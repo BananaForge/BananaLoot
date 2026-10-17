@@ -1,11 +1,17 @@
 ## Interface: 11200
 ## Title: BananaLoot |cff33ff99(SoftReserve + SR+)|r
-## Notes: Masterloot-Addon mit Chat-basierten Soft-Reserves und lokalem SR+ Bonussystem, gebaut für OctoWoW (Vanilla 1.12). Teil von BananaForge.
-## Author: BananaForge (Bareg)
-## Version: 3.32
+## Notes: Masterloot-Addon mit Chat-basierten Soft-Reserves und lokalem SR+ Bonussystem, gebaut für OctoWoW (Vanilla 1.12)
+## Author: Du
+## Version: 3.35
 ## SavedVariables: BananaLoot_DB
 
 BananaLootItemDB.lua
+BananaLootBossData.lua
 BananaLoot.lua
 BananaLootUI.lua
 BananaLootExtra.lua
+BananaLootAlias.lua
+BananaLootRaid.lua
+BananaLootStats.lua
+BananaLootRaidlead.lua
+BananaLootTest.lua

@@ -77,7 +77,7 @@ end)
 -- kompakt genug ist.
 -- ============================================================
 local TAB_GENERAL, TAB_AUTOMATION, TAB_NETWORK, TAB_DISPLAY, TAB_MANAGE = 1, 2, 3, 4, 5
-local tabGroups = { {}, {}, {}, {}, {} }
+local tabGroups = { {}, {}, {}, {}, {}, {} }
 local tabButtons = {}
 local optActiveTab = TAB_GENERAL
 
@@ -85,11 +85,12 @@ local optActiveTab = TAB_GENERAL
 -- Werte wurden anhand der tiefsten Y-Position der jeweils zugeordneten
 -- Elemente (siehe AddToTab()-Aufrufe weiter unten) bestimmt.
 local OPT_TAB_HEIGHTS = {
-    [TAB_GENERAL] = 600,
-    [TAB_AUTOMATION] = 560,
-    [TAB_NETWORK] = 440,
+    [TAB_GENERAL] = 680,
+    [TAB_AUTOMATION] = 700,
+    [TAB_NETWORK] = 500,
     [TAB_DISPLAY] = 820,
-    [TAB_MANAGE] = 420,
+    [TAB_MANAGE] = 600,
+    [6] = 680, -- Statistik (BananaLootStats.lua)
 }
 
 -- Nimmt eine explizite Tabelle (Array) statt Varargs entgegen. Vermeidet
@@ -105,7 +106,7 @@ end
 
 local function ShowOptTab(index)
     optActiveTab = index
-    for t = 1, 5 do
+    for t = 1, 6 do
         local group = tabGroups[t]
         local visible = (t == index)
         for i = 1, table.getn(group) do
@@ -119,7 +120,11 @@ local function ShowOptTab(index)
     -- Reiter nicht unnoetig viel leeren Platz unten zeigen. Das Fenster ist
     -- ueber CENTER verankert, bleibt beim Groessenwechsel also mittig.
     optFrame:SetHeight(OPT_TAB_HEIGHTS[index] or 600)
+    if index == 6 and BananaLoot_UI.RefreshStats then BananaLoot_UI:RefreshStats() end
 end
+
+-- Fuer BananaLootStats.lua (Reiter 6): Elemente einem Reiter zuordnen.
+BananaLoot_UI.OptAddToTab = AddToTab
 
 local function CreateOptTabButton(index, width)
     local btn = CreateFrame("Button", "BananaLootOptTabBtn" .. index, optFrame, "UIPanelButtonTemplate")
@@ -148,13 +153,19 @@ RegisterLocaleText(optTabNetworkBtn, "OPT_TAB_NETWORK")
 
 -- Reihe 2 (zwei breitere Reiter, mehr Platz fuer laengere Beschriftung):
 -- Anzeige & Sound / Verwaltung
-local optTabDisplayBtn = CreateOptTabButton(TAB_DISPLAY, 178)
+local optTabDisplayBtn = CreateOptTabButton(TAB_DISPLAY, 118)
 optTabDisplayBtn:SetPoint("TOPLEFT", optTabGeneralBtn, "BOTTOMLEFT", 0, -4)
 RegisterLocaleText(optTabDisplayBtn, "OPT_TAB_DISPLAY")
 
-local optTabManageBtn = CreateOptTabButton(TAB_MANAGE, 178)
+local optTabManageBtn = CreateOptTabButton(TAB_MANAGE, 118)
 optTabManageBtn:SetPoint("LEFT", optTabDisplayBtn, "RIGHT", 4, 0)
 RegisterLocaleText(optTabManageBtn, "OPT_TAB_MANAGE")
+
+-- Reiter 6: Statistik (Inhalt in BananaLootStats.lua). Bewusst ohne neue
+-- lokale Variablen (Locals-Limit dieser Datei, siehe Hinweis oben).
+CreateOptTabButton(6, 118)
+tabButtons[6]:SetPoint("LEFT", optTabManageBtn, "RIGHT", 4, 0)
+RegisterLocaleText(tabButtons[6], "OPT_TAB_STATS")
 
 local bonusLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 bonusLabel:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -228)
@@ -264,6 +275,28 @@ unknownReplyHint:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -524)
 unknownReplyHint:SetWidth(360)
 unknownReplyHint:SetJustifyH("LEFT")
 RegisterLocaleText(unknownReplyHint, "OPT_UNKNOWN_REPLY_HINT")
+
+-- raidres.top-Import: SR+ von raidres.top hat Vorrang vor lokalem SR+
+-- (Standard: AUS). Siehe BananaLoot:GetRaidResSRPlusOverride.
+-- Hinweis: bewusst KEINE lokalen Variablen (Vanilla-Lua 5.0 erlaubt max. 200
+-- Locals pro Funktion; diese Datei ist am Limit). Frames liegen in BananaLoot_UI.
+BananaLoot_UI.raidresPlusCheck = CreateFrame("CheckButton", "BananaLootRaidResPlusCheck", optFrame, "UICheckButtonTemplate")
+BananaLoot_UI.raidresPlusCheck:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 18, -566)
+BananaLoot_UI.raidresPlusCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    local checked = BananaLoot_UI.raidresPlusCheck:GetChecked()
+    BananaLoot:SetRaidResSRPlusOverride(checked and true or false)
+end)
+
+BananaLoot_UI.raidresPlusLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+BananaLoot_UI.raidresPlusLabel:SetPoint("LEFT", BananaLoot_UI.raidresPlusCheck, "RIGHT", 2, 0)
+RegisterLocaleText(BananaLoot_UI.raidresPlusLabel, "OPT_RAIDRES_SRPLUS_LABEL")
+
+BananaLoot_UI.raidresPlusHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+BananaLoot_UI.raidresPlusHint:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -590)
+BananaLoot_UI.raidresPlusHint:SetWidth(360)
+BananaLoot_UI.raidresPlusHint:SetJustifyH("LEFT")
+RegisterLocaleText(BananaLoot_UI.raidresPlusHint, "OPT_RAIDRES_SRPLUS_HINT")
 
 -- Sprache der Chat- und UI-Ausgaben
 local languageLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -615,7 +648,7 @@ rollSyncHint:SetJustifyH("LEFT")
 RegisterLocaleText(rollSyncHint, "OPT_ROLLSYNC_HINT")
 
 local rollSyncSenderCheck = CreateFrame("CheckButton", "BananaLootRollSyncSenderCheck", optFrame, "UICheckButtonTemplate")
-rollSyncSenderCheck:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 30, -278)
+rollSyncSenderCheck:SetPoint("TOPLEFT", rollSyncHint, "BOTTOMLEFT", 10, -6)
 rollSyncSenderCheck:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     local checked = rollSyncSenderCheck:GetChecked()
@@ -648,7 +681,7 @@ RegisterLocaleText(multiWinnerHint, "OPT_MULTIWINNER_HINT")
 
 -- Trade-Tracking (automatisch, siehe BananaLoot:GetTradeTrackingEnabled).
 local tradeTrackingCheck = CreateFrame("CheckButton", "BananaLootTradeTrackingCheck", optFrame, "UICheckButtonTemplate")
-tradeTrackingCheck:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 18, -330)
+tradeTrackingCheck:SetPoint("TOPLEFT", rollSyncSenderCheck, "BOTTOMLEFT", -12, -10)
 tradeTrackingCheck:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     local checked = tradeTrackingCheck:GetChecked()
@@ -660,7 +693,7 @@ tradeTrackingLabel:SetPoint("LEFT", tradeTrackingCheck, "RIGHT", 2, 0)
 RegisterLocaleText(tradeTrackingLabel, "OPT_TRADETRACKING_LABEL")
 
 local tradeTrackingHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-tradeTrackingHint:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -354)
+tradeTrackingHint:SetPoint("TOPLEFT", tradeTrackingCheck, "BOTTOMLEFT", 2, 0)
 tradeTrackingHint:SetWidth(360)
 tradeTrackingHint:SetJustifyH("LEFT")
 RegisterLocaleText(tradeTrackingHint, "OPT_TRADETRACKING_HINT")
@@ -683,6 +716,78 @@ recoveryBtn:SetScript("OnEnter", function()
 end)
 recoveryBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+-- Testlauf (Loot-Simulation, siehe BananaLootTest.lua). Bewusst OHNE
+-- eigene lokale Variable: diese Datei liegt nah am Lua-5.1-Limit von 200
+-- Locals pro Chunk, die Referenz haengt daher an BananaLoot_UI.
+BananaLoot_UI.optTestBtn = CreateFrame("Button", "BananaLootTestRunBtn", optFrame, "UIPanelButtonTemplate")
+BananaLoot_UI.optTestBtn:SetWidth(160)
+BananaLoot_UI.optTestBtn:SetHeight(20)
+BananaLoot_UI.optTestBtn:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -372)
+RegisterLocaleText(BananaLoot_UI.optTestBtn, "UI_BTN_TEST_RUN")
+BananaLoot_UI.optTestBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.StartTest then BananaLoot_UI:StartTest() end
+end)
+BananaLoot_UI.optTestBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(BananaLoot_UI.optTestBtn, "ANCHOR_RIGHT")
+    GameTooltip:SetText(BananaLoot:L("UI_BTN_TEST_TOOLTIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+BananaLoot_UI.optTestBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+-- Raidlead-Fenster oeffnen (siehe BananaLootRaidlead.lua). Ohne lokale Variable.
+BananaLoot_UI.optRaidleadBtn = CreateFrame("Button", "BananaLootRaidleadOpenBtn", optFrame, "UIPanelButtonTemplate")
+BananaLoot_UI.optRaidleadBtn:SetWidth(160)
+BananaLoot_UI.optRaidleadBtn:SetHeight(20)
+BananaLoot_UI.optRaidleadBtn:SetPoint("TOPLEFT", BananaLoot_UI.optTestBtn, "BOTTOMLEFT", 0, -6)
+RegisterLocaleText(BananaLoot_UI.optRaidleadBtn, "UI_BTN_RAIDLEAD")
+BananaLoot_UI.optRaidleadBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.ShowRaidlead then BananaLoot_UI:ShowRaidlead() end
+end)
+BananaLoot_UI.optRaidleadBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(BananaLoot_UI.optRaidleadBtn, "ANCHOR_RIGHT")
+    GameTooltip:SetText(BananaLoot:L("UI_BTN_RAIDLEAD_TOOLTIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+BananaLoot_UI.optRaidleadBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+-- Hauptschalter fuer das GESAMTE Raidlead-Feature (Standard: aus). Aus =
+-- keine Ansagen, kein Fenster, keine Reaktion auf Ziel/Raidstart/Raidende.
+BananaLoot_UI.rlEnableCheck = CreateFrame("CheckButton", "BananaLootRaidleadEnableCheck", optFrame, "UICheckButtonTemplate")
+BananaLoot_UI.rlEnableCheck:SetPoint("TOPLEFT", BananaLoot_UI.optRaidleadBtn, "BOTTOMLEFT", -2, -8)
+BananaLoot_UI.rlEnableCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    local checked = BananaLoot_UI.rlEnableCheck:GetChecked() and true or false
+    BananaLoot:SetRaidleadEnabled(checked)
+    if checked then BananaLoot_UI.optRaidleadBtn:Enable() else BananaLoot_UI.optRaidleadBtn:Disable() end
+end)
+BananaLoot_UI.rlEnableLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+BananaLoot_UI.rlEnableLabel:SetPoint("LEFT", BananaLoot_UI.rlEnableCheck, "RIGHT", 2, 0)
+RegisterLocaleText(BananaLoot_UI.rlEnableLabel, "OPT_RL_ENABLE_LABEL")
+BananaLoot_UI.rlEnableHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+BananaLoot_UI.rlEnableHint:SetPoint("TOPLEFT", BananaLoot_UI.rlEnableCheck, "BOTTOMLEFT", 2, 0)
+BananaLoot_UI.rlEnableHint:SetWidth(360)
+BananaLoot_UI.rlEnableHint:SetJustifyH("LEFT")
+RegisterLocaleText(BananaLoot_UI.rlEnableHint, "OPT_RL_ENABLE_HINT")
+
+-- Optionaler Test-Raid UBRS (Standard: aus). Unabhaengig vom Raidlead-Schalter:
+-- gilt auch fuer den Auto-Masterloot.
+BananaLoot_UI.ubrsCheck = CreateFrame("CheckButton", "BananaLootUBRSCheck", optFrame, "UICheckButtonTemplate")
+BananaLoot_UI.ubrsCheck:SetPoint("TOPLEFT", BananaLoot_UI.rlEnableHint, "BOTTOMLEFT", -2, -34)
+BananaLoot_UI.ubrsCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot:SetOptionalRaidEnabled("UBRS", BananaLoot_UI.ubrsCheck:GetChecked() and true or false)
+end)
+BananaLoot_UI.ubrsLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+BananaLoot_UI.ubrsLabel:SetPoint("LEFT", BananaLoot_UI.ubrsCheck, "RIGHT", 2, 0)
+RegisterLocaleText(BananaLoot_UI.ubrsLabel, "OPT_UBRS_LABEL")
+BananaLoot_UI.ubrsHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+BananaLoot_UI.ubrsHint:SetPoint("TOPLEFT", BananaLoot_UI.ubrsCheck, "BOTTOMLEFT", 2, 0)
+BananaLoot_UI.ubrsHint:SetWidth(360)
+BananaLoot_UI.ubrsHint:SetJustifyH("LEFT")
+RegisterLocaleText(BananaLoot_UI.ubrsHint, "OPT_UBRS_HINT")
+
 -- ============================================================
 -- 1d) REITER-ZUORDNUNG: jedes Element genau einem Reiter zuordnen.
 -- Muss NACH der Erzeugung aller obigen Elemente stehen.
@@ -695,10 +800,32 @@ AddToTab(TAB_GENERAL, {
     bonusLabel, bonusEditBox, bonusSaveBtn, optHint,
     timeoutLabel, timeoutEditBox, timeoutSaveBtn,
     maxSRLabel, maxSREditBox, maxSRSaveBtn, maxSRHint,
-    unknownReplyCheck, unknownReplyLabel, unknownReplyHint })
+    unknownReplyCheck, unknownReplyLabel, unknownReplyHint,
+    BananaLoot_UI.raidresPlusCheck, BananaLoot_UI.raidresPlusLabel, BananaLoot_UI.raidresPlusHint })
+
+-- Round Robin fuer Main-Spec (siehe BananaLoot:IsRoundRobinActive). Ohne neue
+-- lokale Variablen (Locals-Limit dieser Datei), Elemente in BananaLoot_UI.
+BananaLoot_UI.rrCheck = CreateFrame("CheckButton", "BananaLootRRCheck", optFrame, "UICheckButtonTemplate")
+BananaLoot_UI.rrCheck:SetPoint("TOPLEFT", countdownHint, "BOTTOMLEFT", -2, -10)
+BananaLoot_UI.rrCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    local checked = BananaLoot_UI.rrCheck:GetChecked()
+    BananaLoot:SetRoundRobinEnabled(checked and true or false)
+end)
+
+BananaLoot_UI.rrLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+BananaLoot_UI.rrLabel:SetPoint("LEFT", BananaLoot_UI.rrCheck, "RIGHT", 2, 0)
+RegisterLocaleText(BananaLoot_UI.rrLabel, "OPT_RR_LABEL")
+
+BananaLoot_UI.rrHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+BananaLoot_UI.rrHint:SetPoint("TOPLEFT", BananaLoot_UI.rrCheck, "BOTTOMLEFT", 2, 0)
+BananaLoot_UI.rrHint:SetWidth(360)
+BananaLoot_UI.rrHint:SetJustifyH("LEFT")
+RegisterLocaleText(BananaLoot_UI.rrHint, "OPT_RR_HINT")
 
 AddToTab(TAB_AUTOMATION, {
     autoMLCheck, autoMLLabel, autoMLHint,
+    BananaLoot_UI.rrCheck, BananaLoot_UI.rrLabel, BananaLoot_UI.rrHint,
     multiWinnerCheck, multiWinnerLabel, multiWinnerHint,
     lootPreviewCheck, lootPreviewLabel, lootPreviewHint,
     countdownCheck, countdownLabel, countdownHint })
@@ -719,7 +846,9 @@ AddToTab(TAB_DISPLAY, {
 
 AddToTab(TAB_MANAGE, {
     manageSectionLabel, optResetBtn, optWipeBtn, optCsvBtn, optCsvLogBtn,
-    optClearLogBtn, recoveryBtn })
+    optClearLogBtn, recoveryBtn, BananaLoot_UI.optTestBtn, BananaLoot_UI.optRaidleadBtn,
+    BananaLoot_UI.rlEnableCheck, BananaLoot_UI.rlEnableLabel, BananaLoot_UI.rlEnableHint,
+    BananaLoot_UI.ubrsCheck, BananaLoot_UI.ubrsLabel, BananaLoot_UI.ubrsHint })
 
 
 function BananaLoot_UI:ToggleOptions()
@@ -731,6 +860,11 @@ function BananaLoot_UI:ToggleOptions()
         timeoutEditBox:SetText(tostring(BananaLoot:GetRollTimeout()))
         countdownCheck:SetChecked(BananaLoot:GetChatCountdownEnabled())
         unknownReplyCheck:SetChecked(BananaLoot:GetUnknownCommandReplyEnabled())
+        BananaLoot_UI.raidresPlusCheck:SetChecked(BananaLoot:GetRaidResSRPlusOverride())
+        BananaLoot_UI.rrCheck:SetChecked(BananaLoot:GetRoundRobinEnabled())
+        BananaLoot_UI.rlEnableCheck:SetChecked(BananaLoot:GetRaidleadEnabled())
+        BananaLoot_UI.ubrsCheck:SetChecked(BananaLoot:GetOptionalRaidEnabled("UBRS"))
+        if BananaLoot:GetRaidleadEnabled() then BananaLoot_UI.optRaidleadBtn:Enable() else BananaLoot_UI.optRaidleadBtn:Disable() end
         scaleEditBox:SetText(tostring(BananaLoot:GetUIScalePercent()))
         lootScaleEditBox:SetText(tostring(BananaLoot:GetLootUIScalePercent()))
         soundEnabledCheck:SetChecked(BananaLoot:GetSoundEnabled())
@@ -886,8 +1020,17 @@ importRaidResBtn:SetScript("OnClick", function()
         if table.getn(result.hrSkipped) > 0 then
             DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("IMPORT_RAIDRES_HR_SKIPPED_WARNING"), table.getn(result.hrSkipped), table.concat(result.hrSkipped, ", ")))
         end
+        if result.whisperCount and result.whisperCount > 0 then
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("IMPORT_RAIDRES_WHISPERS"), result.whisperCount))
+        end
+        if result.whisperSkipped and table.getn(result.whisperSkipped) > 0 then
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("IMPORT_RAIDRES_WHISPER_SKIPPED"), table.concat(result.whisperSkipped, ", ")))
+        end
         if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
         importFrame:Hide()
+        if table.getn(result.unmatchedNames) > 0 and BananaLoot_UI.ShowAliasWindow then
+            BananaLoot_UI:ShowAliasWindow()
+        end
     else
         if err == "base64_failed" then
             DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("IMPORT_RAIDRES_BASE64_FAILED"))
@@ -1835,6 +1978,7 @@ local historyEntries = {}
 local HISTORY_POOL_LABEL_KEY = {
     ms = "POOL_MS", os = "POOL_OS", tmog = "POOL_TMOG",
     manual = "POOL_MANUAL", bank = "POOL_BANK", raidroll = "POOL_RAIDROLL",
+    disenchant = "POOL_DISENCHANT",
 }
 
 -- Baut einen farbcodierten Anzeigetext direkt aus einer itemID auf --
@@ -2613,4 +2757,9 @@ end
 function BananaLoot_UI:ApplyLocaleAll()
     if self.ApplyLocale then self:ApplyLocale() end
     if self.ApplyLocaleExtra then self:ApplyLocaleExtra() end
+    if self.ApplyLocaleAlias then self:ApplyLocaleAlias() end
+    if self.ApplyLocaleRaid then self:ApplyLocaleRaid() end
+    if self.ApplyLocaleRaidlead then self:ApplyLocaleRaidlead() end
+    if self.ApplyLocaleStats then self:ApplyLocaleStats() end
+    if self.ApplyLocaleTest then self:ApplyLocaleTest() end
 end

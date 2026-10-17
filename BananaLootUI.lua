@@ -13,7 +13,7 @@
 
 BananaLoot_UI = {}
 
-local LOOT_ROW_HEIGHT = 54
+local LOOT_ROW_HEIGHT = 72
 local SR_ROW_HEIGHT = 40
 local MAX_ROWS = 20
 local MAX_PLAYERS_SHOWN = 3 -- vollständige Liste bleibt im "Verwalten"-Fenster einsehbar
@@ -73,6 +73,8 @@ local function ResolveRowIcon(id)
     local _, _, _, _, _, _, _, _, _, itemTexture = GetItemInfo("item:" .. id .. ":0:0:0:0:0:0:0")
     local cachedLootIcon = BananaLoot.knownLootIcons[id]
     local bagIcon = GetBagIconForItem(id)
+    local staticInfo = BananaLoot:GetStaticItemInfo(id)
+    local staticIcon = staticInfo and staticInfo.icon or nil
     local iconFromDedicatedApi = nil
     if GetItemIcon then
         local ok, result = pcall(GetItemIcon, "item:" .. id .. ":0:0:0:0:0:0:0")
@@ -84,6 +86,8 @@ local function ResolveRowIcon(id)
         texture = cachedLootIcon
     elseif type(bagIcon) == "string" and bagIcon ~= "" then
         texture = bagIcon
+    elseif type(staticIcon) == "string" and staticIcon ~= "" then
+        texture = "Interface\\Icons\\" .. staticIcon
     elseif type(iconFromDedicatedApi) == "string" and iconFromDedicatedApi ~= "" then
         texture = iconFromDedicatedApi
     elseif type(itemTexture) == "string" and itemTexture ~= "" then
@@ -806,7 +810,34 @@ local function CreateLootRow(index)
     row.awardBtn:SetText(BananaLoot:L("UI_BTN_AWARD"))
     row.awardBtn:Hide()
 
+    -- Gewinner-/Disenchanter-Name: eigene, gut lesbare Zeile links neben
+    -- den Buttons (unterste Zeile der Row), damit vor dem Klick auf
+    -- "Vergeben"/"Disenchant" klar sichtbar ist, wer das Item bekommt.
+    row.winnerText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.winnerText:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 4, 4)
+    row.winnerText:SetJustifyH("LEFT")
+    row.winnerText:SetWidth(190)
+    row.winnerText:SetHeight(16)
+
     return row
+end
+
+-- Zeigt statt "Vergeben" den "Disenchant"-Button (Item, für das niemand
+-- gerollt hat) samt Name des gesetzten Disenchanters.
+local function ShowDisenchantButton(row, id)
+    local de = BananaLoot:GetDisenchanter()
+    if de then
+        row.winnerText:SetText(string.format(BananaLoot:L("UI_DE_LABEL"), BananaLoot:ColoredName(de)))
+    else
+        row.winnerText:SetText(BananaLoot:L("UI_DE_NOT_SET_LABEL"))
+    end
+    row.awardBtn:SetText(BananaLoot:L("UI_BTN_DISENCHANT"))
+    row.awardBtn:SetWidth(84)
+    row.awardBtn:Show()
+    row.awardBtn:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        BananaLoot:AwardDisenchant(id)
+    end)
 end
 
 for i = 1, MAX_ROWS do
@@ -900,7 +931,9 @@ function BananaLoot_UI:RefreshLoot()
 
         -- Status / Roll-Auswertung
         row.statusText:SetText("")
+        row.winnerText:SetText("")
         row.awardBtn:SetText(BananaLoot:L("UI_BTN_AWARD"))
+        row.awardBtn:SetWidth(70)
         row.awardBtn:Hide()
 
         if isHR then
@@ -944,6 +977,11 @@ function BananaLoot_UI:RefreshLoot()
                     local winner, score, roll, pool = BananaLoot.activeRoll.winner, BananaLoot.activeRoll.winnerScore, BananaLoot.activeRoll.winnerRoll, BananaLoot.activeRoll.winnerPool
                     if winner then
                         row.statusText:SetText(string.format(BananaLoot:L("UI_STATUS_WINNER"), pool or "?", BananaLoot:ColoredName(winner), roll, score))
+                        if BananaLoot.activeRoll.rrActive then
+                            row.statusText:SetText(row.statusText:GetText() .. string.format(BananaLoot:L("UI_STATUS_RR"),
+                                BananaLoot.activeRoll.rrWinnerRR or 0, table.getn(BananaLoot.activeRoll.rrExcluded or {})))
+                        end
+                        row.winnerText:SetText(string.format(BananaLoot:L("UI_WINNER_LABEL"), BananaLoot:ColoredName(winner)))
                         row.awardBtn:Show()
                         row.awardBtn:SetScript("OnClick", function()
                             BananaLoot:PlayClickSound()
@@ -951,6 +989,7 @@ function BananaLoot_UI:RefreshLoot()
                         end)
                     else
                         row.statusText:SetText(BananaLoot:L("UI_STATUS_NOBODY_ROLLED"))
+                        ShowDisenchantButton(row, id)
                     end
                 else
                     -- Mehrfachdrop ("Top N gewinnen"): jeder Gewinner wird
@@ -972,6 +1011,7 @@ function BananaLoot_UI:RefreshLoot()
                     end
                     row.statusText:SetText(text)
                     if nextUnawarded then
+                        row.winnerText:SetText(string.format(BananaLoot:L("UI_WINNER_LABEL"), BananaLoot:ColoredName(nextUnawarded.name)))
                         row.awardBtn:Show()
                         row.awardBtn:SetText(BananaLoot:L("UI_BTN_AWARD"))
                         local winnerNameForClick = nextUnawarded.name
@@ -986,6 +1026,12 @@ function BananaLoot_UI:RefreshLoot()
                 row.arfBtn:Enable()
             end
         else
+            -- Auto-Modus: "Niemand hat gerollt" räumt activeRoll weg, der
+            -- Merker in noRollItems zeigt trotzdem den Disenchant-Button.
+            if BananaLoot.noRollItems[id] then
+                row.statusText:SetText(BananaLoot:L("UI_STATUS_NOBODY_ROLLED"))
+                ShowDisenchantButton(row, id)
+            end
             row.rollBtn:Enable()
             row.rollBtn:SetText(BananaLoot:L("UI_BTN_ROLL"))
             row.arfBtn:Enable()
@@ -1234,17 +1280,30 @@ local function RefreshRollSyncPopup()
     -- Hauptspec-Wurf ihn immer schlägt.
     local POOL_SYNC_PRIORITY = { ms = 1, os = 2, tmog = 3 }
     local names = {}
-    for name, _ in pairs(rollSyncState.rolls) do table.insert(names, name) end
+    -- Round Robin (nur wenn der Loot-Master RR-Stufen mitsendet): niedrigste
+    -- RR unter den MS-Wuerfen gewinnt, Wuerfe mit hoeherer RR sind "nicht gewertet".
+    local minRR = nil
+    for name, entry in pairs(rollSyncState.rolls) do
+        table.insert(names, name)
+        if entry.type == "ms" and entry.rr and (not minRR or entry.rr < minRR) then minRR = entry.rr end
+    end
     table.sort(names, function(a, b)
         local ea, eb = rollSyncState.rolls[a], rollSyncState.rolls[b]
         local pa = POOL_SYNC_PRIORITY[ea.type] or 9
         local pb = POOL_SYNC_PRIORITY[eb.type] or 9
         if pa ~= pb then return pa < pb end
+        if ea.type == "ms" and ea.rr and eb.rr and ea.rr ~= eb.rr then return ea.rr < eb.rr end
         return ea.value > eb.value
     end)
 
+    local anyExcluded = false
+    for name, entry in pairs(rollSyncState.rolls) do
+        if entry.type == "ms" and entry.rr and minRR and entry.rr > minRR then anyExcluded = true end
+    end
     if table.getn(names) > RS_MAX then
         rsOverflowText:SetText(string.format(BananaLoot:L("RSWIN_OVERFLOW"), table.getn(names) - RS_MAX))
+    elseif anyExcluded then
+        rsOverflowText:SetText(BananaLoot:L("RSWIN_RR_LEGEND"))
     else
         rsOverflowText:SetText("")
     end
@@ -1256,11 +1315,19 @@ local function RefreshRollSyncPopup()
         local name = names[i]
         local entry = rollSyncState.rolls[name]
         local row = rsRows[shown]
-        row.nameText:SetText(BananaLoot:ColoredName(name))
         local poolSuffix = ""
         if entry.type == "os" then poolSuffix = " (" .. BananaLoot:L("POOL_OS") .. ")"
         elseif entry.type == "tmog" then poolSuffix = " (" .. BananaLoot:L("POOL_TMOG") .. ")" end
-        row.valueText:SetText(tostring(entry.value) .. poolSuffix)
+        if entry.type == "ms" and entry.rr and minRR and entry.rr > minRR then
+            -- Round Robin: Wurf zaehlt nicht (hoehere RR als der beste MS-Roller)
+            row.nameText:SetText("|cff888888" .. name .. "|r")
+            row.valueText:SetText("|cff888888" .. tostring(entry.value) .. " RR" .. entry.rr .. "|r |cffff5555X|r")
+        else
+            row.nameText:SetText(BananaLoot:ColoredName(name))
+            local rrTag = ""
+            if entry.type == "ms" and entry.rr then rrTag = " |cffffcc00RR" .. entry.rr .. "|r" end
+            row.valueText:SetText(tostring(entry.value) .. rrTag .. poolSuffix)
+        end
         row:Show()
     end
     for i = shown + 1, RS_MAX do rsRows[i]:Hide() end
@@ -1293,7 +1360,7 @@ function BananaLoot_UI:HandleRollSync(msgType, fields, sender)
     elseif msgType == "RU" then
         local itemID = tonumber(fields[2])
         if not rollSyncState.active or itemID ~= rollSyncState.itemID then return end
-        rollSyncState.rolls[fields[3]] = { value = tonumber(fields[4]) or 0, type = fields[5] }
+        rollSyncState.rolls[fields[3]] = { value = tonumber(fields[4]) or 0, type = fields[5], rr = tonumber(fields[6]) }
         RefreshRollSyncPopup()
 
     elseif msgType == "RT" then
