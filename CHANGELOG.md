@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.36 (vs. v3.35)
+
+- **New:** Default raid lead announcements for all 50 bosses that had none: Molten Core (10), Onyxia, Blackwing Lair (8), Zul'Gurub (10), Naxxramas (15) and the six world bosses (Azuregos, Lord Kazzak and the four Emerald Dragons). Each boss gets a short message 1 (tank/DD/healer hints plus curse, poison and disease notes); message 2 stays empty. Everything remains editable in the raid lead window and your own texts always take priority. The mechanics are written from general Vanilla knowledge, so check them against your raid strategy (and against Turtle WoW changes) before relying on them.
+
 ## v3.35 (vs. v3.34)
 
 - **New:** Disenchanter: new side-menu button "Set Disenchanter" in the SR window. If nobody rolled on an item, the loot window now shows a "Disenchant" button instead of "Award". Clicking it awards the item directly to the set disenchanter without another roll (also in auto mode). The award goes through the normal award path (loot log and shared history category "Disenchant", roll-sync broadcast, queued if the loot window is closed) and is announced in raid/party chat. If no disenchanter is set, a chat hint is shown.

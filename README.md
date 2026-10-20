@@ -240,8 +240,8 @@ BananaLoot never talks to the internet on its own.
 - Double-post protection: only the raid leader sends – or, if a name is
   entered in the sender field, only that player. Each boss is announced once
   per raid, and other BananaLoot clients are informed so they stay silent
-- Default texts ship for raids with custom content and for AQ20/AQ40;
-  everything is editable
+- Default texts ship for every boss (including the optional UBRS raid);
+  everything is editable and your own texts always take priority
 
 ### Two dedicated windows
 
