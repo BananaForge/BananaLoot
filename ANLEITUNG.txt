@@ -605,6 +605,13 @@ ANPASSUNGEN
 
 CHANGELOG
 ---------
+v3.42 (vs. v3.41)
+ - Fixed: Game freeze/crash when opening loot as master looter in a raid.
+   The routine that removes reservations of players who are no longer in
+   the raid (PruneAbsentReservations) could loop forever on inconsistent
+   reservation data. It now collects the absent names first, removes them
+   in a fixed-length loop and cleans up inconsistent entries directly.
+
 v3.41 (vs. v3.40)
  - New: Raid roll list (button "RL" in the SR window, /bl raidroll
    [Item][Item]..., /bl raidroll remove [Item]). Items on the list are

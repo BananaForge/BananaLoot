@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.41"
+BananaLoot.VERSION = "3.42"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -3547,15 +3547,24 @@ function BananaLoot:PruneAbsentReservations()
     local roster = GetCurrentRosterSet()
     local removedNames = {}
     for id, res in pairs(self.reservations) do
-        local i = 1
-        while i <= table.getn(res.order) do
+        -- Erst die abwesenden Namen einsammeln, dann entfernen. Rückwärts
+        -- bzw. mit fester Schleifenlänge, damit eine inkonsistente
+        -- Reservierung (Name doppelt in order oder nur in order, nicht in
+        -- players) nie zur Endlosschleife werden kann.
+        local absent = {}
+        for i = 1, table.getn(res.order) do
             local name = res.order[i]
-            if not roster[name] then
-                self:RemoveReservation(res.link, name)
-                table.insert(removedNames, name .. " (" .. (GetItemNameFromLink(res.link) or res.link) .. ")")
-            else
-                i = i + 1
+            if not roster[name] then table.insert(absent, name) end
+        end
+        for a = 1, table.getn(absent) do
+            local name = absent[a]
+            if not self:RemoveReservation(res.link, name) then
+                -- Fallback bei Dateninkonsistenz: direkt bereinigen.
+                res.players[name] = nil
+                RemovePlayerFromOrder(res.order, name)
+                self:RemoveItemFromPlayerList(name, id)
             end
+            table.insert(removedNames, name .. " (" .. (GetItemNameFromLink(res.link) or res.link) .. ")")
         end
     end
     if table.getn(removedNames) > 0 then
