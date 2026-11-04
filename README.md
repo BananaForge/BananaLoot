@@ -321,6 +321,18 @@ BananaLoot never talks to the internet on its own.
   correctly colored item name and icon immediately, instead of just
   "Item #12345" until the item actually drops
 
+### Item preloading per instance
+
+- When you enter a dungeon or raid, BananaLoot asks the server (slowly, in the
+  background, about 4 items per second) for every item that can drop there and
+  that your client doesn't know yet. This way the Blizzard roll window shows
+  icon and tooltip instead of a question mark
+- Purely local, no addon messages; the Roll-Sync protocol is not affected
+- Progress is shown in chat; `/bl prefetch` runs it manually for the current
+  zone, `/bl prefetch on|off` toggles it (default: on)
+- Data source: AtlasLoot Turtle WoW Edition, used with the developer's
+  permission (see `THIRD_PARTY_NOTICES.md`)
+
 ### Test mode
 
 - "Start test run" (Options → Management) simulates a complete loot drop on
@@ -419,6 +431,7 @@ The release ZIP also contains `ANLEITUNG.txt`, the full German manual.
 | `/bl history`                                       | Show the shared loot history for this session (Roll-Sync)                   |
 | `/bl clearlog`                                      | Clear the loot log (e.g. at the start of a season)                          |
 | `/bl lfm`                                           | Open the LFM window (timed posts in the world channel)                      |
+| `/bl prefetch` / `/bl prefetch on\|off`             | Preload the current instance's items now / toggle automatic preloading    
 | `/bl options`                                       | Open settings                                                               |
 
 Full command overview is also available in-game via the **?** button in
@@ -484,11 +497,14 @@ BananaLootRaid.lua        SR window side menu, Start/End Raid, raid timer,
                           Disenchanter / BR looter / Auto ML buttons
 BananaLootStats.lua       Statistics tab
 BananaLootRaidlead.lua    Raid lead window
+BananaLootZoneLoot.lua    Instance -> item IDs for item preloading (generated, don't edit by hand)
+BananaLootPrefetch.lua    Item preloading when entering an instance
 BananaLootTest.lua        Test mode (simulated loot drop)
 Icons/                    TGA textures loaded in-game
 docs/ANLEITUNG.txt        Full German user manual (shipped in the release ZIP)
 docs/ENTWICKLUNG.md       Developer notes (German)
 tools/                    Checks run by CI: syntax, Lua 5.0 compatibility, TOC, version
+tools/gen_zone_loot.py    Regenerates BananaLootZoneLoot.lua from an AtlasLoot copy
 assets/                   Images for this README only (not shipped)
 ```
 
@@ -527,6 +543,9 @@ few great community projects and resources:
   bonus stacking) that BananaLoot's behavior is modeled after.
 - **Bananaforge Luminar** – source of the bundled static item database
   (see `THIRD_PARTY_NOTICES.md`).
+- **AtlasLoot Turtle WoW Edition** – source of the per-instance item lists used
+  for item preloading, used with the developer's permission (see
+  `THIRD_PARTY_NOTICES.md`).
 - **[raidres.top](https://raidres.top/)** – the external soft-reserve
   website whose export format BananaLoot can import directly.
 

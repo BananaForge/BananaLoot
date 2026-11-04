@@ -12,6 +12,13 @@ BananaLoot's bundled item database (`BananaLootItemDB.lua`) contains item data
 (names, qualities, icons and further item attributes) sourced from
 Bananaforge Luminar.
 
+## Instance Loot Data
+
+`BananaLootZoneLoot.lua` (instance -> item IDs) is generated from the loot
+tables of AtlasLoot Turtle WoW Edition and used with permission of its
+developer. It is only used to preload item information from the game server.
+`tools/gen_zone_loot.py` regenerates the file from an AtlasLoot copy.
+
 ## Separation of Licenses
 
 The MIT License included in this repository applies to the original BananaLoot

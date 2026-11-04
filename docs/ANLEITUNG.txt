@@ -81,6 +81,10 @@ BEDIENUNG (Masterlooter)
 /bl br          -> öffnet die Liste aller aktuellen Bankreserve-Items
                    (mit "Entfernen"-Button je Item)
 /bl br remove [Item] -> entfernt ein Item wieder von der Bankreserve
+/bl prefetch    -> laedt die Items der aktuellen Instanz jetzt vor (siehe
+                   Abschnitt ITEM-VORLADEN weiter unten)
+/bl prefetch on|off -> schaltet das automatische Vorladen beim Betreten
+                   einer Instanz ein/aus (Standard: an)
 /bl lfm         -> öffnet das LFM-Fenster: postet einen frei wählbaren
                    Text in regelmäßigen Abständen im Weltkanal (z.B.
                    PUG-Raid-Werbung oder Nachbesetzung eines
@@ -491,6 +495,25 @@ Die Datenbank ist reine, generierte Daten und wird nicht von Hand
 bearbeitet. Zum Aktualisieren (z.B. nach einem Content-Patch) wird
 BananaLootItemDB.lua aus der Quelle neu erzeugt; Tabellenname ist
 BananaLoot_ItemDB, Format siehe Kommentar am Dateianfang.
+
+ITEM-VORLADEN BEIM BETRETEN EINER INSTANZ
+-------------------------------------------------------------
+Das Blizzard-Wuerfelfenster zeigt fuer Items, die der Client noch nie
+gesehen hat, nur ein Fragezeichen ohne Tooltip. Damit das beim Looten
+nicht passiert, fragt BananaLoot beim Betreten einer Instanz (Dungeon
+oder Raid) alle dort droppenden Items, die der Client noch nicht kennt,
+gedrosselt im Hintergrund beim Server ab (4 Items pro Sekunde, per
+unsichtbarem Tooltip). Der Client legt sie dadurch im lokalen Cache ab.
+
+ - Beginn und Ende erscheinen als Chat-Meldung.
+ - Rein lokal: keine Addon-Nachrichten, das Roll-Sync-Protokoll ist
+   nicht betroffen.
+ - /bl prefetch startet den Vorgang von Hand fuer die aktuelle Zone;
+   /bl prefetch on|off schaltet das automatische Vorladen ein/aus.
+ - Meldet der Befehl "Keine Loot-Daten fuer '<Zone>'", ist die Zone
+   unbekannt (die deutschen Zonennamen sind nicht ingame geprueft).
+ - Daten: BananaLootZoneLoot.lua (Quelle: AtlasLoot Turtle WoW Edition,
+   mit Erlaubnis des Entwicklers verwendet).
 
 EINSTELLUNGEN (/bl options)
 -------------------------------

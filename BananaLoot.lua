@@ -169,6 +169,8 @@ local LOCALE = {
             "/bl recover            SR+-Wiederherstellungsliste anzeigen\n" ..
             "/bl history            Geteilte Loot-Historie anzeigen (nur Session)\n" ..
             "/bl lfm                LFM-Fenster öffnen (Text im Weltkanal posten)\n" ..
+            "/bl prefetch          Items der aktuellen Instanz jetzt vorladen\n" ..
+            "/bl prefetch on|off   Automatisches Vorladen beim Betreten von Instanzen\n" ..
             "\n" ..
             "=== WHISPER-BEFEHLE (Spieler) ===\n" ..
             "sr [Item]              Item reservieren\n" ..
@@ -181,7 +183,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm",
+        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl prefetch [on|off]",
 
         -- Optionen (Chat-Feedback)
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ Bonus pro Stufe auf +%d gesetzt.",
@@ -193,6 +195,12 @@ local LOCALE = {
         OPT_LOOTPREVIEW_ON = "|cff33ff99BananaLoot|r: Loot-Vorschau im Raid-/Gruppenchat aktiviert.",
         OPT_LOOTPREVIEW_OFF = "|cff33ff99BananaLoot|r: Loot-Vorschau im Raid-/Gruppenchat deaktiviert.",
         OPT_LANGUAGE_SET = "|cff33ff99BananaLoot|r: Sprache umgestellt.",
+        PREFETCH_START = "|cff33ff99BananaLoot|r: Lade %d unbekannte Items für %s vor...",
+        PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item-Cache für %s fertig (%d Items geladen).",
+        PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: Keine Loot-Daten für '%s' (keine bekannte Instanz).",
+        PREFETCH_ALL_KNOWN = "|cff33ff99BananaLoot|r: Alle Items für %s sind dem Client bereits bekannt.",
+        PREFETCH_ON = "|cff33ff99BananaLoot|r: Item-Vorladen beim Betreten von Instanzen aktiviert.",
+        PREFETCH_OFF = "|cff33ff99BananaLoot|r: Item-Vorladen beim Betreten von Instanzen deaktiviert.",
         IMPORT_SUCCESS = "|cff33ff99BananaLoot|r: %d Item-Reservierung(en) und %d Hard-Reserve-Eintrag/Einträge importiert.",
         IMPORT_DROPPED_WARNING = "|cffffcc00BananaLoot|r: %d Reservierung(en) wegen des aktuellen SR-Limits (max. %d pro Spieler) beim Import verworfen.",
         WIN_IMPORT_RAIDRES_BTN = "raidres.top",
@@ -723,6 +731,8 @@ local LOCALE = {
             "/bl recover            Show SR+ recovery list\n" ..
             "/bl history            Show shared loot history (session only)\n" ..
             "/bl lfm                Open the LFM window (post a text in the World channel)\n" ..
+            "/bl prefetch          Preload the items of the current instance now\n" ..
+            "/bl prefetch on|off   Automatic preloading when entering instances\n" ..
             "\n" ..
             "=== WHISPER COMMANDS (Players) ===\n" ..
             "sr [Item]              Reserve item\n" ..
@@ -735,7 +745,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm",
+        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl prefetch [on|off]",
 
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ bonus per stack set to +%d.",
         OPT_BONUS_INVALID = "|cffff5555BananaLoot|r: Please enter a valid number.",
@@ -746,6 +756,12 @@ local LOCALE = {
         OPT_LOOTPREVIEW_ON = "|cff33ff99BananaLoot|r: Loot preview in raid/party chat enabled.",
         OPT_LOOTPREVIEW_OFF = "|cff33ff99BananaLoot|r: Loot preview in raid/party chat disabled.",
         OPT_LANGUAGE_SET = "|cff33ff99BananaLoot|r: Language switched.",
+        PREFETCH_START = "|cff33ff99BananaLoot|r: Preloading %d unknown items for %s...",
+        PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item cache for %s ready (%d items loaded).",
+        PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: No loot data for '%s' (not a known instance).",
+        PREFETCH_ALL_KNOWN = "|cff33ff99BananaLoot|r: All items for %s are already known to the client.",
+        PREFETCH_ON = "|cff33ff99BananaLoot|r: Item preloading on entering instances enabled.",
+        PREFETCH_OFF = "|cff33ff99BananaLoot|r: Item preloading on entering instances disabled.",
         IMPORT_SUCCESS = "|cff33ff99BananaLoot|r: Imported %d item reservation(s) and %d Hard Reserve entr(y/ies).",
         IMPORT_DROPPED_WARNING = "|cffffcc00BananaLoot|r: %d reservation(s) were dropped during import due to the current SR limit (max. %d per player).",
         WIN_IMPORT_RAIDRES_BTN = "raidres.top",
@@ -6122,6 +6138,14 @@ SlashCmdList["BANANALOOT"] = function(msg)
 
     elseif cmd == "history" then
         if BananaLoot_UI and BananaLoot_UI.ShowHistory then BananaLoot_UI:ShowHistory() end
+
+    elseif cmd == "prefetch" then
+        if BananaLoot.PrefetchZoneItems then BananaLoot:PrefetchZoneItems(nil, true) end
+
+    elseif cmd == "prefetch on" or cmd == "prefetch off" then
+        local on = (cmd == "prefetch on")
+        BananaLoot:SetPrefetchEnabled(on)
+        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L(on and "PREFETCH_ON" or "PREFETCH_OFF"))
 
     elseif cmd == "lfm" then
         if BananaLoot_UI and BananaLoot_UI.ShowLFM then BananaLoot_UI:ShowLFM() end

@@ -15,3 +15,5 @@ BananaLootRaid.lua
 BananaLootStats.lua
 BananaLootRaidlead.lua
 BananaLootTest.lua
+BananaLootZoneLoot.lua
+BananaLootPrefetch.lua
