@@ -11,14 +11,19 @@
 local srFrame = getglobal("BananaLootSRFrame")
 if not srFrame then return end
 
-local PANEL_W = 150
+-- Layout des Seitenmenues: einheitliche Buttonhoehe, klare Abstaende, vier
+-- Gruppen (Raid / Daten / Sonstiges / Looter) durch Trennlinien getrennt.
+local PANEL_W = 180
+local BTN_W = PANEL_W - 24
+local BTN_H = 26
+local PANEL_PAD = 12
 
 -- ============================================================
 -- Seitenpanel
 -- ============================================================
 local panel = CreateFrame("Frame", "BananaLootSRMenuPanel", srFrame)
 panel:SetWidth(PANEL_W)
-panel:SetHeight(270)
+panel:SetHeight(392)
 -- Der Fensterrahmen des SR-Fensters liegt optisch einige Pixel innerhalb der
 -- Frame-Kante, daher negativer Versatz, damit das Panel buendig anliegt.
 panel:SetPoint("TOPLEFT", srFrame, "TOPRIGHT", -5, -60)
@@ -33,22 +38,35 @@ panel:Hide()
 
 -- Umhaengen der bestehenden Buttons ins Panel
 local moved = {
-    { "BananaLootExportBtn", -50 },
-    { "BananaLootImportBtn", -74 },
-    { "BananaLootSaveRaidBtn", -98 },
-    { "BananaLootLoadRaidBtn", -122 },
-    { "BananaLootOptionsBtn", -146 },
-    { "BananaLootLFMQuickBtn", -170 },
+    { "BananaLootExportBtn", -62 },
+    { "BananaLootImportBtn", -94 },
+    { "BananaLootSaveRaidBtn", -126 },
+    { "BananaLootLoadRaidBtn", -158 },
+    { "BananaLootOptionsBtn", -204 },
+    { "BananaLootLFMQuickBtn", -236 },
 }
 for i = 1, table.getn(moved) do
     local btn = getglobal(moved[i][1])
     if btn then
         btn:SetParent(panel)
         btn:ClearAllPoints()
-        btn:SetWidth(PANEL_W - 20)
-        btn:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, moved[i][2])
+        btn:SetWidth(BTN_W)
+        btn:SetHeight(BTN_H)
+        btn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, moved[i][2])
     end
 end
+
+-- Duenne Trennlinien zwischen den Gruppen
+local function AddSeparator(y)
+    local line = panel:CreateTexture(nil, "ARTWORK")
+    line:SetTexture(1, 0.82, 0, 0.35)
+    line:SetHeight(1)
+    line:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, y)
+    line:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PAD, y)
+end
+AddSeparator(-52)
+AddSeparator(-194)
+AddSeparator(-274)
 
 -- Hauptfenster neu ordnen: Sperren/ML-GL/Loot-Fenster in eine Zeile, Liste
 -- rueckt hoch, unten bleibt Platz fuer den Timer.
@@ -214,18 +232,18 @@ end
 
 -- Buttons im Seitenmenue (unter LFM)
 local deBtn = CreateFrame("Button", "BananaLootSetDEBtn", panel, "UIPanelButtonTemplate")
-deBtn:SetWidth(PANEL_W - 20)
-deBtn:SetHeight(22)
-deBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -194)
+deBtn:SetWidth(BTN_W)
+deBtn:SetHeight(BTN_H)
+deBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -284)
 deBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     OpenSetFrame("de")
 end)
 
 local brBtn = CreateFrame("Button", "BananaLootSetBRBtn", panel, "UIPanelButtonTemplate")
-brBtn:SetWidth(PANEL_W - 20)
-brBtn:SetHeight(22)
-brBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -218)
+brBtn:SetWidth(BTN_W)
+brBtn:SetHeight(BTN_H)
+brBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -316)
 brBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     OpenSetFrame("br")
@@ -233,9 +251,9 @@ end)
 
 -- Auto-Masterloot bei Boss-Target (alle Raidbosse) an/aus, Standard: an
 local autoMLBtn = CreateFrame("Button", "BananaLootAutoMLMenuBtn", panel, "UIPanelButtonTemplate")
-autoMLBtn:SetWidth(PANEL_W - 20)
-autoMLBtn:SetHeight(22)
-autoMLBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -242)
+autoMLBtn:SetWidth(BTN_W)
+autoMLBtn:SetHeight(BTN_H)
+autoMLBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -348)
 
 local function UpdateAutoMLBtn()
     if BananaLoot:GetAutoMasterLootEnabled() then
@@ -263,9 +281,9 @@ end
 -- Raid starten / beenden
 -- ============================================================
 local raidBtn = CreateFrame("Button", "BananaLootRaidToggleBtn", panel, "UIPanelButtonTemplate")
-raidBtn:SetWidth(PANEL_W - 20)
-raidBtn:SetHeight(28)
-raidBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -12)
+raidBtn:SetWidth(BTN_W)
+raidBtn:SetHeight(32)
+raidBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -12)
 
 local timerText = srFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 timerText:SetPoint("BOTTOM", srFrame, "BOTTOM", 0, 18)

@@ -87,8 +87,8 @@ BananaLoot never talks to the internet on its own.
 
 ### Automatic roll evaluation
 
-- Detects Main Spec (`/roll`), Off-Spec (`/roll 1 99`), and Transmog
-  (`/roll 1 98`) rolls automatically via system chat
+- Detects Main Spec (`/roll`), Off-Spec (`/roll 99`), and Transmog
+  (`/roll 98`) rolls automatically via system chat
 - Priority: Main Spec > Off-Spec > Transmog
 - If an item is soft-reserved, only the reservers may roll Main Spec –
   Off-Spec/Transmog stays open to everyone

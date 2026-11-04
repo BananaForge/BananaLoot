@@ -182,7 +182,7 @@ Diese sehen dann ein eigenes, verschiebbares Popup-Fenster mit:
    Kategorie-Priorität -- Hauptspec schlägt Off-Spec schlägt Transmog,
    exakt wie bei der tatsächlichen Auswertung -- dann nach Wurf-Wert)
  - drei Buttons (MS/OS/TM) zum direkten Würfeln aus dem Fenster heraus
-   (technisch identisch zu /roll, /roll 1 99, /roll 1 98 von Hand)
+   (technisch identisch zu /roll, /roll 99, /roll 98 von Hand)
 Bei Gleichstand setzt sich die Liste zurück und der Countdown startet
 neu; bei einem Gewinner wird das Ergebnis hervorgehoben und das
 Fenster schließt sich nach wenigen Sekunden automatisch; bei einem
@@ -286,7 +286,7 @@ Roll-Ablauf ausprobieren lassen -- ohne Raid und ohne echte Items.
 OFFSPEC- UND TRANSMOG-ROLLS
 ------------------------------
 Spieler können statt des normalen /roll (Hauptspec, 1-100) auch
-"/roll 1 99" (Off-Spec) oder "/roll 1 98" (Transmog) würfeln. Das
+"/roll 99" (Off-Spec) oder "/roll 98" (Transmog) würfeln. Das
 Addon wertet automatisch nach Priorität aus: gibt es Hauptspec-Rolls,
 gewinnt der beste davon (inkl. SR+ Bonus); gibt es keine, zählen
 Off-Spec-Rolls; erst wenn auch die fehlen, zählen Transmog-Rolls.
@@ -824,7 +824,7 @@ v3.31 (vs. v3.29)
    Muster bleiben als Fallback.
  - Fix: Tie-Break auf einem SR-Item konnte haengenbleiben. Wuerfelten die
    Gleichstands-Teilnehmer (die selbst nicht auf der SR-Liste stehen) beim
-   Nachrollen mit normalem /roll statt /roll 1 99, wurden ihre Wuerfe stumm
+   Nachrollen mit normalem /roll statt /roll 99, wurden ihre Wuerfe stumm
    verworfen -> Timeout -> "Niemand hat gerollt" -> im Auto-Modus wurde das
    Item uebersprungen. Waehrend eines laufenden Tie-Breaks greift die
    SR-Beschraenkung jetzt nicht mehr, die Teilnehmerliste ist ohnehin fix.
@@ -913,7 +913,7 @@ v3.24 (vs. v3.23)
    Off-Spec beats Transmog, exactly like the master's own evaluation --
    then by roll value within the same pool). Three buttons (MS/OS/TM)
    let the viewer roll directly from the window via RandomRoll, the
-   same effect as typing /roll, /roll 1 99, or /roll 1 98 by hand. On
+   same effect as typing /roll, /roll 99, or /roll 98 by hand. On
    a tie, the standings reset and the countdown restarts; on a winner,
    the result is highlighted and the window auto-closes after a few
    seconds; on cancellation, it closes immediately. New sub-option
