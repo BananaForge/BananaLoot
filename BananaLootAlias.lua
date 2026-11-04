@@ -12,6 +12,56 @@ local texts = {}
 local aliasRows = {}
 local pickRows = {}
 local pickTarget = nil
+local soloConfirmed = {}
+local pendingAssign = nil
+
+local function Trim(str)
+    return (string.gsub(str or "", "^%s*(.-)%s*$", "%1"))
+end
+
+local function DoAssign(importName, target, onDone)
+    if BananaLoot:SetAlias(importName, target) then
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("ALIAS_SET"), importName, target))
+    end
+    if onDone then onDone() end
+    if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+end
+
+-- Zuordnung mit Sicherheitsabfrage, falls ein fremder Name dem eigenen
+-- Charakter zugeordnet werden soll (haeufiger Fehler beim Import ohne Gruppe).
+local function TryAssign(importName, target, onDone)
+    local me = UnitName("player")
+    if target == me and importName ~= me and StaticPopup_Show and StaticPopupDialogs then
+        pendingAssign = { importName = importName, target = target, onDone = onDone }
+        StaticPopupDialogs["BANANALOOT_CONFIRM_ALIAS_SELF"].text = BananaLoot:L("ALIAS_SELF_POPUP")
+        StaticPopupDialogs["BANANALOOT_CONFIRM_ALIAS_SELF"].button1 = BananaLoot:L("ALIAS_SELF_YES")
+        StaticPopupDialogs["BANANALOOT_CONFIRM_ALIAS_SELF"].button2 = BananaLoot:L("UI_POPUP_CANCEL")
+        StaticPopup_Show("BANANALOOT_CONFIRM_ALIAS_SELF", importName, me)
+        return
+    end
+    DoAssign(importName, target, onDone)
+end
+
+if StaticPopupDialogs then
+    StaticPopupDialogs["BANANALOOT_CONFIRM_ALIAS_SELF"] = {
+        text = "",
+        button1 = "",
+        button2 = "",
+        OnAccept = function()
+            if pendingAssign then
+                local pa = pendingAssign
+                pendingAssign = nil
+                DoAssign(pa.importName, pa.target, pa.onDone)
+            end
+        end,
+        OnCancel = function()
+            pendingAssign = nil
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+    }
+end
 
 -- ============================================================
 -- Auswahlfenster: Raider aus der aktuellen Raid-/Gruppenliste waehlen
@@ -113,6 +163,15 @@ local overflowText = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmal
 overflowText:SetPoint("BOTTOM", frame, "BOTTOM", 0, 12)
 overflowText:SetText("")
 
+local manageBtn = CreateFrame("Button", "BananaLootAliasManageButton", frame, "UIPanelButtonTemplate")
+manageBtn:SetWidth(150)
+manageBtn:SetHeight(20)
+manageBtn:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 16, 8)
+manageBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot_UI:ShowAliasManager()
+end)
+
 local function CreateRow(i)
     local r = CreateFrame("Frame", "BananaLootAliasRow" .. i, child)
     r:SetWidth(420)
@@ -138,6 +197,23 @@ local function CreateRow(i)
     r.pickBtn:SetWidth(80)
     r.pickBtn:SetHeight(20)
     r.pickBtn:SetPoint("LEFT", r, "LEFT", 322, 0)
+
+    -- Nur ohne Gruppe: Textfeld mit Namen + OK (statt Vorschlag/Waehlen)
+    r.edit = CreateFrame("EditBox", "BananaLootAliasRow" .. i .. "Edit", r, "InputBoxTemplate")
+    r.edit:SetWidth(180)
+    r.edit:SetHeight(20)
+    r.edit:SetPoint("LEFT", r, "LEFT", 132, 0)
+    r.edit:SetAutoFocus(false)
+    r.edit:SetMaxLetters(24)
+    r.edit:SetScript("OnEscapePressed", function() this:ClearFocus() end)
+    r.edit:SetScript("OnEnterPressed", function() this:GetParent().okBtn:Click() end)
+    r.edit:Hide()
+
+    r.okBtn = CreateFrame("Button", "BananaLootAliasRow" .. i .. "OkBtn", r, "UIPanelButtonTemplate")
+    r.okBtn:SetWidth(80)
+    r.okBtn:SetHeight(20)
+    r.okBtn:SetPoint("LEFT", r, "LEFT", 322, 0)
+    r.okBtn:Hide()
     return r
 end
 
@@ -148,9 +224,20 @@ end
 
 local function RefreshAlias()
     title:SetText(BananaLoot:L("WIN_ALIAS_TITLE"))
-    hint:SetText(BananaLoot:L("WIN_ALIAS_HINT"))
+    local solo = BananaLoot:IsSolo()
+    if solo then
+        hint:SetText(BananaLoot:L("WIN_ALIAS_SOLO_HINT"))
+    else
+        hint:SetText(BananaLoot:L("WIN_ALIAS_HINT"))
+    end
+    manageBtn:SetText(BananaLoot:L("ALIASMGR_BTN_OPEN"))
 
-    local names = BananaLoot:GetUnmatchedPlayers()
+    local names
+    if solo then
+        names = BananaLoot:GetReservedPlayerNames()
+    else
+        names = BananaLoot:GetUnmatchedPlayers()
+    end
     local total = table.getn(names)
     if total > MAX_ROWS then
         overflowText:SetText(string.format(BananaLoot:L("ALIAS_OVERFLOW"), total - MAX_ROWS))
@@ -159,37 +246,66 @@ local function RefreshAlias()
     end
 
     local shown = 0
+    local me = UnitName("player")
     for i = 1, total do
         if i <= MAX_ROWS then
             shown = shown + 1
             local importName = names[i]
             local row = aliasRows[shown]
             row.nameText:SetText(BananaLoot:ColoredName(importName))
-            local suggestion = BananaLoot:SuggestRosterName(importName)
-            row.sugBtn:SetText(BananaLoot:L("ALIAS_BTN_SUGGEST"))
-            row.pickBtn:SetText(BananaLoot:L("ALIAS_BTN_PICK"))
-            if suggestion then
-                row.sugText:SetText("|cff33ff99" .. suggestion .. "|r")
-                row.sugBtn:Enable()
-                row.sugBtn:SetScript("OnClick", function()
+            if solo then
+                row.sugText:Hide()
+                row.sugBtn:Hide()
+                row.pickBtn:Hide()
+                row.edit:SetText(importName)
+                row.edit:Show()
+                if soloConfirmed[importName] or importName == me then
+                    row.okBtn:SetText(BananaLoot:L("ALIAS_SOLO_DONE"))
+                else
+                    row.okBtn:SetText(BananaLoot:L("ALIAS_SOLO_OK"))
+                end
+                row.okBtn:SetScript("OnClick", function()
                     BananaLoot:PlayClickSound()
-                    if BananaLoot:SetAlias(importName, suggestion) then
-                        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("ALIAS_SET"), importName, suggestion))
+                    local newName = Trim(row.edit:GetText())
+                    row.edit:ClearFocus()
+                    if newName == "" then return end
+                    if newName == importName then
+                        soloConfirmed[importName] = true
+                        RefreshAlias()
+                    else
+                        TryAssign(importName, newName, function()
+                            soloConfirmed[newName] = true
+                            RefreshAlias()
+                        end)
                     end
-                    RefreshAlias()
-                    if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
                 end)
+                row.okBtn:Show()
             else
-                row.sugText:SetText("|cff888888-|r")
-                row.sugBtn:Disable()
-                row.sugBtn:SetScript("OnClick", nil)
+                row.edit:Hide()
+                row.okBtn:Hide()
+                row.sugText:Show()
+                local suggestion = BananaLoot:SuggestRosterName(importName)
+                row.sugBtn:SetText(BananaLoot:L("ALIAS_BTN_SUGGEST"))
+                row.pickBtn:SetText(BananaLoot:L("ALIAS_BTN_PICK"))
+                if suggestion then
+                    row.sugText:SetText("|cff33ff99" .. suggestion .. "|r")
+                    row.sugBtn:Enable()
+                    row.sugBtn:SetScript("OnClick", function()
+                        BananaLoot:PlayClickSound()
+                        TryAssign(importName, suggestion, function() RefreshAlias() end)
+                    end)
+                else
+                    row.sugText:SetText("|cff888888-|r")
+                    row.sugBtn:Disable()
+                    row.sugBtn:SetScript("OnClick", nil)
+                end
+                row.pickBtn:SetScript("OnClick", function()
+                    BananaLoot:PlayClickSound()
+                    BananaLoot_UI:ShowAliasPick(importName)
+                end)
+                row.sugBtn:Show()
+                row.pickBtn:Show()
             end
-            row.pickBtn:SetScript("OnClick", function()
-                BananaLoot:PlayClickSound()
-                BananaLoot_UI:ShowAliasPick(importName)
-            end)
-            row.sugBtn:Show()
-            row.pickBtn:Show()
             row:Show()
         end
     end
@@ -201,6 +317,8 @@ local function RefreshAlias()
         aliasRows[1].sugText:SetText("")
         aliasRows[1].sugBtn:Hide()
         aliasRows[1].pickBtn:Hide()
+        aliasRows[1].edit:Hide()
+        aliasRows[1].okBtn:Hide()
         aliasRows[1]:Show()
     end
 end
@@ -219,12 +337,9 @@ function BananaLoot_UI:ShowAliasPick(importName)
             b:SetText(rosterName)
             b:SetScript("OnClick", function()
                 BananaLoot:PlayClickSound()
-                if BananaLoot:SetAlias(pickTarget, rosterName) then
-                    DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("ALIAS_SET"), pickTarget, rosterName))
-                end
+                local importName = pickTarget
                 pickFrame:Hide()
-                RefreshAlias()
-                if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+                TryAssign(importName, rosterName, function() RefreshAlias() end)
             end)
             b:Show()
         end
@@ -234,6 +349,132 @@ function BananaLoot_UI:ShowAliasPick(importName)
     pickFrame:Show()
 end
 
+-- ============================================================
+-- Verwaltung gespeicherter Zuordnungen (anzeigen / entfernen)
+-- ============================================================
+local MGR_ROW_H = 24
+local MGR_MAX = 30
+
+local mgrFrame = CreateFrame("Frame", "BananaLootAliasMgrFrame", UIParent)
+mgrFrame:SetWidth(400)
+mgrFrame:SetHeight(400)
+mgrFrame:SetPoint("CENTER", UIParent, "CENTER", 30, 0)
+mgrFrame:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 32,
+    insets = { left = 11, right = 11, top = 11, bottom = 11 },
+})
+mgrFrame:SetMovable(true)
+mgrFrame:EnableMouse(true)
+mgrFrame:RegisterForDrag("LeftButton")
+mgrFrame:SetScript("OnDragStart", function() mgrFrame:StartMoving() end)
+mgrFrame:SetScript("OnDragStop", function() mgrFrame:StopMovingOrSizing() end)
+mgrFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+mgrFrame:Hide()
+
+local mgrClose = CreateFrame("Button", "BananaLootAliasMgrClose", mgrFrame, "UIPanelCloseButton")
+mgrClose:SetPoint("TOPRIGHT", mgrFrame, "TOPRIGHT", -4, -4)
+mgrClose:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    mgrFrame:Hide()
+end)
+
+local mgrTitle = mgrFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+mgrTitle:SetPoint("TOP", mgrFrame, "TOP", 0, -16)
+
+local mgrHint = mgrFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+mgrHint:SetPoint("TOP", mgrFrame, "TOP", 0, -40)
+mgrHint:SetWidth(350)
+mgrHint:SetJustifyH("CENTER")
+
+local mgrScroll = CreateFrame("ScrollFrame", "BananaLootAliasMgrScroll", mgrFrame, "UIPanelScrollFrameTemplate")
+mgrScroll:SetPoint("TOPLEFT", mgrFrame, "TOPLEFT", 16, -76)
+mgrScroll:SetPoint("BOTTOMRIGHT", mgrFrame, "BOTTOMRIGHT", -30, 30)
+
+local mgrChild = CreateFrame("Frame", "BananaLootAliasMgrChild", mgrScroll)
+mgrChild:SetWidth(350)
+mgrChild:SetHeight(1)
+mgrScroll:SetScrollChild(mgrChild)
+
+local mgrOverflow = mgrFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+mgrOverflow:SetPoint("BOTTOM", mgrFrame, "BOTTOM", 0, 12)
+mgrOverflow:SetText("")
+
+local mgrRows = {}
+for i = 1, MGR_MAX do
+    local r = CreateFrame("Frame", "BananaLootAliasMgrRow" .. i, mgrChild)
+    r:SetWidth(350)
+    r:SetHeight(MGR_ROW_H)
+    r:SetPoint("TOPLEFT", mgrChild, "TOPLEFT", 0, -(i - 1) * MGR_ROW_H)
+    r.text = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    r.text:SetPoint("LEFT", r, "LEFT", 0, 0)
+    r.text:SetWidth(250)
+    r.text:SetJustifyH("LEFT")
+    r.btn = CreateFrame("Button", "BananaLootAliasMgrRow" .. i .. "Btn", r, "UIPanelButtonTemplate")
+    r.btn:SetWidth(80)
+    r.btn:SetHeight(20)
+    r.btn:SetPoint("LEFT", r, "LEFT", 262, 0)
+    r:Hide()
+    mgrRows[i] = r
+end
+
+local function RefreshMgr()
+    mgrTitle:SetText(BananaLoot:L("WIN_ALIASMGR_TITLE"))
+    mgrHint:SetText(BananaLoot:L("WIN_ALIASMGR_HINT"))
+    local list = BananaLoot:GetAliasList()
+    local total = table.getn(list)
+    local me = UnitName("player")
+    if total > MGR_MAX then
+        mgrOverflow:SetText(string.format(BananaLoot:L("ALIAS_OVERFLOW"), total - MGR_MAX))
+    else
+        mgrOverflow:SetText("")
+    end
+    local shown = 0
+    for i = 1, total do
+        if i <= MGR_MAX then
+            shown = shown + 1
+            local entry = list[i]
+            local row = mgrRows[shown]
+            local line = entry.name .. " |cff888888->|r " .. entry.target
+            if entry.target == me and entry.name ~= me then
+                line = line .. BananaLoot:L("ALIASMGR_SELF_WARN")
+            end
+            row.text:SetText(line)
+            row.btn:SetText(BananaLoot:L("ALIASMGR_BTN_REMOVE"))
+            row.btn:SetScript("OnClick", function()
+                BananaLoot:PlayClickSound()
+                local ok, count, hadTracking = BananaLoot:RemoveAlias(entry.name, true)
+                if ok then
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("ALIAS_REMOVED"), entry.name))
+                    if not hadTracking then
+                        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("ALIAS_REMOVED_NOTRACK"))
+                    elseif count > 0 then
+                        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("ALIAS_REVERTED"), count, entry.name))
+                    end
+                end
+                RefreshMgr()
+                if frame:IsShown() then RefreshAlias() end
+                if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+            end)
+            row.btn:Show()
+            row:Show()
+        end
+    end
+    for i = shown + 1, MGR_MAX do mgrRows[i]:Hide() end
+    mgrChild:SetHeight(math.max(1, shown * MGR_ROW_H))
+    if shown == 0 then
+        mgrRows[1].text:SetText(BananaLoot:L("ALIAS_LIST_EMPTY"))
+        mgrRows[1].btn:Hide()
+        mgrRows[1]:Show()
+    end
+end
+
+function BananaLoot_UI:ShowAliasManager()
+    RefreshMgr()
+    mgrFrame:Show()
+end
+
 function BananaLoot_UI:ShowAliasWindow()
     RefreshAlias()
     frame:Show()
@@ -241,5 +482,6 @@ end
 
 function BananaLoot_UI:ApplyLocaleAlias()
     if frame:IsShown() then RefreshAlias() end
+    if mgrFrame:IsShown() then RefreshMgr() end
     if pickFrame:IsShown() and pickTarget then BananaLoot_UI:ShowAliasPick(pickTarget) end
 end

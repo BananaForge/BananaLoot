@@ -141,6 +141,15 @@ local function AttachIconTooltip(row)
         end
     end)
     row.iconFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    -- Shift+Linksklick: Item-Link ins offene Chat-Eingabefeld einfuegen
+    -- (wie beim Inventar). Nur echte Links, keine Fallback-Anzeigen.
+    row.iconFrame:SetScript("OnMouseUp", function()
+        if arg1 == "LeftButton" and IsShiftKeyDown() and row.currentLink
+            and string.find(row.currentLink, "|Hitem:") and string.find(row.currentLink, "|h%[")
+            and ChatFrameEditBox and ChatFrameEditBox:IsVisible() then
+            ChatFrameEditBox:Insert(row.currentLink)
+        end
+    end)
 end
 
 -- ============================================================
@@ -249,6 +258,22 @@ srHRBtn:SetScript("OnEnter", function()
     GameTooltip:Show()
 end)
 srHRBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+local srRLBtn = CreateFrame("Button", "BananaLootSRRLBtn", srFrame, "UIPanelButtonTemplate")
+srRLBtn:SetWidth(26)
+srRLBtn:SetHeight(20)
+srRLBtn:SetPoint("RIGHT", srHRBtn, "LEFT", -4, 0)
+srRLBtn:SetText("RL")
+srRLBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.ShowRaidRollList then BananaLoot_UI:ShowRaidRollList() end
+end)
+srRLBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(srRLBtn, "ANCHOR_LEFT")
+    GameTooltip:SetText(BananaLoot:L("UI_BTN_RAIDLIST_TOOLTIP"))
+    GameTooltip:Show()
+end)
+srRLBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 -- ------------------------------------------------------------
 -- Kopfzeile: Hinweistext + Steuerbuttons (Export/Import/Optionen/Lock/
@@ -558,7 +583,7 @@ function BananaLoot_UI:RefreshSR()
 
     local ids = {}
     for id, res in pairs(BananaLoot.reservations) do
-        if table.getn(res.order) > 0 then
+        if BananaLoot:CountRealReservers(res) > 0 then
             table.insert(ids, id)
         end
     end
@@ -596,11 +621,18 @@ function BananaLoot_UI:RefreshSR()
         end)
 
         local list = ""
-        local total = table.getn(res.order)
+        -- temporaere Eintraege ("nur dieser Drop") gehoeren nicht in die SR-Liste
+        local realNames = {}
+        for p = 1, table.getn(res.order) do
+            if not (res.temp and res.temp[res.order[p]]) then
+                table.insert(realNames, res.order[p])
+            end
+        end
+        local total = table.getn(realNames)
         local shownPlayers = total
         if shownPlayers > MAX_PLAYERS_SHOWN then shownPlayers = MAX_PLAYERS_SHOWN end
         for p = 1, shownPlayers do
-            local name = res.order[p]
+            local name = realNames[p]
             local stack = BananaLoot:GetStack(name, id)
             if stack > 0 then
                 list = list .. BananaLoot:ColoredName(name) .. "|cffffcc00(+" .. (stack * BananaLoot:GetBonusPerStack()) .. ")|r"
@@ -1064,7 +1096,7 @@ end
 -- BananaLoot.lua, das hier über BananaLoot_UI:HandleRollSync andockt).
 -- Zeigt Item/Modus/Countdown/laufende Rolls live an und erlaubt per
 -- MS/OS/TM-Button, direkt daraus zu würfeln (RandomRoll -- derselbe
--- Effekt wie /roll bzw. /roll 1 99/98 von Hand einzutippen; kennt wie
+-- Effekt wie /roll bzw. /roll 99 und /roll 98 von Hand einzutippen; kennt wie
 -- ein manueller /roll keine SR-Berechtigung, das prüft weiterhin
 -- ausschließlich der Loot-Master lokal).
 -- ============================================================
