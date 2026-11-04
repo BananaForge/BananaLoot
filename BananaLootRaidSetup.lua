@@ -188,6 +188,7 @@ end
 function BananaLoot:DeletePreparedRaid(id)
     local e, idx = self:GetPreparedRaid(id)
     if not e then return false end
+    if self.CodeOnDelete then self:CodeOnDelete(e) end
     table.remove(self:GetPreparedRaids(), idx)
     if BananaLoot_DB.selectedPreparedRaid == id then BananaLoot_DB.selectedPreparedRaid = nil end
     return true
@@ -195,7 +196,10 @@ end
 
 function BananaLoot:SelectPreparedRaid(id)
     BananaLoot.EnsureDB()
+    local old = self:GetSelectedPreparedRaid()
     BananaLoot_DB.selectedPreparedRaid = id
+    -- SR-Sperre und per Raid-Code eingegangene SR auf den neuen Raid umstellen
+    if self.CodeOnSelectionChanged then self:CodeOnSelectionChanged(old, self:GetPreparedRaid(id)) end
 end
 
 function BananaLoot:GetSelectedPreparedRaid()

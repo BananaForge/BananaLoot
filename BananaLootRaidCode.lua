@@ -134,9 +134,19 @@ function BananaLoot:IsRunningPrepared(entry)
     return session and session.running and entry and session.preparedId == entry.id
 end
 
--- Nimmt dieser Raid aktuell SR an?
+-- Ist der Raid der im Hauptfenster ausgewaehlte (oder laufende) Raid?
+function BananaLoot:IsActivePrepared(entry)
+    if not entry then return false end
+    if self:IsRunningPrepared(entry) then return true end
+    local sel = self:GetSelectedPreparedRaid()
+    return sel ~= nil and sel.id == entry.id
+end
+
+-- Nimmt dieser Raid aktuell SR an? Fuer den ausgewaehlten bzw. laufenden Raid ist
+-- das die SR-Sperre des Hauptfensters (Button "Offen"/"Gesperrt"), sonst der
+-- gespeicherte Status des Raids -- beide Schalter sind also dieselbe Einstellung.
 function BananaLoot:IsSROpenFor(entry)
-    if self:IsRunningPrepared(entry) then return not self:GetSRLocked() end
+    if self:IsActivePrepared(entry) then return not self:GetSRLocked() end
     return entry.srOpen ~= false
 end
 
@@ -242,21 +252,78 @@ function BananaLoot:RaidCodeBroadcastStatus(entry)
     SendStatus(entry, self:RaidCodeChannel())
 end
 
--- Hook aus SetSRLocked: laufenden vorbereiteten Raid melden.
-function BananaLoot:RaidCodeOnLockChanged()
+-- Der aktive Raid: laufender, sonst im Hauptfenster ausgewaehlter vorbereiteter Raid.
+function BananaLoot:GetActivePrepared()
     local session = self:GetRaidSession()
-    if session and session.running and session.preparedId then
-        local entry = self:GetPreparedRaid(session.preparedId)
-        if entry and entry.code then self:RaidCodeBroadcastStatus(entry) end
+    if session and session.running then return self:GetPreparedRaid(session.preparedId) end
+    return self:GetSelectedPreparedRaid()
+end
+
+-- Hook aus SetSRLocked: Status des aktiven Raids merken und melden, beide
+-- Buttons (Hauptfenster, Raid-Liste) angleichen.
+function BananaLoot:RaidCodeOnLockChanged()
+    local entry = self:GetActivePrepared()
+    if entry and entry.code then
+        entry.srOpen = not self:GetSRLocked()
+        self:RaidCodeBroadcastStatus(entry)
+    end
+    if BananaLoot_UI then
+        if BananaLoot_UI.UpdateLockButton then BananaLoot_UI:UpdateLockButton() end
+        if BananaLoot_UI.RefreshRaidPicker then BananaLoot_UI:RefreshRaidPicker() end
     end
 end
 
--- SR vor dem Raid-Start auf-/zusperren (Raid-Liste).
+-- SR auf-/zusperren (Raid-Liste). Beim aktiven Raid schaltet das dieselbe Sperre
+-- wie der Button im Hauptfenster.
 function BananaLoot:SetPreparedSROpen(entry, open)
     if not entry then return end
     self:EnsurePreparedCode(entry)
-    entry.srOpen = open and true or false
-    self:RaidCodeBroadcastStatus(entry)
+    if self:IsActivePrepared(entry) then
+        self:SetSRLocked(not open)   -- ruft RaidCodeOnLockChanged
+    else
+        entry.srOpen = open and true or false
+        self:RaidCodeBroadcastStatus(entry)
+    end
+end
+
+-- Per Raid-Code eingegangene SR des ausgewaehlten Raids stehen schon vor dem Start
+-- im Hauptfenster: in die Reservierungen uebernehmen bzw. wieder entfernen.
+function BananaLoot:CodeApplyLive(entry)
+    if not entry then return end
+    entry.live = entry.live or {}
+    for player, ids in pairs(entry.sr or {}) do
+        self:ApplyPlayerSRList(player, ids)
+        entry.live[player] = ids
+    end
+end
+
+function BananaLoot:CodeClearLive(entry)
+    if not entry or not entry.live then return end
+    for player, ids in pairs(entry.live) do
+        for i = 1, table.getn(ids) do
+            self:RemoveReservation(self:SetupItemLink(ids[i]), player)
+        end
+    end
+    entry.live = nil
+end
+
+-- Auswahl im Hauptfenster gewechselt (nicht bei laufendem Raid).
+function BananaLoot:CodeOnSelectionChanged(old, new)
+    local session = self:GetRaidSession()
+    if session and session.running then return end
+    if old and (not new or old.id ~= new.id) then self:CodeClearLive(old) end
+    if new then
+        self:EnsurePreparedCode(new)
+        self:SetSRLocked(new.srOpen == false)   -- Sperre auf den Status des Raids stellen
+        self:CodeApplyLive(new)
+    end
+    if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+end
+
+function BananaLoot:CodeOnDelete(entry)
+    local session = self:GetRaidSession()
+    if session and session.running then return end
+    self:CodeClearLive(entry)
 end
 
 -- ============================================================
@@ -308,6 +375,13 @@ function BananaLoot:CodeSubmitSR(entry, player, ids)
     end
     if not entry.sr then entry.sr = {} end
     if table.getn(list) == 0 then entry.sr[player] = nil else entry.sr[player] = list end
+    -- Ausgewaehlter Raid: SR sofort im Hauptfenster anzeigen
+    if self:IsActivePrepared(entry) then
+        self:ApplyPlayerSRList(player, list)
+        entry.live = entry.live or {}
+        if table.getn(list) == 0 then entry.live[player] = nil else entry.live[player] = list end
+        if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+    end
     return true, table.getn(list), skipped
 end
 
@@ -322,6 +396,7 @@ function BananaLoot:CodeOnRaidStart(entry)
         players = players + 1
     end
     entry.srOpen = false
+    entry.live = nil          -- die SR gehoeren ab jetzt zum laufenden Raid
     self:SetSRLocked(true)   -- meldet den Status (siehe RaidCodeOnLockChanged)
     return players
 end

@@ -569,6 +569,12 @@ Raid-Liste (Klick auf die Ueberschrift im Hauptfenster).
    Hard-Reserve-/Raid-Roll-Items werden uebersprungen).
  - "SR offen/zu" in der Raid-Liste oeffnet bzw. schliesst die Einreichung
    vor dem Start. Eine erneute Einreichung ersetzt die alte SR des Spielers.
+ - Fuer den im Hauptfenster AUSGEWAEHLTEN Raid erscheint jede eingehende SR
+   sofort in der SR-Liste des Hauptfensters (auch vor dem Raid-Start). Wird
+   ein anderer Raid ausgewaehlt, wechseln auch die angezeigten SR.
+ - "SR offen/zu" in der Raid-Liste und der Button "Offen"/"Gesperrt" im
+   Hauptfenster sind DER GLEICHE Schalter: wer einen umstellt, stellt den
+   anderen mit um (die Raider sehen den neuen Status live).
  - STELLVERTRETER: Ein anderer Loot-Master laedt den Raid mit "Code laden"
    (oder /bl join CODE) und bekommt Hard Reserve, Raid-Roll, Namen und alle
    bisherigen SR. Neue SR nehmen alle Clients an, die den Raid kennen --

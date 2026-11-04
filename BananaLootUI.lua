@@ -331,6 +331,8 @@ local function UpdateLockButtonText()
     end
 end
 UpdateLockButtonText()
+-- Von aussen aufrufbar (Raid-Liste schaltet dieselbe SR-Sperre, siehe BananaLootRaidCode.lua)
+function BananaLoot_UI:UpdateLockButton() UpdateLockButtonText() end
 
 lockBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
