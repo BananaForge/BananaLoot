@@ -90,7 +90,7 @@ local OPT_TAB_HEIGHTS = {
     [TAB_AUTOMATION] = 700,
     [TAB_NETWORK] = 500,
     [TAB_DISPLAY] = 820,
-    [TAB_MANAGE] = 600,
+    [TAB_MANAGE] = 660,
     [6] = 680, -- Statistik (BananaLootStats.lua)
 }
 
@@ -180,7 +180,7 @@ bonusEditBox:SetAutoFocus(false)
 bonusEditBox:SetNumeric(true)
 
 local bonusSaveBtn = CreateFrame("Button", "BananaLootBonusSaveBtn", optFrame, "UIPanelButtonTemplate")
-bonusSaveBtn:SetWidth(80)
+bonusSaveBtn:SetWidth(92)
 bonusSaveBtn:SetHeight(20)
 bonusSaveBtn:SetPoint("LEFT", bonusEditBox, "RIGHT", 16, 0)
 RegisterLocaleText(bonusSaveBtn, "OPT_SAVE_BTN")
@@ -215,7 +215,7 @@ timeoutEditBox:SetAutoFocus(false)
 timeoutEditBox:SetNumeric(true)
 
 local timeoutSaveBtn = CreateFrame("Button", "BananaLootTimeoutSaveBtn", optFrame, "UIPanelButtonTemplate")
-timeoutSaveBtn:SetWidth(80)
+timeoutSaveBtn:SetWidth(92)
 timeoutSaveBtn:SetHeight(20)
 timeoutSaveBtn:SetPoint("LEFT", timeoutEditBox, "RIGHT", 16, 0)
 RegisterLocaleText(timeoutSaveBtn, "OPT_SAVE_BTN")
@@ -454,7 +454,7 @@ optResetBtn:SetScript("OnClick", function()
 end)
 
 local optWipeBtn = CreateFrame("Button", "BananaLootOptWipeBtn", optFrame, "UIPanelButtonTemplate")
-optWipeBtn:SetWidth(140)
+optWipeBtn:SetWidth(160)
 optWipeBtn:SetHeight(20)
 optWipeBtn:SetPoint("LEFT", optResetBtn, "RIGHT", 6, 0)
 RegisterLocaleText(optWipeBtn, "UI_BTN_WIPE")
@@ -502,7 +502,7 @@ optClearLogBtn:SetScript("OnClick", function()
 end)
 
 local optAliasBtn = CreateFrame("Button", "BananaLootOptAliasBtn", optFrame, "UIPanelButtonTemplate")
-optAliasBtn:SetWidth(140)
+optAliasBtn:SetWidth(160)
 optAliasBtn:SetHeight(20)
 optAliasBtn:SetPoint("LEFT", optClearLogBtn, "RIGHT", 6, 0)
 RegisterLocaleText(optAliasBtn, "UI_BTN_ALIAS_MANAGE")
@@ -510,6 +510,37 @@ optAliasBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     if BananaLoot_UI and BananaLoot_UI.ShowAliasManager then BananaLoot_UI:ShowAliasManager() end
 end)
+
+-- Export / Import / Raid speichern / Raid laden: waren im Seitenmenue des SR-Fensters,
+-- liegen jetzt hier unter Verwaltung (die Buttons selbst bleiben unveraendert).
+BananaLoot_UI.optDataBtns = {}   -- (Tabelle statt local: Lua 5.0 erlaubt max. 200 lokale Variablen pro Datei)
+do
+    local btns = BananaLoot_UI.optDataBtns
+    local specs = {
+        { "BananaLootExportBtn", 120 }, { "BananaLootImportBtn", 140 },
+        { "BananaLootSaveRaidBtn", 120 }, { "BananaLootLoadRaidBtn", 140 },
+    }
+    for k = 1, table.getn(specs) do
+        local b = getglobal(specs[k][1])
+        if b then
+            b:SetParent(optFrame)
+            b:ClearAllPoints()
+            b:SetWidth(specs[k][2])
+            b:SetHeight(20)
+            if k == 1 then
+                b:SetPoint("TOPLEFT", optClearLogBtn, "BOTTOMLEFT", 0, -6)
+            elseif k == 2 then
+                b:SetPoint("LEFT", btns[1], "RIGHT", 6, 0)
+            elseif k == 3 then
+                b:SetPoint("TOPLEFT", btns[1], "BOTTOMLEFT", 0, -6)
+            else
+                b:SetPoint("LEFT", btns[3], "RIGHT", 6, 0)
+            end
+            table.insert(btns, b)
+        end
+    end
+end
+AddToTab(TAB_MANAGE, BananaLoot_UI.optDataBtns)
 
 -- ============================================================
 -- 1b) ANZEIGE: getrennte Skalierung für SR-Fenster und Loot-Fenster
@@ -528,7 +559,7 @@ scaleEditBox:SetAutoFocus(false)
 scaleEditBox:SetNumeric(true)
 
 local scaleSaveBtn = CreateFrame("Button", "BananaLootScaleSaveBtn", optFrame, "UIPanelButtonTemplate")
-scaleSaveBtn:SetWidth(80)
+scaleSaveBtn:SetWidth(92)
 scaleSaveBtn:SetHeight(20)
 scaleSaveBtn:SetPoint("LEFT", scaleEditBox, "RIGHT", 16, 0)
 RegisterLocaleText(scaleSaveBtn, "OPT_SAVE_BTN")
@@ -563,7 +594,7 @@ lootScaleEditBox:SetAutoFocus(false)
 lootScaleEditBox:SetNumeric(true)
 
 local lootScaleSaveBtn = CreateFrame("Button", "BananaLootLootScaleSaveBtn", optFrame, "UIPanelButtonTemplate")
-lootScaleSaveBtn:SetWidth(80)
+lootScaleSaveBtn:SetWidth(92)
 lootScaleSaveBtn:SetHeight(20)
 lootScaleSaveBtn:SetPoint("LEFT", lootScaleEditBox, "RIGHT", 16, 0)
 RegisterLocaleText(lootScaleSaveBtn, "OPT_SAVE_BTN")
@@ -600,7 +631,7 @@ maxSREditBox:SetAutoFocus(false)
 maxSREditBox:SetNumeric(true)
 
 local maxSRSaveBtn = CreateFrame("Button", "BananaLootMaxSRSaveBtn", optFrame, "UIPanelButtonTemplate")
-maxSRSaveBtn:SetWidth(80)
+maxSRSaveBtn:SetWidth(92)
 maxSRSaveBtn:SetHeight(20)
 maxSRSaveBtn:SetPoint("LEFT", maxSREditBox, "RIGHT", 16, 0)
 RegisterLocaleText(maxSRSaveBtn, "OPT_SAVE_BTN")
@@ -716,7 +747,7 @@ RegisterLocaleText(tradeTrackingHint, "OPT_TRADETRACKING_HINT")
 local recoveryBtn = CreateFrame("Button", "BananaLootRecoveryBtn", optFrame, "UIPanelButtonTemplate")
 recoveryBtn:SetWidth(160)
 recoveryBtn:SetHeight(20)
-recoveryBtn:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -338)
+recoveryBtn:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -390)
 RegisterLocaleText(recoveryBtn, "UI_BTN_RECOVERY")
 recoveryBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
@@ -735,7 +766,7 @@ recoveryBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 BananaLoot_UI.optTestBtn = CreateFrame("Button", "BananaLootTestRunBtn", optFrame, "UIPanelButtonTemplate")
 BananaLoot_UI.optTestBtn:SetWidth(160)
 BananaLoot_UI.optTestBtn:SetHeight(20)
-BananaLoot_UI.optTestBtn:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -372)
+BananaLoot_UI.optTestBtn:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -424)
 RegisterLocaleText(BananaLoot_UI.optTestBtn, "UI_BTN_TEST_RUN")
 BananaLoot_UI.optTestBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
@@ -1411,7 +1442,7 @@ mgAddBox:SetPoint("TOPLEFT", mgAddLabel, "BOTTOMLEFT", 6, -8)
 mgAddBox:SetAutoFocus(false)
 
 local mgAddBtn = CreateFrame("Button", "BananaLootManageAddBtn", manageFrame, "UIPanelButtonTemplate")
-mgAddBtn:SetWidth(80)
+mgAddBtn:SetWidth(96)
 mgAddBtn:SetHeight(20)
 mgAddBtn:SetPoint("LEFT", mgAddBox, "RIGHT", 10, 0)
 RegisterLocaleText(mgAddBtn, "MG_ADD_BTN")
@@ -1654,11 +1685,11 @@ local function CreateHRRow(i)
 
     r.linkText = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     r.linkText:SetPoint("LEFT", r, "LEFT", 0, 0)
-    r.linkText:SetWidth(190)
+    r.linkText:SetWidth(178)
     r.linkText:SetJustifyH("LEFT")
 
     r.removeBtn = CreateFrame("Button", "BananaLootHRRow" .. i .. "RemoveBtn", r, "UIPanelButtonTemplate")
-    r.removeBtn:SetWidth(80)
+    r.removeBtn:SetWidth(92)
     r.removeBtn:SetHeight(18)
     r.removeBtn:SetPoint("RIGHT", r, "RIGHT", 0, 0)
     r.removeBtn:SetText(BananaLoot:L("HR_REMOVE_BTN"))
@@ -1781,11 +1812,11 @@ local function CreateBRRow(i)
 
     r.linkText = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     r.linkText:SetPoint("LEFT", r, "LEFT", 0, 0)
-    r.linkText:SetWidth(190)
+    r.linkText:SetWidth(178)
     r.linkText:SetJustifyH("LEFT")
 
     r.removeBtn = CreateFrame("Button", "BananaLootBRRow" .. i .. "RemoveBtn", r, "UIPanelButtonTemplate")
-    r.removeBtn:SetWidth(80)
+    r.removeBtn:SetWidth(92)
     r.removeBtn:SetHeight(18)
     r.removeBtn:SetPoint("RIGHT", r, "RIGHT", 0, 0)
     r.removeBtn:SetText(BananaLoot:L("BR_REMOVE_BTN"))
@@ -1907,10 +1938,10 @@ do
         r:SetPoint("TOPLEFT", rlChild, "TOPLEFT", 0, -(i - 1) * RL_ROW_H)
         r.linkText = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         r.linkText:SetPoint("LEFT", r, "LEFT", 0, 0)
-        r.linkText:SetWidth(180)
+        r.linkText:SetWidth(168)
         r.linkText:SetJustifyH("LEFT")
         r.removeBtn = CreateFrame("Button", "BananaLootRaidListRow" .. i .. "RemoveBtn", r, "UIPanelButtonTemplate")
-        r.removeBtn:SetWidth(80)
+        r.removeBtn:SetWidth(92)
         r.removeBtn:SetHeight(20)
         r.removeBtn:SetPoint("RIGHT", r, "RIGHT", 0, 0)
         r:Hide()
@@ -2034,11 +2065,11 @@ local function CreateRecoveryRow(i)
 
     r.itemText = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     r.itemText:SetPoint("LEFT", r.nameText, "RIGHT", 4, 0)
-    r.itemText:SetWidth(130)
+    r.itemText:SetWidth(112)
     r.itemText:SetJustifyH("LEFT")
 
     r.restoreBtn = CreateFrame("Button", "BananaLootRecoveryRow" .. i .. "RestoreBtn", r, "UIPanelButtonTemplate")
-    r.restoreBtn:SetWidth(90)
+    r.restoreBtn:SetWidth(112)
     r.restoreBtn:SetHeight(18)
     r.restoreBtn:SetPoint("RIGHT", r, "RIGHT", 0, 0)
     r.restoreBtn:SetText(BananaLoot:L("RECOVERY_RESTORE_BTN"))

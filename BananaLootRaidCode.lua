@@ -22,6 +22,11 @@
 --   SD~code~spieler~id,id      Host: SR-Liste eines Spielers (nur beim Laden per SJ)
 --   SA~code~spieler~OK~n~skip  Host: SR angenommen (n Items, skip uebersprungen)
 --   SA~code~spieler~ERR~grund  Host: abgelehnt (closed, limit, unknown)
+--   SW                         Raider -> Host: "welcher Raid laeuft in meiner Gruppe?"
+--                              (nur ueber RAID/PARTY, nie ueber GUILD)
+--   SC~code~name~O|C           Host: Code des aktiven Raids (Antwort auf SW)
+--   HQ / HA                    Raid-Lead abgeben: "wer hat BananaLoot?" / "ich"
+--   HO~code~spieler            neuer Raid-Leiter: laedt den Raid automatisch (wie SJ)
 --
 -- Lua 5.0: kein #-Operator, kein %-Operator, kein string.gmatch/match, Events ueber
 -- this/arg1.
@@ -37,6 +42,7 @@ local C = {
     seen = {},       -- ["S|code"] / ["A|code|spieler"] = Zeit der zuletzt gesehenen Antwort anderer
     lastMsg = {},    -- [sender] = Zeit der letzten SR-Nachricht (Spam-Schutz)
     joining = {},    -- [code] = Startzeit
+    hasAddon = {},   -- [spieler] = Zeit der letzten HA-Antwort (hat BananaLoot)
 }
 BananaLoot_CodeState = C
 
@@ -213,8 +219,8 @@ local function SendStatus(entry, channel)
 end
 
 local function SendLists(entry, channel)
-    local kinds = { { "H", entry.hr }, { "R", entry.rr } }
-    for k = 1, 2 do
+    local kinds = { { "H", entry.hr }, { "R", entry.rr }, { "B", entry.br } }
+    for k = 1, 3 do
         local list = SetToSortedList(kinds[k][2])
         local i = 1
         while i <= table.getn(list) do
@@ -362,7 +368,7 @@ function BananaLoot:CodeSubmitSR(entry, player, ids)
         if not seen[id] then
             seen[id] = true
             local blocked = (not pool[id]) or (entry.hr and entry.hr[id]) or (entry.rr and entry.rr[id])
-                or self:IsBankReserve(id)
+                or (entry.br and entry.br[id]) or self:IsBankReserve(id)
             if running and (self:IsHardReserve(id) or self:IsRaidRollItem(id)) then blocked = true end
             if blocked then skipped = skipped + 1 else table.insert(list, id) end
         end
@@ -405,9 +411,11 @@ end
 -- 4) NACHRICHTEN EMPFANGEN. Rueckgabe true = Nachricht gehoert zum Raid-Code.
 -- ============================================================
 function BananaLoot:HandleCodeMessage(text, sender, channel)
-    if not text or string.sub(text, 3, 3) ~= "~" then return false end
+    -- Kurznachrichten (SW, HQ) bestehen nur aus dem Typ, alle anderen haben "~" an Stelle 3
+    if not text or (string.len(text) > 2 and string.sub(text, 3, 3) ~= "~") then return false end
     local t = string.sub(text, 1, 2)
-    if t ~= "SR" and t ~= "SQ" and t ~= "SJ" and t ~= "SS" and t ~= "SH" and t ~= "SD" and t ~= "SA" then
+    if t ~= "SR" and t ~= "SQ" and t ~= "SJ" and t ~= "SS" and t ~= "SH" and t ~= "SD" and t ~= "SA"
+        and t ~= "SW" and t ~= "SC" and t ~= "HQ" and t ~= "HA" and t ~= "HO" then
         return false
     end
     local fields = Split(text, "~")
@@ -461,6 +469,49 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
         return true
     end
 
+    -- SW: Raider fragt in der Gruppe nach dem aktiven Raid. Beantwortet wird nur, was ueber
+    -- Raid/Gruppe kommt (der Kanal beweist, dass der Anfragende in der Gruppe ist).
+    if t == "SW" then
+        if channel == "RAID" or channel == "PARTY" then
+            local active = self:GetActivePrepared()
+            if active then
+                self:EnsurePreparedCode(active)
+                ScheduleReply(active, "W|" .. active.code, function()
+                    local state = BananaLoot:IsSROpenFor(active) and "O" or "C"
+                    QueueSend("SC~" .. active.code .. "~" .. Clean(active.name) .. "~" .. state, channel)
+                end)
+            end
+        end
+        return true
+    end
+    if t == "SC" then return true end   -- nur fuer Raider
+
+    -- HQ/HA: wer hat BananaLoot? (Raid-Lead abgeben)
+    if t == "HQ" then
+        if not isSelf then
+            After(math.random() * 1.2, function() QueueSend("HA~1", channel) end)
+        end
+        return true
+    end
+    if t == "HA" then
+        C.hasAddon[sender] = GetTime()
+        if BananaLoot_UI and BananaLoot_UI.RefreshMemberPicker then BananaLoot_UI:RefreshMemberPicker() end
+        return true
+    end
+    if t == "HO" then
+        -- Neuer Raid-Leiter: den Raid des bisherigen Leiters sofort per Code laden.
+        if fields[3] == me and not isSelf then
+            local code2 = self:NormalizeRaidCode(fields[2])
+            if code2 ~= "" and not self:FindPreparedByCode(code2) then
+                DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L("LEAD_RECEIVED"), sender))
+                self:JoinRaidCode(code2)
+            else
+                DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L("LEAD_RECEIVED_NOCODE"), sender))
+            end
+        end
+        return true
+    end
+
     -- Antworten anderer Hosts (SS/SH/SD/SA)
     if not isSelf then
         if t == "SS" then C.seen["S|" .. code] = GetTime()
@@ -475,7 +526,7 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
             local list = self:GetPreparedRaids()
             table.insert(list, {
                 id = BananaLoot_DB.nextPreparedId, created = time(), joined = true, code = code,
-                name = fields[6] or code, raidKey = fields[5], hr = {}, rr = {}, sr = {},
+                name = fields[6] or code, raidKey = fields[5], hr = {}, rr = {}, br = {}, sr = {},
                 srOpen = (fields[3] == "O"),
             })
         elseif entry and entry.joined then
@@ -483,7 +534,11 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
         end
     elseif t == "SH" then
         if entry and entry.joined and C.joining[code] then
-            local target = (fields[3] == "H") and entry.hr or entry.rr
+            local target = entry.rr
+            if fields[3] == "H" then target = entry.hr elseif fields[3] == "B" then
+                if not entry.br then entry.br = {} end
+                target = entry.br
+            end
             local ids = IdsToList(fields[4])
             for i = 1, table.getn(ids) do target[ids[i]] = true end
         end
@@ -542,10 +597,14 @@ function BananaLoot:PostRaidCode(entry)
 end
 
 -- ============================================================
--- 5) RAID-LEAD ABGEBEN
+-- 5) SPIELERAUSWAHL + RAID-LEAD ABGEBEN
 -- ============================================================
-local H = { rows = {}, offset = 0 }
+local H = { rows = {}, offset = 0, showAll = false, opts = nil }
 local HROWS = 12
+
+local function InGroup()
+    return GetNumRaidMembers() > 0 or GetNumPartyMembers() > 0
+end
 
 local function IsLeader()
     if GetNumRaidMembers() > 0 then return IsRaidLeader and IsRaidLeader() == 1 end
@@ -553,17 +612,18 @@ local function IsLeader()
     return false
 end
 
--- Namen aller anderen Raid-/Gruppenmitglieder, alphabetisch.
-function BananaLoot:GetHandoverCandidates()
+-- Namen der Raid-/Gruppenmitglieder (includeSelf: auch man selbst), alphabetisch.
+function BananaLoot:GetGroupMembers(includeSelf)
     local names = {}
     local me = UnitName("player")
     local n = GetNumRaidMembers()
     if n > 0 then
         for i = 1, n do
             local name = GetRaidRosterInfo(i)
-            if name and name ~= me then table.insert(names, name) end
+            if name and (includeSelf or name ~= me) then table.insert(names, name) end
         end
     else
+        if includeSelf and me then table.insert(names, me) end
         for i = 1, GetNumPartyMembers() do
             local name = UnitName("party" .. i)
             if name then table.insert(names, name) end
@@ -573,8 +633,14 @@ function BananaLoot:GetHandoverCandidates()
     return names
 end
 
--- Uebergibt die Raid-Leitung (und, falls Masterloot aktiv und man selbst Loot-
--- Master ist, den Loot-Master) an einen anderen Spieler.
+-- Hat der Spieler BananaLoot? (Antwort auf HQ; man selbst natuerlich ja)
+function BananaLoot:HasBananaLoot(name)
+    return name == UnitName("player") or C.hasAddon[name] ~= nil
+end
+
+-- Uebergibt die Raid-Leitung sofort an einen Spieler (und den Loot-Master, falls Masterloot
+-- aktiv und man selbst Loot-Master ist). Der neue Leiter bekommt den aktiven Raid
+-- automatisch per Code (HO), er muss nichts eintragen.
 function BananaLoot:HandOverRaidLead(name)
     if not IsLeader() then
         DEFAULT_CHAT_FRAME:AddMessage(self:L("LEAD_NOT_LEADER"))
@@ -594,6 +660,11 @@ function BananaLoot:HandOverRaidLead(name)
             movedML = pcall(function() SetLootMethod("master", name) end)
         end
     end
+    local active = self:GetActivePrepared()
+    local channel = self:RaidCodeChannel()
+    if active and active.code and channel and self:HasBananaLoot(name) then
+        QueueSend("HO~" .. active.code .. "~" .. name, channel)
+    end
     DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L(movedML and "LEAD_DONE_ML" or "LEAD_DONE"), name))
     return true
 end
@@ -605,9 +676,9 @@ local function MakeBtn(name, parent, w, h)
     return b
 end
 
-H.frame = CreateFrame("Frame", "BananaLootHandoverFrame", UIParent)
-H.frame:SetWidth(280)
-H.frame:SetHeight(HROWS * 24 + 90)
+H.frame = CreateFrame("Frame", "BananaLootMemberPicker", UIParent)
+H.frame:SetWidth(300)
+H.frame:SetHeight(HROWS * 24 + 130)
 H.frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
 H.frame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -626,36 +697,41 @@ H.frame:Hide()
 H.title = H.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 H.title:SetPoint("TOP", H.frame, "TOP", 0, -16)
 H.hint = H.frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-H.hint:SetPoint("TOP", H.frame, "TOP", 0, -38)
-H.hint:SetWidth(240)
-H.close = CreateFrame("Button", "BananaLootHandoverClose", H.frame, "UIPanelCloseButton")
+H.hint:SetPoint("TOP", H.frame, "TOP", 0, -40)
+H.hint:SetWidth(260)
+H.close = CreateFrame("Button", "BananaLootMemberPickerClose", H.frame, "UIPanelCloseButton")
 H.close:SetPoint("TOPRIGHT", H.frame, "TOPRIGHT", -4, -4)
 H.close:SetScript("OnClick", function() BananaLoot:PlayClickSound(); this:GetParent():Hide() end)
-H.list = CreateFrame("Frame", "BananaLootHandoverList", H.frame)
-H.list:SetWidth(240)
+H.list = CreateFrame("Frame", "BananaLootMemberPickerList", H.frame)
+H.list:SetWidth(260)
 H.list:SetHeight(HROWS * 24)
-H.list:SetPoint("TOPLEFT", H.frame, "TOPLEFT", 20, -64)
+H.list:SetPoint("TOPLEFT", H.frame, "TOPLEFT", 20, -74)
 H.list:EnableMouseWheel(true)
 H.list:SetScript("OnMouseWheel", function()
     H.offset = H.offset - arg1
     H.Refresh()
 end)
 H.empty = H.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-H.empty:SetPoint("TOP", H.frame, "TOP", 0, -100)
-H.empty:SetWidth(220)
+H.empty:SetPoint("TOP", H.frame, "TOP", 0, -110)
+H.empty:SetWidth(240)
+H.allBtn = MakeBtn("BananaLootMemberPickerAll", H.frame, 180, 22)
+H.allBtn:SetPoint("BOTTOM", H.frame, "BOTTOM", 0, 20)
+H.allBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    H.showAll = not H.showAll
+    H.offset = 0
+    H.Refresh()
+end)
 
 for i = 1, HROWS do
-    local b = MakeBtn("BananaLootHandoverRow" .. i, H.list, 236, 22)
+    local b = MakeBtn("BananaLootMemberPickerRow" .. i, H.list, 256, 22)
     b:SetPoint("TOPLEFT", H.list, "TOPLEFT", 2, -(i - 1) * 24)
     b:SetScript("OnClick", function()
-        if not this.who then return end
+        if not this.who or not H.opts then return end
         BananaLoot:PlayClickSound()
-        H.pending = this.who
-        local d = StaticPopupDialogs["BANANALOOT_HANDOVER"]
-        d.text = string.format(BananaLoot:L("LEAD_CONFIRM"), this.who)
-        d.button1 = BananaLoot:L("UI_POPUP_YES")
-        d.button2 = BananaLoot:L("UI_POPUP_CANCEL")
-        StaticPopup_Show("BANANALOOT_HANDOVER")
+        local who, cb = this.who, H.opts.onPick
+        H.frame:Hide()
+        if cb then cb(who) end
     end)
     H.rows[i] = b
 end
@@ -667,7 +743,6 @@ StaticPopupDialogs["BANANALOOT_HANDOVER"] = {
     OnAccept = function()
         if H.pending then BananaLoot:HandOverRaidLead(H.pending) end
         H.pending = nil
-        H.frame:Hide()
     end,
     timeout = 0,
     whileDead = true,
@@ -675,46 +750,108 @@ StaticPopupDialogs["BANANALOOT_HANDOVER"] = {
 }
 
 function H.Refresh()
-    if not H.frame:IsShown() then return end
-    local names = BananaLoot:GetHandoverCandidates()
-    local n = table.getn(names)
+    if not H.frame:IsShown() or not H.opts then return end
+    local opts = H.opts
+    local names = BananaLoot:GetGroupMembers(opts.includeSelf)
+    local list = {}
+    for i = 1, table.getn(names) do
+        local has = BananaLoot:HasBananaLoot(names[i])
+        if not opts.onlyAddon or H.showAll or has then table.insert(list, { name = names[i], has = has }) end
+    end
+    if opts.onlyAddon then   -- BananaLoot-Nutzer zuerst
+        table.sort(list, function(a, b)
+            if a.has ~= b.has then return a.has end
+            return a.name < b.name
+        end)
+    end
+    local n = table.getn(list)
     local maxOff = math.max(0, n - HROWS)
     if H.offset > maxOff then H.offset = maxOff end
     if H.offset < 0 then H.offset = 0 end
-    H.title:SetText(BananaLoot:L("LEAD_TITLE"))
-    H.hint:SetText(BananaLoot:L("LEAD_HINT"))
+    H.title:SetText(opts.title or "")
+    H.hint:SetText(opts.hint or "")
     for i = 1, HROWS do
-        local nm = names[H.offset + i]
-        if nm then
-            H.rows[i].who = nm
-            H.rows[i]:SetText(BananaLoot:ColoredName(nm))
+        local e = list[H.offset + i]
+        if e then
+            H.rows[i].who = e.name
+            local label = BananaLoot:ColoredName(e.name)
+            if opts.onlyAddon then
+                if e.has then
+                    label = label .. "  |cff33ff99" .. BananaLoot:L("LEAD_TAG_ADDON") .. "|r"
+                else
+                    label = label .. "  |cff808080" .. BananaLoot:L("LEAD_TAG_NOADDON") .. "|r"
+                end
+            end
+            H.rows[i]:SetText(label)
             H.rows[i]:Show()
         else
             H.rows[i].who = nil
             H.rows[i]:Hide()
         end
     end
-    if n == 0 then H.empty:SetText(BananaLoot:L("LEAD_EMPTY")) else H.empty:SetText("") end
+    if n == 0 then
+        H.empty:SetText(BananaLoot:L(opts.onlyAddon and "LEAD_EMPTY_ADDON" or "LEAD_EMPTY"))
+    else
+        H.empty:SetText("")
+    end
+    if opts.onlyAddon then
+        H.allBtn:SetText(BananaLoot:L(H.showAll and "LEAD_SHOW_ADDON" or "LEAD_SHOW_ALL"))
+        H.allBtn:Show()
+    else
+        H.allBtn:Hide()
+    end
 end
 H.frame:SetScript("OnShow", function() H.Refresh() end)
 
+-- Allgemeine Spielerauswahl. opts = { title, hint, onPick = function(name), onlyAddon, includeSelf }
+function BananaLoot_UI:ShowMemberPicker(opts)
+    if not InGroup() then
+        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("PICK_NOT_IN_GROUP"))
+        return
+    end
+    H.opts = opts
+    H.offset = 0
+    H.showAll = false
+    H.frame:Show()
+    if opts.onlyAddon then
+        local channel = BananaLoot:RaidCodeChannel()
+        if channel then QueueSend("HQ", channel) end   -- wer hat BananaLoot?
+    end
+    H.Refresh()
+end
+
+function BananaLoot_UI:RefreshMemberPicker()
+    H.Refresh()
+end
+
+-- Raid-Lead abgeben: Mitglieder mit BananaLoot waehlen, sofort uebergeben.
 function BananaLoot_UI:ShowHandover()
     if not IsLeader() then
         DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("LEAD_NOT_LEADER"))
         return
     end
-    H.offset = 0
-    H.frame:Show()
-    H.Refresh()
+    BananaLoot_UI:ShowMemberPicker({
+        title = BananaLoot:L("LEAD_TITLE"),
+        hint = BananaLoot:L("LEAD_HINT"),
+        onlyAddon = true,
+        onPick = function(name)
+            H.pending = name
+            local d = StaticPopupDialogs["BANANALOOT_HANDOVER"]
+            d.text = string.format(BananaLoot:L("LEAD_CONFIRM"), name)
+            d.button1 = BananaLoot:L("UI_POPUP_YES")
+            d.button2 = BananaLoot:L("UI_POPUP_CANCEL")
+            StaticPopup_Show("BANANALOOT_HANDOVER")
+        end,
+    })
 end
 
 -- Button unten rechts im Hauptfenster
 local srMain = getglobal("BananaLootSRFrame")
 if srMain then
     local leadBtn = CreateFrame("Button", "BananaLootHandoverBtn", srMain, "UIPanelButtonTemplate")
-    leadBtn:SetWidth(120)
-    leadBtn:SetHeight(20)
-    leadBtn:SetPoint("BOTTOMRIGHT", srMain, "BOTTOMRIGHT", -22, 16)
+    leadBtn:SetWidth(150)
+    leadBtn:SetHeight(22)
+    leadBtn:SetPoint("BOTTOMRIGHT", srMain, "BOTTOMRIGHT", -22, 14)
     leadBtn:SetScript("OnClick", function()
         BananaLoot:PlayClickSound()
         BananaLoot_UI:ShowHandover()

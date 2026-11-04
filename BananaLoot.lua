@@ -169,7 +169,8 @@ local LOCALE = {
             "/bl recover            SR+-Wiederherstellungsliste anzeigen\n" ..
             "/bl history            Geteilte Loot-Historie anzeigen (nur Session)\n" ..
             "/bl lfm                LFM-Fenster öffnen (Text im Weltkanal posten)\n" ..
-            "/bl setup             Raid-Setup: Hard Reserve / Raid-Roll aus der Raid-Beute waehlen\n" ..
+            "/bl mini              Kleinen GL/ML-Button ein-/ausblenden (verschiebbar)\n" ..
+            "/bl setup             Laufender Raid: Hard Reserve / Bankreserve / Raid-Roll bearbeiten, Drops\n" ..
             "/bl join [Code]       Raid per Raid-Code von einem anderen Loot-Master laden (Stellvertreter)\n" ..
             "/bl prefetch          Items der aktuellen Instanz jetzt vorladen\n" ..
             "/bl prefetch on|off   Automatisches Vorladen beim Betreten von Instanzen\n" ..
@@ -185,7 +186,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl prefetch [on|off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [on|off]",
 
         -- Optionen (Chat-Feedback)
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ Bonus pro Stufe auf +%d gesetzt.",
@@ -206,7 +207,7 @@ local LOCALE = {
         SETUP_TITLE_PREP = "Raid vorbereiten: %s",
         SETUP_NAME_LABEL = "Name:",
         SETUP_BTN_SAVE = "Raid speichern",
-        SETUP_SAVED = "|cff33ff99BananaLoot|r: Raid vorbereitet: %s (%s, %d Hard Reserve, %d Raid-Roll). Wähle ihn im Hauptfenster aus und starte ihn mit \"Raid starten\".",
+        SETUP_SAVED = "|cff33ff99BananaLoot|r: Raid vorbereitet: %s (%s, %d Hard Reserve, %d Bankreserve, %d Raid-Roll). Wähle ihn im Hauptfenster aus und starte ihn mit \"Raid starten\".",
         SETUP_HINT_HR = "Haken = Item kommt auf die Hard-Reserve-Liste (wird nie verrollt, nur manuell vergeben). Maus über ein Item zeigt den Tooltip.",
         SETUP_HINT_RR = "Haken = Item wird beim Looten automatisch per Raid-Roll unter allen Raidmitgliedern verlost. Tipp: Qualitätsfilter \"Grün\" + \"Alle\".",
         SETUP_QUAL_LABEL = "Qualität:",
@@ -216,7 +217,7 @@ local LOCALE = {
         SETUP_QUAL_4 = "Episch",
         SETUP_QUAL_5 = "Orange",
         SETUP_QUAL_TIP = "Filter: nur Items dieser Qualität anzeigen (mehrere möglich, keine Auswahl = alle). \"Alle\"/\"Keine\" wirken nur auf die sichtbaren Items.",
-        SETUP_TEMPLATE_ASK = "Letzte Einstellungen für %s übernehmen?\n(%d Hard Reserve, %d Raid-Roll)\n\nDu kannst sie danach noch anpassen.",
+        SETUP_TEMPLATE_ASK = "Letzte Einstellungen für %s übernehmen?\n(%d Hard Reserve, %d Bankreserve, %d Raid-Roll)\n\nDu kannst sie danach noch anpassen.",
         SETUP_TEMPLATE_YES = "Ja, übernehmen",
         SETUP_TEMPLATE_NO = "Nein, leer beginnen",
         SETUP_PICK_TITLE = "Vorbereitete Raids",
@@ -231,7 +232,7 @@ local LOCALE = {
         SETUP_DELETE_ASK = "Vorbereiteten Raid \"%s\" löschen?",
         SETUP_SELECT_NONE = "Raid wählen...",
         SETUP_SELECT_TIP = "Klicken: vorbereitete Raids anzeigen, auswählen, bearbeiten oder löschen",
-        SETUP_STARTED = "|cff33ff99BananaLoot|r: Raid %s gestartet (%d Hard Reserve, %d Raid-Roll).",
+        SETUP_STARTED = "|cff33ff99BananaLoot|r: Raid %s gestartet (%d Hard Reserve, %d Bankreserve, %d Raid-Roll).",
         SETUP_BTN_OPEN_TOOLTIP = "Laufender Raid: Hard Reserve und Raid-Roll bearbeiten. Sonst: neuen Raid vorbereiten.",
         CODE_POST_TEXT = "BananaLoot Raid-Code fuer %s: %s  (SR einreichen: BananaLoot Raider, /blr sr)",
         CODE_NO_CHANNEL = "|cffff5555BananaLoot|r: Weder Raid/Gruppe noch Gilde: kein Kanal fuer den Raid-Code.",
@@ -240,11 +241,25 @@ local LOCALE = {
         CODE_JOIN_FAILED = "|cffff5555BananaLoot|r: Keine Antwort fuer Code %s. Ist der Loot-Master online (Raid/Gruppe/Gilde)?",
         CODE_JOIN_EXISTS = "|cff33ff99BananaLoot|r: Raid-Code %s ist bereits vorhanden.",
         CODE_START_SR = "|cff33ff99BananaLoot|r: SR von %d Spielern aus dem Raid-Code uebernommen. SR-Liste ist jetzt gesperrt (Sperr-Button im Hauptfenster oeffnet sie wieder).",
+        LEAD_EMPTY_ADDON = "Keine Spieler mit BananaLoot gefunden (Antworten kommen nach 1-2 Sekunden). Mit \"Alle anzeigen\" kannst du jeden Spieler wählen.",
+        LEAD_SHOW_ALL = "Alle Spieler anzeigen",
+        LEAD_SHOW_ADDON = "Nur Spieler mit BananaLoot",
+        LEAD_TAG_ADDON = "BananaLoot",
+        LEAD_TAG_NOADDON = "kein BananaLoot",
+        LEAD_RECEIVED = "|cff33ff99BananaLoot|r: %s hat dir die Raid-Leitung übergeben. Der Raid wird per Code geladen ...",
+        LEAD_RECEIVED_NOCODE = "|cff33ff99BananaLoot|r: %s hat dir die Raid-Leitung übergeben.",
+        PICK_NOT_IN_GROUP = "|cffff5555BananaLoot|r: Du bist in keiner Gruppe oder keinem Raid.",
+        SETPLAYER_PICK = "Aus Raid wählen",
+        SETPLAYER_PICK_TITLE = "Spieler wählen",
+        SETPLAYER_PICK_HINT = "Spieler aus Raid/Gruppe anklicken, der Name wird eingetragen.",
+        MINI_TOOLTIP = "Loot-Methode wechseln (GL = Gruppenloot, ML = Masterloot). Ziehen verschiebt den Button.",
+        MINI_ON = "|cff33ff99BananaLoot|r: GL/ML-Button eingeblendet.",
+        MINI_OFF = "|cff33ff99BananaLoot|r: GL/ML-Button ausgeblendet (wieder einblenden mit /bl mini).",
         LEAD_BTN = "Raid-Lead abgeben",
         LEAD_TOOLTIP = "Raid-Leitung (und Loot-Master) an einen anderen Spieler im Raid uebergeben",
         LEAD_TITLE = "Raid-Lead abgeben",
-        LEAD_HINT = "Spieler anklicken. Der Spieler wird Raid-Leiter (und Loot-Master, falls du es bist).",
-        LEAD_EMPTY = "Keine anderen Spieler in Raid/Gruppe.",
+        LEAD_HINT = "Spieler mit BananaLoot anklicken. Er wird sofort Raid-Leiter (und Loot-Master, falls du es bist) und bekommt den Raid automatisch.",
+        LEAD_EMPTY = "Keine Spieler in Raid/Gruppe.",
         LEAD_CONFIRM = "Raid-Leitung an %s uebergeben?",
         LEAD_NOT_LEADER = "|cffff5555BananaLoot|r: Nur der Raid-/Gruppenleiter kann die Leitung abgeben.",
         LEAD_FAILED = "|cffff5555BananaLoot|r: Leitung konnte nicht uebergeben werden.",
@@ -259,6 +274,10 @@ local LOCALE = {
         SETUP_STATE_OPEN = "offen",
         SETUP_STATE_CLOSED = "zu",
         SETUP_JOIN_ASK = "Raid-Code des Loot-Masters eingeben (z.B. MC-7K3Q):",
+        SETUP_TAB_BR = "4. Bankreserve",
+        SETUP_HINT_BR = "Haken = Item geht automatisch an den Bankreserve-Looter (\"BR-Looter setzen\"), z.B. für die Gildenbank. Wird nie verrollt oder angekündigt.",
+        SETUP_COUNT_BR = "Bankreserve: %d gewählt",
+        SETUP_TAG_RR = "Raid-Roll",
         SETUP_TAB_HR = "1. Hard Reserve",
         SETUP_TAB_SR = "2. Soft Reserve",
         SETUP_TAB_RR = "3. Raid-Roll",
@@ -288,11 +307,11 @@ local LOCALE = {
         SETUP_DROPS_MSG = "|cff33ff99BananaLoot|r: %s %s",
         SETUP_DROPS_MSG_TPL = "ab jetzt Raid-Roll und beim nächsten %s-Start vorausgewählt.",
         SETUP_DROPS_MSG_NOTPL = "ab jetzt Raid-Roll (kein Raid gewählt, daher keine Vorlage gespeichert).",
-        SETUP_APPLIED = "|cff33ff99BananaLoot|r: Raid-Setup %s übernommen: %d Hard Reserve, %d Raid-Roll.",
+        SETUP_APPLIED = "|cff33ff99BananaLoot|r: Raid-Setup %s übernommen: %d Hard Reserve, %d Bankreserve, %d Raid-Roll.",
         SETUP_TIP_ILVL = "Item-Level %d",
         SETUP_TIP_UNCACHED = "Details noch nicht im Client-Cache. Sie werden beim Betreten der Instanz geladen.",
         SETUP_BTN_OPEN = "Raid-Setup",
-        SETUP_PICK_ROW = "%s  |  %d HR, %d Raid-Roll  |  Code: %s  |  SR: %d (%s)",
+        SETUP_PICK_ROW = "%s  |  %d HR, %d BR, %d Raid-Roll  |  SR: %d (%s)",
         PREFETCH_START = "|cff33ff99BananaLoot|r: Lade %d unbekannte Items für %s vor...",
         PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item-Cache für %s fertig (%d Items geladen).",
         PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: Keine Loot-Daten für '%s' (keine bekannte Instanz).",
@@ -829,7 +848,8 @@ local LOCALE = {
             "/bl recover            Show SR+ recovery list\n" ..
             "/bl history            Show shared loot history (session only)\n" ..
             "/bl lfm                Open the LFM window (post a text in the World channel)\n" ..
-            "/bl setup             Raid setup: pick Hard Reserve / Raid Roll items from the raid loot\n" ..
+            "/bl mini              Show/hide the small GL/ML button (draggable)\n" ..
+            "/bl setup             Running raid: edit Hard Reserve / Bank Reserve / Raid Roll, drops\n" ..
             "/bl join [Code]       Load a raid from another loot master by raid code (stand-in)\n" ..
             "/bl prefetch          Preload the items of the current instance now\n" ..
             "/bl prefetch on|off   Automatic preloading when entering instances\n" ..
@@ -845,7 +865,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl prefetch [on|off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [on|off]",
 
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ bonus per stack set to +%d.",
         OPT_BONUS_INVALID = "|cffff5555BananaLoot|r: Please enter a valid number.",
@@ -865,7 +885,7 @@ local LOCALE = {
         SETUP_TITLE_PREP = "Prepare raid: %s",
         SETUP_NAME_LABEL = "Name:",
         SETUP_BTN_SAVE = "Save raid",
-        SETUP_SAVED = "|cff33ff99BananaLoot|r: Raid prepared: %s (%s, %d Hard Reserve, %d Raid Roll). Select it in the main window and start it with \"Start raid\".",
+        SETUP_SAVED = "|cff33ff99BananaLoot|r: Raid prepared: %s (%s, %d Hard Reserve, %d Bank Reserve, %d Raid Roll). Select it in the main window and start it with \"Start raid\".",
         SETUP_HINT_HR = "Check = item goes on the Hard Reserve list (never rolled, only awarded manually). Hover an item for its tooltip.",
         SETUP_HINT_RR = "Check = item is automatically raid-rolled among all raid members when looted. Tip: quality filter \"Green\" + \"All\".",
         SETUP_QUAL_LABEL = "Quality:",
@@ -875,7 +895,7 @@ local LOCALE = {
         SETUP_QUAL_4 = "Epic",
         SETUP_QUAL_5 = "Orange",
         SETUP_QUAL_TIP = "Filter: only show items of this quality (multiple allowed, none selected = all). \"All\"/\"None\" only affect the visible items.",
-        SETUP_TEMPLATE_ASK = "Reuse your last settings for %s?\n(%d Hard Reserve, %d Raid Roll)\n\nYou can still adjust them afterwards.",
+        SETUP_TEMPLATE_ASK = "Reuse your last settings for %s?\n(%d Hard Reserve, %d Bank Reserve, %d Raid Roll)\n\nYou can still adjust them afterwards.",
         SETUP_TEMPLATE_YES = "Yes, reuse",
         SETUP_TEMPLATE_NO = "No, start empty",
         SETUP_PICK_TITLE = "Prepared raids",
@@ -890,7 +910,7 @@ local LOCALE = {
         SETUP_DELETE_ASK = "Delete prepared raid \"%s\"?",
         SETUP_SELECT_NONE = "Select raid...",
         SETUP_SELECT_TIP = "Click: show, select, edit or delete prepared raids",
-        SETUP_STARTED = "|cff33ff99BananaLoot|r: Raid %s started (%d Hard Reserve, %d Raid Roll).",
+        SETUP_STARTED = "|cff33ff99BananaLoot|r: Raid %s started (%d Hard Reserve, %d Bank Reserve, %d Raid Roll).",
         SETUP_BTN_OPEN_TOOLTIP = "Running raid: edit Hard Reserve and Raid Roll. Otherwise: prepare a new raid.",
         CODE_POST_TEXT = "BananaLoot raid code for %s: %s  (submit SR: BananaLoot Raider, /blr sr)",
         CODE_NO_CHANNEL = "|cffff5555BananaLoot|r: Neither raid/party nor guild: no channel for the raid code.",
@@ -899,11 +919,25 @@ local LOCALE = {
         CODE_JOIN_FAILED = "|cffff5555BananaLoot|r: No answer for code %s. Is the loot master online (raid/party/guild)?",
         CODE_JOIN_EXISTS = "|cff33ff99BananaLoot|r: Raid code %s already exists.",
         CODE_START_SR = "|cff33ff99BananaLoot|r: SR of %d players taken over from the raid code. The SR list is now locked (the lock button in the main window reopens it).",
+        LEAD_EMPTY_ADDON = "No players with BananaLoot found (answers arrive after 1-2 seconds). \"Show all\" lets you pick any player.",
+        LEAD_SHOW_ALL = "Show all players",
+        LEAD_SHOW_ADDON = "Only players with BananaLoot",
+        LEAD_TAG_ADDON = "BananaLoot",
+        LEAD_TAG_NOADDON = "no BananaLoot",
+        LEAD_RECEIVED = "|cff33ff99BananaLoot|r: %s handed the raid lead to you. Loading the raid by code ...",
+        LEAD_RECEIVED_NOCODE = "|cff33ff99BananaLoot|r: %s handed the raid lead to you.",
+        PICK_NOT_IN_GROUP = "|cffff5555BananaLoot|r: You are not in a party or raid.",
+        SETPLAYER_PICK = "Pick from raid",
+        SETPLAYER_PICK_TITLE = "Pick a player",
+        SETPLAYER_PICK_HINT = "Click a player from raid/party, the name is filled in.",
+        MINI_TOOLTIP = "Switch loot method (GL = group loot, ML = master loot). Drag to move the button.",
+        MINI_ON = "|cff33ff99BananaLoot|r: GL/ML button shown.",
+        MINI_OFF = "|cff33ff99BananaLoot|r: GL/ML button hidden (show it again with /bl mini).",
         LEAD_BTN = "Hand over lead",
         LEAD_TOOLTIP = "Hand over raid leadership (and loot master) to another player in the raid",
         LEAD_TITLE = "Hand over raid lead",
-        LEAD_HINT = "Click a player. They become raid leader (and loot master, if that is you).",
-        LEAD_EMPTY = "No other players in raid/party.",
+        LEAD_HINT = "Click a player who has BananaLoot. They become raid leader at once (and loot master, if that is you) and receive the raid automatically.",
+        LEAD_EMPTY = "No players in raid/party.",
         LEAD_CONFIRM = "Hand over raid leadership to %s?",
         LEAD_NOT_LEADER = "|cffff5555BananaLoot|r: Only the raid/party leader can hand over the lead.",
         LEAD_FAILED = "|cffff5555BananaLoot|r: Could not hand over the lead.",
@@ -918,6 +952,10 @@ local LOCALE = {
         SETUP_STATE_OPEN = "open",
         SETUP_STATE_CLOSED = "closed",
         SETUP_JOIN_ASK = "Enter the raid code of the loot master (e.g. MC-7K3Q):",
+        SETUP_TAB_BR = "4. Bank Reserve",
+        SETUP_HINT_BR = "Check = item automatically goes to the Bank Reserve looter (\"Set BR looter\"), e.g. for the guild bank. Never rolled or announced.",
+        SETUP_COUNT_BR = "Bank Reserve: %d selected",
+        SETUP_TAG_RR = "Raid Roll",
         SETUP_TAB_HR = "1. Hard Reserve",
         SETUP_TAB_SR = "2. Soft Reserve",
         SETUP_TAB_RR = "3. Raid Roll",
@@ -947,11 +985,11 @@ local LOCALE = {
         SETUP_DROPS_MSG = "|cff33ff99BananaLoot|r: %s %s",
         SETUP_DROPS_MSG_TPL = "is a Raid Roll item from now on and preselected at the next %s start.",
         SETUP_DROPS_MSG_NOTPL = "is a Raid Roll item from now on (no raid selected, so no template saved).",
-        SETUP_APPLIED = "|cff33ff99BananaLoot|r: Raid setup %s applied: %d Hard Reserve, %d Raid Roll.",
+        SETUP_APPLIED = "|cff33ff99BananaLoot|r: Raid setup %s applied: %d Hard Reserve, %d Bank Reserve, %d Raid Roll.",
         SETUP_TIP_ILVL = "Item level %d",
         SETUP_TIP_UNCACHED = "Details not in the client cache yet. They are loaded when you enter the instance.",
         SETUP_BTN_OPEN = "Raid Setup",
-        SETUP_PICK_ROW = "%s  |  %d HR, %d Raid Roll  |  Code: %s  |  SR: %d (%s)",
+        SETUP_PICK_ROW = "%s  |  %d HR, %d BR, %d Raid Roll  |  SR: %d (%s)",
         PREFETCH_START = "|cff33ff99BananaLoot|r: Preloading %d unknown items for %s...",
         PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item cache for %s ready (%d items loaded).",
         PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: No loot data for '%s' (not a known instance).",
@@ -6349,6 +6387,9 @@ SlashCmdList["BANANALOOT"] = function(msg)
     elseif string.find(cmd, "^join ") then
         local code = Trim(string.sub(msg, 6))
         if BananaLoot.JoinRaidCode then BananaLoot:JoinRaidCode(code) end
+
+    elseif cmd == "mini" then
+        if BananaLoot_UI and BananaLoot_UI.ToggleMiniGL then BananaLoot_UI:ToggleMiniGL() end
 
     elseif cmd == "setup" then
         if BananaLoot_UI and BananaLoot_UI.ShowRaidSetup then BananaLoot_UI:ShowRaidSetup() end

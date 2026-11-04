@@ -23,7 +23,7 @@ local PANEL_PAD = 12
 -- ============================================================
 local panel = CreateFrame("Frame", "BananaLootSRMenuPanel", srFrame)
 panel:SetWidth(PANEL_W)
-panel:SetHeight(456)
+panel:SetHeight(280)
 -- Der Fensterrahmen des SR-Fensters liegt optisch einige Pixel innerhalb der
 -- Frame-Kante, daher negativer Versatz, damit das Panel buendig anliegt.
 panel:SetPoint("TOPLEFT", srFrame, "TOPRIGHT", -5, -60)
@@ -38,12 +38,8 @@ panel:Hide()
 
 -- Umhaengen der bestehenden Buttons ins Panel
 local moved = {
-    { "BananaLootExportBtn", -92 },
-    { "BananaLootImportBtn", -124 },
-    { "BananaLootSaveRaidBtn", -156 },
-    { "BananaLootLoadRaidBtn", -188 },
-    { "BananaLootOptionsBtn", -234 },
-    { "BananaLootLFMQuickBtn", -266 },
+    { "BananaLootOptionsBtn", -92 },
+    { "BananaLootLFMQuickBtn", -124 },
 }
 for i = 1, table.getn(moved) do
     local btn = getglobal(moved[i][1])
@@ -65,9 +61,7 @@ local function AddSeparator(y)
     line:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PAD, y)
 end
 AddSeparator(-82)
-AddSeparator(-224)
-AddSeparator(-304)
-AddSeparator(-410)
+AddSeparator(-162)
 
 -- Hauptfenster neu ordnen: Sperren/ML-GL/Loot-Fenster in eine Zeile, Liste
 -- rueckt hoch, unten bleibt Platz fuer den Timer.
@@ -134,20 +128,37 @@ setCurrent:SetPoint("TOPLEFT", setFrame, "TOPLEFT", 26, -84)
 setCurrent:SetJustifyH("LEFT")
 
 local setBox = CreateFrame("EditBox", "BananaLootSetPlayerBox", setFrame, "InputBoxTemplate")
-setBox:SetWidth(220)
+setBox:SetWidth(150)
 setBox:SetHeight(20)
 setBox:SetPoint("TOPLEFT", setFrame, "TOPLEFT", 30, -110)
 setBox:SetAutoFocus(false)
 setBox:SetMaxLetters(24)
 setBox:SetScript("OnEscapePressed", function() setFrame:Hide() end)
 
+-- Dropdown-artige Auswahl aus Raid/Gruppe (nur in einer Gruppe nutzbar)
+local setPickBtn = CreateFrame("Button", "BananaLootSetPlayerPickBtn", setFrame, "UIPanelButtonTemplate")
+setPickBtn:SetWidth(130)
+setPickBtn:SetHeight(22)
+setPickBtn:SetPoint("LEFT", setBox, "RIGHT", 10, 0)
+setPickBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.ShowMemberPicker then
+        BananaLoot_UI:ShowMemberPicker({
+            title = BananaLoot:L("SETPLAYER_PICK_TITLE"),
+            hint = BananaLoot:L("SETPLAYER_PICK_HINT"),
+            includeSelf = true,
+            onPick = function(name) setBox:SetText(name) end,
+        })
+    end
+end)
+
 local setSaveBtn = CreateFrame("Button", "BananaLootSetPlayerSaveBtn", setFrame, "UIPanelButtonTemplate")
-setSaveBtn:SetWidth(100)
+setSaveBtn:SetWidth(110)
 setSaveBtn:SetHeight(20)
 setSaveBtn:SetPoint("TOPLEFT", setBox, "BOTTOMLEFT", -4, -14)
 
 local setClearBtn = CreateFrame("Button", "BananaLootSetPlayerClearBtn", setFrame, "UIPanelButtonTemplate")
-setClearBtn:SetWidth(120)
+setClearBtn:SetWidth(170)
 setClearBtn:SetHeight(20)
 setClearBtn:SetPoint("LEFT", setSaveBtn, "RIGHT", 8, 0)
 
@@ -169,6 +180,8 @@ local function RefreshSetFrame()
     end
     setSaveBtn:SetText(BananaLoot:L("SETPLAYER_SAVE"))
     setClearBtn:SetText(BananaLoot:L(isDE and "SETPLAYER_CLEAR_DE" or "SETPLAYER_CLEAR_BR"))
+    setPickBtn:SetText(BananaLoot:L("SETPLAYER_PICK"))
+    if GetNumRaidMembers() > 0 or GetNumPartyMembers() > 0 then setPickBtn:Enable() else setPickBtn:Disable() end
 end
 
 local function AfterSetChange()
@@ -236,7 +249,7 @@ end
 local deBtn = CreateFrame("Button", "BananaLootSetDEBtn", panel, "UIPanelButtonTemplate")
 deBtn:SetWidth(BTN_W)
 deBtn:SetHeight(BTN_H)
-deBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -314)
+deBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -172)
 deBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     OpenSetFrame("de")
@@ -245,33 +258,17 @@ end)
 local brBtn = CreateFrame("Button", "BananaLootSetBRBtn", panel, "UIPanelButtonTemplate")
 brBtn:SetWidth(BTN_W)
 brBtn:SetHeight(BTN_H)
-brBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -346)
+brBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -204)
 brBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     OpenSetFrame("br")
 end)
 
--- Raid-Setup (Hard Reserve / Raid-Roll aus der Raid-Beute, siehe BananaLootRaidSetup.lua)
-local setupBtn = CreateFrame("Button", "BananaLootRaidSetupMenuBtn", panel, "UIPanelButtonTemplate")
-setupBtn:SetWidth(BTN_W)
-setupBtn:SetHeight(BTN_H)
-setupBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -418)
-setupBtn:SetScript("OnClick", function()
-    BananaLoot:PlayClickSound()
-    if BananaLoot_UI.ShowRaidSetup then BananaLoot_UI:ShowRaidSetup() end
-end)
-setupBtn:SetScript("OnEnter", function()
-    GameTooltip:SetOwner(setupBtn, "ANCHOR_RIGHT")
-    GameTooltip:SetText(BananaLoot:L("SETUP_BTN_OPEN_TOOLTIP"), 1, 1, 1, 1, 1)
-    GameTooltip:Show()
-end)
-setupBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
 -- Auto-Masterloot bei Boss-Target (alle Raidbosse) an/aus, Standard: an
 local autoMLBtn = CreateFrame("Button", "BananaLootAutoMLMenuBtn", panel, "UIPanelButtonTemplate")
 autoMLBtn:SetWidth(BTN_W)
 autoMLBtn:SetHeight(BTN_H)
-autoMLBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -378)
+autoMLBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -236)
 
 local function UpdateAutoMLBtn()
     if BananaLoot:GetAutoMasterLootEnabled() then
@@ -292,7 +289,6 @@ local function RefreshSetButtonTexts()
     UpdateAutoMLBtn()
     deBtn:SetText(BananaLoot:L("RAID_BTN_SET_DE"))
     brBtn:SetText(BananaLoot:L("RAID_BTN_SET_BR"))
-    setupBtn:SetText(BananaLoot:L("SETUP_BTN_OPEN"))
     RefreshSetFrame()
 end
 

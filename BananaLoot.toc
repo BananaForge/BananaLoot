@@ -13,6 +13,7 @@ BananaLootUI.lua
 BananaLootExtra.lua
 BananaLootAlias.lua
 BananaLootRaid.lua
+BananaLootMini.lua
 BananaLootStats.lua
 BananaLootRaidlead.lua
 BananaLootTest.lua

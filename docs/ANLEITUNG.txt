@@ -83,8 +83,9 @@ BEDIENUNG (Masterlooter)
 /bl br remove [Item] -> entfernt ein Item wieder von der Bankreserve
 /bl setup       -> im laufenden Raid: Hard Reserve / Raid-Roll des Raids
                    bearbeiten; sonst: neuen Raid vorbereiten (siehe
-                   Abschnitt RAID VORBEREITEN weiter unten). Auch per
-                   Button "Raid-Setup" im Seitenmenue des SR-Fensters.
+                   Abschnitt RAID VORBEREITEN weiter unten).
+/bl mini        -> blendet den kleinen GL/ML-Button ein/aus (verschiebbar,
+                   immer sichtbar; Klick wechselt Gruppenloot/Masterloot)
 /bl prefetch    -> laedt die Items der aktuellen Instanz jetzt vor (siehe
                    Abschnitt ITEM-VORLADEN weiter unten)
 /bl prefetch on|off -> schaltet das automatische Vorladen beim Betreten
@@ -548,8 +549,7 @@ VORLAGE: Pro Raid-Typ merkt sich BananaLoot die letzte gespeicherte Auswahl.
 Beim Vorbereiten eines weiteren Raids desselben Typs fragt BananaLoot, ob
 sie uebernommen werden soll ("Ja, uebernehmen" / "Nein, leer beginnen").
 
-DROPS-REITER (nur im laufenden Raid, ueber den Button "Raid-Setup" im
-Seitenmenue oder /bl setup): Zeigt alle Items, die im laufenden Raid
+DROPS-REITER (nur im laufenden Raid, ueber /bl setup): Zeigt alle Items, die im laufenden Raid
 gedroppt sind (neueste zuerst). Wurde ein Item versehentlich normal
 gerollt, obwohl es ein Raid-Roll-Item ist, setzt der Button "Kuenftig Raid-
 Roll" es ab sofort auf die Raid-Roll-Liste und merkt es im gestarteten Raid
@@ -585,9 +585,32 @@ Raid-Liste (Klick auf die Ueberschrift im Hauptfenster).
    die Reservierungen. Raider sehen live, ob die SR offen oder geschlossen ist.
 
 RAID-LEAD ABGEBEN: Der Button "Raid-Lead abgeben" (unten rechts im Haupt-
-fenster) listet die anderen Raid-/Gruppenmitglieder. Der gewaehlte Spieler
-wird Raid-Leiter (und Loot-Master, falls du es warst). Nur der Raid-/
-Gruppenleiter kann die Leitung abgeben.
+fenster) listet die Raid-/Gruppenmitglieder, die BananaLoot haben (wird
+automatisch erkannt; "Alle Spieler anzeigen" zeigt jeden). Der gewaehlte
+Spieler wird SOFORT Raid-Leiter (und Loot-Master, falls du es warst) und
+bekommt den aktiven vorbereiteten Raid automatisch per Code -- er muss nichts
+eintragen. Nur der Raid-/Gruppenleiter kann die Leitung abgeben.
+
+DISENCHANTER / BR-LOOTER SETZEN: Name von Hand eintragen oder in einer Gruppe
+mit "Aus Raid wählen" einen Spieler aus Raid/Gruppe anklicken.
+
+SEITENMENUE UND HAUPTFENSTER: Das Seitenmenue enthaelt Raid waehlen, Raid
+starten, Optionen, LFM, Disenchanter setzen, BR-Looter setzen und Auto-ML.
+Export, Import, Raid speichern und Raid laden findest du unter Optionen >
+Verwaltung. Die Buttons RL/HR/BR/? sitzen in der Steuerzeile des Hauptfensters.
+
+AUTOMATISCHE VERBINDUNG IN BANANALOOT RAIDER: Ist ein Raider in derselben
+Gruppe wie ein Loot-Master mit ausgewaehltem oder laufendem Raid, erkennt
+BananaLoot Raider den Raid im Hintergrund (nur ueber Raid-/Gruppenchat, nie
+ueber die Gilde) und verbindet sich selbst -- der Code muss nicht abgeschrieben
+werden. Ein von Hand eingegebener Code bleibt bestehen.
+
+BANKRESERVE IM RAID: Im Vorbereitungsfenster gibt es zusaetzlich den Reiter
+"4. Bankreserve". Abgehakte Items gehen beim Looten automatisch (lautlos, ohne
+Roll) an den Bankreserve-Looter ("BR-Looter setzen"), z.B. fuer die Gildenbank.
+Ein Item steht immer nur in EINER Liste (Bankreserve, Hard Reserve oder Raid-
+Roll); Items einer anderen Liste sind gesperrt. Raider sehen BR-Items im SR-
+Fenster gesperrt.
 
 HINWEIS: "Neuer Raid" in den Optionen leert nicht mehr die Reservierungen
 (dafuer weiterhin /bl reset). Der gestartete Raid wird auch fuer die

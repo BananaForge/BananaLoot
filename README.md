@@ -248,10 +248,12 @@ BananaLoot never talks to the internet on its own.
 - **SR window** (`/bl`, minimap left-click): persistent overview of all
   current reservations, independent of whether loot is currently open.
   Player names are shown in their class color throughout. A collapsible
-  **side menu** on the right (state is remembered) holds Start/End Raid,
-  Export, Import, Save Raid, Load Raid, Options, LFM, Set Disenchanter, Set BR
-  Looter and the Auto ML toggle. Lock, ML/GL, HR/BR quick access and the loot
-  window button stay in the main window
+  **side menu** on the right (state is remembered) holds Select Raid, Start/End
+  Raid, Options, LFM, Set Disenchanter, Set BR Looter and the Auto ML toggle.
+  Export, Import, Save Raid and Load Raid moved to Options > Management. Lock,
+  ML/GL, the RL/HR/BR/? quick access buttons and the loot window button stay in
+  the main window, together with the **Hand over lead** button. A small
+  draggable **GL/ML button** (`/bl mini`) is visible even with the window closed
 - **Loot window** (`/bl loot`): only the items currently visible in the
   real Blizzard loot window, with Roll/ARF/Award (or Disenchant) actions.
   Opens automatically whenever loot becomes available
@@ -332,7 +334,9 @@ BananaLoot never talks to the internet on its own.
   3. **Soft Reserve** – reminder: SR comes in by whisper or by importing the
      raid request link (buttons to open the import / SR window)
   4. **Raid Roll** – tick the items that are raid-rolled right from the start
-  5. Name the raid (default "<Raid> <date>") and save it
+  5. **Bank Reserve** – tick the items that automatically go to the Bank Reserve
+     looter (the player set with "Set BR Looter"), e.g. for the guild bank
+  6. Name the raid (default "<Raid> <date>") and save it
 - **Quality filter** (White / Green / Blue / Epic / Orange, several at once):
   "All" / "None" act on the visible items only, so "Green" + "All" puts every
   green item on the Raid Roll list with one click
@@ -347,8 +351,7 @@ BananaLoot never talks to the internet on its own.
 - **Drops tab** (running raid): shows the items that dropped. Rolled one
   normally by mistake? One click makes it a Raid Roll item from now on and
   stores it in the prepared raid for the next run
-- Reopen the setup for the running raid any time via the **Raid Setup** button
-  in the SR side menu or `/bl setup`
+- Reopen the setup for the running raid (and the Drops tab) with `/bl setup`
 - Data source: AtlasLoot Turtle WoW Edition, used with the developer's
   permission (see `THIRD_PARTY_NOTICES.md`)
 
@@ -369,8 +372,12 @@ BananaLoot never talks to the internet on its own.
 - **Starting the raid** takes over the collected SR and locks the SR list. The
   lock button in the main window reopens it (e.g. before a certain boss); SR
   sent via the code then go straight into the reservations
-- **Hand over lead:** button in the main window; the chosen raid/party member
-  becomes raid leader (and loot master, if that was you)
+- **Hand over lead:** button in the main window. It lists the raid/party members
+  who have BananaLoot (detected automatically; "Show all players" as fallback).
+  The chosen player becomes raid leader at once (and loot master, if that was
+  you) and automatically receives the prepared raid by code, nothing to type
+- **Disenchanter / BR looter:** type the name or pick a player from the raid with
+  **Pick from raid**
 
 ### Item preloading per instance
 
