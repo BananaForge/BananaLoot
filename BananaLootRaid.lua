@@ -23,7 +23,7 @@ local PANEL_PAD = 12
 -- ============================================================
 local panel = CreateFrame("Frame", "BananaLootSRMenuPanel", srFrame)
 panel:SetWidth(PANEL_W)
-panel:SetHeight(424)
+panel:SetHeight(456)
 -- Der Fensterrahmen des SR-Fensters liegt optisch einige Pixel innerhalb der
 -- Frame-Kante, daher negativer Versatz, damit das Panel buendig anliegt.
 panel:SetPoint("TOPLEFT", srFrame, "TOPRIGHT", -5, -60)
@@ -38,12 +38,12 @@ panel:Hide()
 
 -- Umhaengen der bestehenden Buttons ins Panel
 local moved = {
-    { "BananaLootExportBtn", -62 },
-    { "BananaLootImportBtn", -94 },
-    { "BananaLootSaveRaidBtn", -126 },
-    { "BananaLootLoadRaidBtn", -158 },
-    { "BananaLootOptionsBtn", -204 },
-    { "BananaLootLFMQuickBtn", -236 },
+    { "BananaLootExportBtn", -92 },
+    { "BananaLootImportBtn", -124 },
+    { "BananaLootSaveRaidBtn", -156 },
+    { "BananaLootLoadRaidBtn", -188 },
+    { "BananaLootOptionsBtn", -234 },
+    { "BananaLootLFMQuickBtn", -266 },
 }
 for i = 1, table.getn(moved) do
     local btn = getglobal(moved[i][1])
@@ -64,10 +64,10 @@ local function AddSeparator(y)
     line:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, y)
     line:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -PANEL_PAD, y)
 end
-AddSeparator(-52)
-AddSeparator(-194)
-AddSeparator(-274)
-AddSeparator(-380)
+AddSeparator(-82)
+AddSeparator(-224)
+AddSeparator(-304)
+AddSeparator(-410)
 
 -- Hauptfenster neu ordnen: Sperren/ML-GL/Loot-Fenster in eine Zeile, Liste
 -- rueckt hoch, unten bleibt Platz fuer den Timer.
@@ -235,7 +235,7 @@ end
 local deBtn = CreateFrame("Button", "BananaLootSetDEBtn", panel, "UIPanelButtonTemplate")
 deBtn:SetWidth(BTN_W)
 deBtn:SetHeight(BTN_H)
-deBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -284)
+deBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -314)
 deBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     OpenSetFrame("de")
@@ -244,7 +244,7 @@ end)
 local brBtn = CreateFrame("Button", "BananaLootSetBRBtn", panel, "UIPanelButtonTemplate")
 brBtn:SetWidth(BTN_W)
 brBtn:SetHeight(BTN_H)
-brBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -316)
+brBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -346)
 brBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     OpenSetFrame("br")
@@ -254,7 +254,7 @@ end)
 local setupBtn = CreateFrame("Button", "BananaLootRaidSetupMenuBtn", panel, "UIPanelButtonTemplate")
 setupBtn:SetWidth(BTN_W)
 setupBtn:SetHeight(BTN_H)
-setupBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -388)
+setupBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -418)
 setupBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     if BananaLoot_UI.ShowRaidSetup then BananaLoot_UI:ShowRaidSetup() end
@@ -270,7 +270,7 @@ setupBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 local autoMLBtn = CreateFrame("Button", "BananaLootAutoMLMenuBtn", panel, "UIPanelButtonTemplate")
 autoMLBtn:SetWidth(BTN_W)
 autoMLBtn:SetHeight(BTN_H)
-autoMLBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -348)
+autoMLBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -378)
 
 local function UpdateAutoMLBtn()
     if BananaLoot:GetAutoMasterLootEnabled() then
@@ -301,7 +301,23 @@ end
 local raidBtn = CreateFrame("Button", "BananaLootRaidToggleBtn", panel, "UIPanelButtonTemplate")
 raidBtn:SetWidth(BTN_W)
 raidBtn:SetHeight(32)
-raidBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -12)
+raidBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -42)
+
+-- Auswahl des vorbereiteten Raids (oeffnet die Liste, siehe BananaLootRaidSetup.lua)
+local raidSelBtn = CreateFrame("Button", "BananaLootRaidSelectBtn", panel, "UIPanelButtonTemplate")
+raidSelBtn:SetWidth(BTN_W)
+raidSelBtn:SetHeight(26)
+raidSelBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -12)
+raidSelBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.ShowRaidPicker then BananaLoot_UI:ShowRaidPicker() end
+end)
+raidSelBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(raidSelBtn, "ANCHOR_RIGHT")
+    GameTooltip:SetText(BananaLoot:L("SETUP_SELECT_TIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+raidSelBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 local timerText = srFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 timerText:SetPoint("BOTTOM", srFrame, "BOTTOM", 0, 18)
@@ -309,6 +325,8 @@ timerText:SetText("")
 
 local function RefreshRaidUI()
     RefreshSetButtonTexts()
+    local selLabel = BananaLoot.GetSelectedRaidLabel and BananaLoot:GetSelectedRaidLabel()
+    raidSelBtn:SetText(selLabel or BananaLoot:L("SETUP_SELECT_NONE"))
     if BananaLoot:IsRaidRunning() then
         raidBtn:SetText("|cffff5555" .. BananaLoot:L("RAID_BTN_STOP") .. "|r")
         timerText:SetText("|cff33ff99" .. string.format(BananaLoot:L("RAID_TIMER_TEXT"),
@@ -391,9 +409,10 @@ raidBtn:SetScript("OnClick", function()
         d.button2 = BananaLoot:L("UI_POPUP_CANCEL")
         StaticPopup_Show("BANANALOOT_CONFIRM_END_RAID")
     else
-        -- Raid-Auswahl + Setup (BananaLootRaidSetup.lua); ohne Raid-Daten wie bisher.
-        if BananaLoot_UI.ShowRaidChooser and table.getn(BananaLoot:GetSetupRaids()) > 0 then
-            BananaLoot_UI:ShowRaidChooser()
+        -- Gewaehlten vorbereiteten Raid starten (ohne Auswahl: Raid-Liste).
+        -- Ohne Raid-Daten (BananaLootRaidSetup.lua fehlt) wie bisher direkt starten.
+        if BananaLoot_UI.StartSelectedRaid then
+            BananaLoot_UI:StartSelectedRaid()
         else
             BananaLoot_UI:DoStartRaid(nil)
         end
@@ -401,8 +420,8 @@ raidBtn:SetScript("OnClick", function()
 end)
 
 -- Startet den Raid (raidKey = im Setup gewaehlter Raid oder nil). Rueckgabe: ok.
-function BananaLoot_UI:DoStartRaid(raidKey)
-    local ok, count = BananaLoot:StartRaid(raidKey)
+function BananaLoot_UI:DoStartRaid(raidKey, raidName, preparedId)
+    local ok, count = BananaLoot:StartRaid(raidKey, raidName, preparedId)
     if ok then
         BananaLoot:RaidleadOnRaidStart()
         DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("RAID_STARTED"), count))

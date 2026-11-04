@@ -1,22 +1,28 @@
 -- BananaLootRaidSetup.lua
--- Raid-Setup beim Raid-Start: Raid auswaehlen, dann Hard Reserve (HR), Soft
--- Reserve (Hinweis/Import) und Raid-Roll-Items aus der Beutetabelle des
--- gewaehlten Raids abhaken. Die Auswahl wird pro Raid als Vorlage gespeichert
--- und beim naechsten Start desselben Raids zum Uebernehmen angeboten.
--- Zusaetzlich: Drops-Tab -- im Raid gefallene Items per Klick "kuenftig
--- Raid-Roll" setzen (falls sie versehentlich normal gerollt wurden).
+-- Raids VORBEREITEN und starten.
+--   Optionen > "Neuer Raid": Raid (Instanz) waehlen, dann Hard Reserve (HR),
+--   Soft Reserve (Hinweis/Import) und Raid-Roll-Items aus der Beutetabelle
+--   abhaken (mit Qualitaetsfilter), Raid benennen und speichern. Beliebig
+--   viele Raids koennen vorbereitet werden; im Hauptfenster waehlt man einen
+--   aus und startet ihn mit "Raid starten" (dabei werden HR/Raid-Roll-Listen
+--   gesetzt). Die Auswahl pro Raid-Typ dient zusaetzlich als Vorlage fuer den
+--   naechsten neuen Raid desselben Typs.
+--   Drops-Tab (im laufenden Raid): gefallene Items per Klick "kuenftig Raid-
+--   Roll" setzen, falls sie versehentlich normal gerollt wurden.
 --
 -- Daten:  BananaLootRaidLoot.lua (Raid -> Bosse -> Item-IDs, aus AtlasLoot)
 -- Texte:  LOCALE-Tabellen in BananaLoot.lua (Schluessel SETUP_*)
--- Speicher: BananaLoot_DB.raidTemplates[raidKey] = { hr = {id=true}, rr = {id=true}, savedAt }
---           BananaLoot_DB.raidSession.raidKey / .drops / .dropOrder
+-- Speicher: BananaLoot_DB.preparedRaids = { { id, name, raidKey, hr, rr, created }, ... }
+--           BananaLoot_DB.selectedPreparedRaid = id
+--           BananaLoot_DB.raidTemplates[raidKey] = { hr = {id=true}, rr = {id=true}, savedAt }
+--           BananaLoot_DB.raidSession.raidKey / .raidName / .preparedId / .drops / .dropOrder
 --
 -- Lua 5.0: kein #-Operator, kein %-Operator, kein string.gmatch/match, Events
 -- ueber this/arg1. UI-Zustand liegt in der Tabelle S (Grenze von 200 lokalen
 -- Variablen bzw. 32 Upvalues je Funktion).
 
 local ROW_H = 26
-local NUM_ROWS = 13
+local NUM_ROWS = 12
 local BOSS_ROW_H = 20
 local NUM_BOSS_ROWS = 18
 local MAX_DROPS = 200
@@ -31,12 +37,16 @@ local S = {
     bossIdx = 0,       -- 0 = alle Bosse
     search = "",
     offset = 0,
+    mode = "live",     -- "prepare" (Raid vorbereiten) | "live" (laufender Raid)
+    prepKey = nil,     -- Raid-Key beim Vorbereiten
+    editId = nil,      -- ID eines bearbeiteten vorbereiteten Raids
+    qual = {},         -- aktive Qualitaetsfilter [1..5] = true (leer = alle)
     selHR = {},        -- [itemID] = true (noch nicht angewendet)
     selRR = {},
     entries = {},
     rows = {},
     bossRows = {},
-    setupKey = nil,    -- Raid-Key, falls kein Raid laeuft
+    setupKey = nil,    -- Raid-Key fuer den Live-Modus ohne Raid-Key in der Session
     loading = false,
 }
 BananaLoot_SetupState = S
@@ -140,11 +150,83 @@ function BananaLoot:SaveRaidTemplate(key, hrSet, rrSet)
     BananaLoot_DB.raidTemplates[key] = { hr = CopySet(hrSet), rr = CopySet(rrSet), savedAt = time() }
 end
 
+-- Vorbereitete Raids ---------------------------------------------------
+function BananaLoot:GetPreparedRaids()
+    BananaLoot.EnsureDB()
+    if not BananaLoot_DB.preparedRaids then BananaLoot_DB.preparedRaids = {} end
+    return BananaLoot_DB.preparedRaids
+end
+
+function BananaLoot:GetPreparedRaid(id)
+    if not id then return nil end
+    local list = self:GetPreparedRaids()
+    for i = 1, table.getn(list) do
+        if list[i].id == id then return list[i], i end
+    end
+    return nil
+end
+
+-- Legt einen vorbereiteten Raid an (id = nil) oder aktualisiert ihn. Speichert
+-- zusaetzlich die Auswahl als Vorlage des Raid-Typs. Rueckgabe: Eintrag.
+function BananaLoot:SavePreparedRaid(id, name, key, hrSet, rrSet)
+    local list = self:GetPreparedRaids()
+    local entry = self:GetPreparedRaid(id)
+    if not entry then
+        BananaLoot_DB.nextPreparedId = (BananaLoot_DB.nextPreparedId or 0) + 1
+        entry = { id = BananaLoot_DB.nextPreparedId, created = time() }
+        table.insert(list, entry)
+    end
+    entry.name = name
+    entry.raidKey = key
+    entry.hr = CopySet(hrSet)
+    entry.rr = CopySet(rrSet)
+    self:SaveRaidTemplate(key, hrSet, rrSet)
+    return entry
+end
+
+function BananaLoot:DeletePreparedRaid(id)
+    local e, idx = self:GetPreparedRaid(id)
+    if not e then return false end
+    table.remove(self:GetPreparedRaids(), idx)
+    if BananaLoot_DB.selectedPreparedRaid == id then BananaLoot_DB.selectedPreparedRaid = nil end
+    return true
+end
+
+function BananaLoot:SelectPreparedRaid(id)
+    BananaLoot.EnsureDB()
+    BananaLoot_DB.selectedPreparedRaid = id
+end
+
+function BananaLoot:GetSelectedPreparedRaid()
+    BananaLoot.EnsureDB()
+    return self:GetPreparedRaid(BananaLoot_DB.selectedPreparedRaid)
+end
+
+-- Name des laufenden bzw. ausgewaehlten Raids (nil, wenn keiner).
+function BananaLoot:GetSelectedRaidLabel()
+    local session = self:GetRaidSession()
+    if session and session.running then
+        return session.raidName or self:GetSetupRaidName(session.raidKey)
+    end
+    local e = self:GetSelectedPreparedRaid()
+    if e then return e.name end
+    return nil
+end
+
+-- Ueberschrift im Hauptfenster (siehe BananaLoot_UI:RefreshSR).
+function BananaLoot:GetRaidHeadline()
+    local label = self:GetSelectedRaidLabel()
+    if label then return label end
+    local saved = self:GetCurrentRaidName()
+    if saved and saved ~= "" then return saved end
+    return "|cff888888" .. self:L("SETUP_SELECT_NONE") .. "|r"
+end
+
 -- Wendet eine Auswahl auf die HR- und Raid-Roll-Liste an und speichert sie als
 -- Vorlage. Nur Items des Raids (Pool) werden angefasst: abgehakte kommen auf die
 -- Liste, nicht (mehr) abgehakte werden von dieser Liste entfernt. Bankreserve-
 -- Items bleiben unberuehrt. Rueckgabe: Anzahl HR, Anzahl Raid-Roll.
-function BananaLoot:ApplyRaidSetup(key, selHR, selRR)
+function BananaLoot:ApplyRaidSetup(key, selHR, selRR, noTemplate)
     local pool = self:GetSetupPool(key)
     local nHR, nRR = 0, 0
     for id in pairs(pool) do
@@ -167,7 +249,7 @@ function BananaLoot:ApplyRaidSetup(key, selHR, selRR)
             end
         end
     end
-    self:SaveRaidTemplate(key, hrKeep, rrKeep)
+    if not noTemplate then self:SaveRaidTemplate(key, hrKeep, rrKeep) end
     return nHR, nRR
 end
 
@@ -208,6 +290,14 @@ function BananaLoot:MarkRaidRollNextTime(id, link)
     end
     tpl.hr[id] = nil
     tpl.rr[id] = true
+    -- Auch der gestartete vorbereitete Raid merkt es sich fuer den naechsten Start.
+    if session and session.preparedId then
+        local pe = self:GetPreparedRaid(session.preparedId)
+        if pe then
+            pe.hr[id] = nil
+            pe.rr[id] = true
+        end
+    end
     S.selHR[id] = nil
     S.selRR[id] = true
     return true
@@ -215,6 +305,7 @@ end
 
 -- Aktueller Raid-Key: laufender Raid, sonst im Setup gewaehlter Raid.
 function S.GetKey()
+    if S.mode == "prepare" then return S.prepKey end
     local session = BananaLoot:GetRaidSession()
     if session and session.running and session.raidKey then return session.raidKey end
     return S.setupKey
@@ -279,7 +370,7 @@ local function MakeWindow(name, w, h)
 end
 
 -- ------------------------------------------------------------
--- 2a) Raid-Auswahl (beim Klick auf "Raid starten")
+-- 2a) Raid-Auswahl (Optionen > Neuer Raid)
 -- ------------------------------------------------------------
 local CH_COLS, CH_BTN_W, CH_BTN_H = 2, 170, 28
 
@@ -288,15 +379,10 @@ S.chooser.hint = S.chooser:CreateFontString(nil, "OVERLAY", "GameFontDisableSmal
 S.chooser.hint:SetPoint("TOP", S.chooser, "TOP", 0, -40)
 S.chooser.hint:SetWidth(350)
 S.chooser.btns = {}
-S.chooser.noneBtn = MakeButton("BananaLootRaidChooserNone", S.chooser, 350, 24)
 S.chooser.cancelBtn = MakeButton("BananaLootRaidChooserCancel", S.chooser, 120, 22)
 S.chooser.cancelBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     S.chooser:Hide()
-end)
-S.chooser.noneBtn:SetScript("OnClick", function()
-    BananaLoot:PlayClickSound()
-    S.OnRaidPicked(nil)
 end)
 
 function S.BuildChooser()
@@ -325,41 +411,33 @@ function S.BuildChooser()
     end
     for i = n + 1, table.getn(S.chooser.btns) do S.chooser.btns[i]:Hide() end
     local rows = math.ceil(n / CH_COLS)
-    local y = 64 + rows * (CH_BTN_H + 4) + 6
-    S.chooser.noneBtn:ClearAllPoints()
-    S.chooser.noneBtn:SetPoint("TOPLEFT", S.chooser, "TOPLEFT", 25, -y)
+    local y = 64 + rows * (CH_BTN_H + 4) + 8
     S.chooser.cancelBtn:ClearAllPoints()
-    S.chooser.cancelBtn:SetPoint("TOP", S.chooser, "TOP", 0, -(y + 32))
-    S.chooser:SetHeight(y + 66)
-    S.chooser.title:SetText(BananaLoot:L(S.chooserMode == "setup" and "SETUP_CHOOSE_TITLE_SETUP" or "SETUP_CHOOSE_TITLE"))
+    S.chooser.cancelBtn:SetPoint("TOP", S.chooser, "TOP", 0, -y)
+    S.chooser:SetHeight(y + 40)
+    local titleKey = (S.chooserMode == "live") and "SETUP_CHOOSE_TITLE_LIVE" or "SETUP_CHOOSE_TITLE"
+    S.chooser.title:SetText(BananaLoot:L(titleKey))
     S.chooser.hint:SetText(BananaLoot:L("SETUP_CHOOSE_HINT"))
-    S.chooser.noneBtn:SetText(BananaLoot:L(S.chooserMode == "setup" and "SETUP_CHOOSE_NONE_SETUP" or "SETUP_CHOOSE_NONE"))
     S.chooser.cancelBtn:SetText(BananaLoot:L("SETUP_CANCEL"))
 end
 
--- Raid im Auswahlfenster angeklickt (key = nil: ohne Vorlage).
+-- Raid im Auswahlfenster angeklickt.
 function S.OnRaidPicked(key)
     S.chooser:Hide()
-    if S.chooserMode == "setup" then
-        if not key then return end
+    if not key then return end
+    S.PrefetchRaid(key)
+    if S.chooserMode == "live" then
         S.setupKey = key
         local session = BananaLoot:GetRaidSession()
         if session and session.running then session.raidKey = key end
+        S.mode = "live"
         S.LoadFromCurrent(key)
         S.tab = "HR"
         S.bossIdx = 0
-        S.PrefetchRaid(key)
         S.Open()
         return
     end
-    if BananaLoot_UI and BananaLoot_UI.DoStartRaid then
-        if not BananaLoot_UI:DoStartRaid(key) then return end
-    end
-    if not key then return end
-    S.setupKey = key
-    S.bossIdx = 0
-    S.tab = "HR"
-    S.PrefetchRaid(key)
+    -- Vorbereiten: Vorlage des letzten Raids dieses Typs anbieten
     local tpl = BananaLoot:GetRaidTemplate(key)
     if tpl and (CountSet(tpl.hr) + CountSet(tpl.rr)) > 0 then
         S.pendingKey = key
@@ -370,8 +448,7 @@ function S.OnRaidPicked(key)
         d.button2 = BananaLoot:L("SETUP_TEMPLATE_NO")
         StaticPopup_Show("BANANALOOT_SETUP_TEMPLATE")
     else
-        S.LoadFromCurrent(key)
-        S.Open()
+        S.BeginPrepare(key, nil, nil)
     end
 end
 
@@ -386,24 +463,41 @@ function S.PrefetchRaid(key)
     end
 end
 
+-- Standardname eines neuen Raids: "<Raid> <TT.MM.JJ>".
+function S.DefaultName(key)
+    local d = ""
+    if date then d = " " .. date("%d.%m.%y") end
+    return (BananaLoot:GetSetupRaidName(key) or "Raid") .. d
+end
+
+-- Raid vorbereiten starten (neuer Raid: id/entry = nil; sonst bearbeiten).
+function S.BeginPrepare(key, tpl, entry)
+    S.mode = "prepare"
+    S.prepKey = key
+    S.editId = entry and entry.id or nil
+    S.selHR, S.selRR = {}, {}
+    local src = entry or tpl
+    if src then
+        S.selHR = CopySet(src.hr)
+        S.selRR = CopySet(src.rr)
+    end
+    S.prepName = entry and entry.name or S.DefaultName(key)
+    S.tab = "HR"
+    S.bossIdx = 0
+    S.Open()
+end
+
 StaticPopupDialogs["BANANALOOT_SETUP_TEMPLATE"] = {
     text = "",
     button1 = "",
     button2 = "",
     OnAccept = function()
         local key = S.pendingKey
-        local tpl = BananaLoot:GetRaidTemplate(key)
-        if not key or not tpl then return end
-        local nHR, nRR = BananaLoot:ApplyRaidSetup(key, tpl.hr, tpl.rr)
-        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("SETUP_TEMPLATE_APPLIED"),
-            BananaLoot:GetSetupRaidName(key), nHR, nRR))
-        if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+        if key then S.BeginPrepare(key, BananaLoot:GetRaidTemplate(key), nil) end
     end,
     OnCancel = function()
-        if S.pendingKey then
-            S.LoadFromCurrent(S.pendingKey)
-            S.Open()
-        end
+        local key = S.pendingKey
+        if key then S.BeginPrepare(key, nil, nil) end
     end,
     timeout = 0,
     whileDead = true,
@@ -435,6 +529,22 @@ for i = 1, table.getn(TAB_KEYS) do
     end)
     S.tabBtns[i] = b
 end
+
+-- Raid-Name (nur beim Vorbereiten), rechts neben den drei Tabs
+F.nameLabel = F:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+F.nameLabel:SetPoint("TOPLEFT", F, "TOPLEFT", 490, -66)
+F.nameBox = CreateFrame("EditBox", "BananaLootRaidSetupName", F, "InputBoxTemplate")
+F.nameBox:SetWidth(150)
+F.nameBox:SetHeight(22)
+F.nameBox:SetPoint("LEFT", F.nameLabel, "RIGHT", 12, 0)
+F.nameBox:SetAutoFocus(false)
+F.nameBox:SetMaxLetters(40)
+F.nameBox:SetScript("OnEscapePressed", function() this:ClearFocus() end)
+F.nameBox:SetScript("OnEnterPressed", function() this:ClearFocus() end)
+F.nameBox:SetScript("OnTextChanged", function()
+    if S.loading then return end
+    S.prepName = this:GetText() or ""
+end)
 
 -- Linke Spalte: Bosse
 F.left = CreateFrame("Frame", "BananaLootRaidSetupBosses", F)
@@ -474,7 +584,7 @@ for i = 1, NUM_BOSS_ROWS do
     S.bossRows[i] = r
 end
 
--- Rechte Seite: Suche + Liste
+-- Rechte Seite: Suche, Qualitaetsfilter, Liste
 F.searchLabel = F:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 F.searchLabel:SetPoint("TOPLEFT", F, "TOPLEFT", 240, -102)
 
@@ -497,10 +607,39 @@ F.countText = F:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 F.countText:SetPoint("TOPRIGHT", F, "TOPRIGHT", -34, -106)
 F.countText:SetJustifyH("RIGHT")
 
+-- Qualitaetsfilter: Weiss / Gruen / Blau / Episch / Orange (Mehrfachauswahl,
+-- keine Auswahl = alle Qualitaeten)
+F.qualLabel = F:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+F.qualLabel:SetPoint("TOPLEFT", F, "TOPLEFT", 240, -132)
+S.qualBtns = {}
+local QUAL_KEYS = { "SETUP_QUAL_1", "SETUP_QUAL_2", "SETUP_QUAL_3", "SETUP_QUAL_4", "SETUP_QUAL_5" }
+for q = 1, 5 do
+    local b = MakeButton("BananaLootRaidSetupQual" .. q, F, 66, 20)
+    b:SetPoint("TOPLEFT", F, "TOPLEFT", 306 + (q - 1) * 68, -129)
+    b.q = q
+    b.sel = b:CreateTexture(nil, "OVERLAY")
+    b.sel:SetAllPoints(b)
+    b.sel:SetTexture(1, 0.82, 0, 0.35)
+    b.sel:Hide()
+    b:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        if S.qual[this.q] then S.qual[this.q] = nil else S.qual[this.q] = true end
+        S.offset = 0
+        S.Refresh()
+    end)
+    b:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(this, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(BananaLoot:L("SETUP_QUAL_TIP"), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    S.qualBtns[q] = b
+end
+
 F.list = CreateFrame("Frame", "BananaLootRaidSetupList", F)
 F.list:SetWidth(440)
 F.list:SetHeight(NUM_ROWS * ROW_H)
-F.list:SetPoint("TOPLEFT", F, "TOPLEFT", 234, -128)
+F.list:SetPoint("TOPLEFT", F, "TOPLEFT", 234, -156)
 F.list:EnableMouseWheel(true)
 
 F.slider = CreateFrame("Slider", "BananaLootRaidSetupSlider", F, "UIPanelScrollBarTemplate")
@@ -653,6 +792,26 @@ function S.Blocked(id)
     return nil
 end
 
+-- Qualitaetsfilter: true, wenn das Item angezeigt werden soll.
+function S.QualityOK(id)
+    local any = false
+    for q = 1, 5 do
+        if S.qual[q] then any = true end
+    end
+    if not any then return true end
+    local _, quality = BananaLoot:SetupItemInfo(id)
+    return S.qual[quality] == true
+end
+
+function S.ItemVisible(id)
+    if not S.QualityOK(id) then return false end
+    if S.search ~= "" then
+        local nm = string.lower((BananaLoot:SetupItemInfo(id)))
+        if not string.find(nm, S.search, 1, true) then return false end
+    end
+    return true
+end
+
 function S.BuildEntries()
     local entries = {}
     if S.tab == "DROPS" then
@@ -662,13 +821,8 @@ function S.BuildEntries()
             for i = table.getn(order), 1, -1 do
                 local id = order[i]
                 local d = session.drops and session.drops[id]
-                if d then
-                    local ok = true
-                    if S.search ~= "" then
-                        local nm = string.lower(BananaLoot:SetupItemInfo(id))
-                        ok = string.find(nm, S.search, 1, true) ~= nil
-                    end
-                    if ok then table.insert(entries, { kind = "drop", id = id, link = d.link, icon = d.icon }) end
+                if d and S.ItemVisible(id) then
+                    table.insert(entries, { kind = "drop", id = id, link = d.link, icon = d.icon })
                 end
             end
         end
@@ -684,12 +838,9 @@ function S.BuildEntries()
             local items = {}
             for i = 1, table.getn(ids) do
                 local id = ids[i]
-                local ok = true
-                if S.search ~= "" then
-                    local nm = string.lower(BananaLoot:SetupItemInfo(id))
-                    ok = string.find(nm, S.search, 1, true) ~= nil
+                if S.ItemVisible(id) then
+                    table.insert(items, { kind = "item", id = id, boss = b })
                 end
-                if ok then table.insert(items, { kind = "item", id = id, boss = b }) end
             end
             if table.getn(items) > 0 then
                 if first ~= last then
@@ -702,7 +853,7 @@ function S.BuildEntries()
     S.entries = entries
 end
 
-local function SetRowTexture(r, id, iconName)
+local function SetRowTexture(r, iconName)
     if iconName then
         r.icon:SetTexture("Interface\\Icons\\" .. iconName)
     else
@@ -736,7 +887,7 @@ function S.UpdateRows()
                 local name, quality, icon = BananaLoot:SetupItemInfo(e.id)
                 if not icon and e.icon then icon = string.gsub(e.icon, "^Interface\\Icons\\", "") end
                 r.icon:Show()
-                SetRowTexture(r, e.id, icon)
+                SetRowTexture(r, icon)
                 r.text:ClearAllPoints()
                 r.text:SetPoint("LEFT", r.icon, "RIGHT", 6, 0)
                 local color = "|cff" .. (QUALITY_HEX[quality] or "ffffff")
@@ -799,12 +950,20 @@ function S.UpdateBossRows()
     end
 end
 
+-- Tabs, die im aktuellen Modus verfuegbar sind (Drops nur im laufenden Raid).
+function S.TabCount()
+    if S.mode == "prepare" then return 3 end
+    return 4
+end
+
 function S.Refresh()
     if not F:IsShown() then return end
+    local prepare = (S.mode == "prepare")
+    if prepare and S.tab == "DROPS" then S.tab = "HR" end
     local key = S.GetKey()
     local raidName = BananaLoot:GetSetupRaidName(key)
     if raidName then
-        F.title:SetText(string.format(BananaLoot:L("SETUP_TITLE"), raidName))
+        F.title:SetText(string.format(BananaLoot:L(prepare and "SETUP_TITLE_PREP" or "SETUP_TITLE"), raidName))
     else
         F.title:SetText(BananaLoot:L("SETUP_TITLE_NONE"))
     end
@@ -813,14 +972,34 @@ function S.Refresh()
         local label = BananaLoot:L(tabNames[i])
         if S.tab == TAB_KEYS[i] then label = "|cffffd100" .. label .. "|r" end
         S.tabBtns[i]:SetText(label)
+        if i <= S.TabCount() then S.tabBtns[i]:Show() else S.tabBtns[i]:Hide() end
+    end
+    if prepare then
+        F.nameLabel:SetText(BananaLoot:L("SETUP_NAME_LABEL"))
+        F.nameLabel:Show()
+        F.nameBox:Show()
+        if F.nameBox:GetText() ~= S.prepName then
+            S.loading = true
+            F.nameBox:SetText(S.prepName or "")
+            S.loading = false
+        end
+    else
+        F.nameLabel:Hide()
+        F.nameBox:Hide()
     end
     F.hint:SetText(BananaLoot:L("SETUP_HINT_" .. S.tab))
     F.searchLabel:SetText(BananaLoot:L("SETUP_SEARCH"))
+    F.qualLabel:SetText(BananaLoot:L("SETUP_QUAL_LABEL"))
+    for q = 1, 5 do
+        local c = QUALITY_HEX[q]
+        S.qualBtns[q]:SetText("|cff" .. c .. BananaLoot:L(QUAL_KEYS[q]) .. "|r")
+        if S.qual[q] then S.qualBtns[q].sel:Show() else S.qualBtns[q].sel:Hide() end
+    end
     F.allBtn:SetText(BananaLoot:L("SETUP_BTN_ALL"))
     F.noneBtn:SetText(BananaLoot:L("SETUP_BTN_NONE"))
     F.backBtn:SetText(BananaLoot:L("SETUP_BTN_BACK"))
     F.nextBtn:SetText(BananaLoot:L("SETUP_BTN_NEXT"))
-    F.applyBtn:SetText(BananaLoot:L("SETUP_BTN_APPLY"))
+    F.applyBtn:SetText(BananaLoot:L(prepare and "SETUP_BTN_SAVE" or "SETUP_BTN_APPLY"))
     F.srImportBtn:SetText(BananaLoot:L("SETUP_SR_IMPORT"))
     F.srOpenBtn:SetText(BananaLoot:L("SETUP_SR_OPEN"))
 
@@ -830,12 +1009,16 @@ function S.Refresh()
     if isSR then F.srPane:Show() else F.srPane:Hide() end
     if isSR then
         F.list:Hide(); F.slider:Hide(); F.searchBox:Hide(); F.searchLabel:Hide(); F.countText:Hide(); F.left:Hide()
+        F.qualLabel:Hide()
+        for q = 1, 5 do S.qualBtns[q]:Hide() end
         F.srText:SetText(BananaLoot:L("SETUP_SR_TEXT"))
         local n = 0
         for _ in pairs(BananaLoot.reservations or {}) do n = n + 1 end
         F.srCount:SetText(string.format(BananaLoot:L("SETUP_SR_COUNT"), n))
     else
         F.list:Show(); F.slider:Show(); F.searchBox:Show(); F.searchLabel:Show(); F.countText:Show(); F.left:Show()
+        F.qualLabel:Show()
+        for q = 1, 5 do S.qualBtns[q]:Show() end
         if isPick then
             F.leftHint:SetText("")
             S.UpdateBossRows()
@@ -859,13 +1042,13 @@ function S.Refresh()
         else
             F.countText:SetText(string.format(BananaLoot:L("SETUP_COUNT_DROPS"), n))
         end
-        if n == 0 then
-            F.leftHint:SetText(F.leftHint:GetText() .. (isDrops and "\n\n" .. BananaLoot:L("SETUP_DROPS_EMPTY") or ""))
+        if n == 0 and isDrops then
+            F.leftHint:SetText(F.leftHint:GetText() .. "\n\n" .. BananaLoot:L("SETUP_DROPS_EMPTY"))
         end
     end
     if isPick then F.allBtn:Show(); F.noneBtn:Show() else F.allBtn:Hide(); F.noneBtn:Hide() end
     if S.tab == "HR" then F.backBtn:Hide() else F.backBtn:Show() end
-    if S.tab == "DROPS" then F.nextBtn:Hide() else F.nextBtn:Show() end
+    if S.tab == TAB_KEYS[S.TabCount()] then F.nextBtn:Hide() else F.nextBtn:Show() end
 end
 
 function S.SetTab(tab)
@@ -881,7 +1064,7 @@ function S.Step(dir)
     end
     idx = idx + dir
     if idx < 1 then idx = 1 end
-    if idx > table.getn(TAB_KEYS) then idx = table.getn(TAB_KEYS) end
+    if idx > S.TabCount() then idx = S.TabCount() end
     S.SetTab(TAB_KEYS[idx])
 end
 
@@ -947,11 +1130,29 @@ function S.OnDropAction(id)
     S.Refresh()
 end
 
--- Auswahl anwenden und als Vorlage des Raids speichern.
+local function Trim(str)
+    local t = string.gsub(str or "", "^%s*(.-)%s*$", "%1")
+    return t
+end
+
+-- Prepare: Raid speichern. Live: Auswahl auf die Listen anwenden.
 function S.Apply(close)
     local key = S.GetKey()
     if not key then
         if close then F:Hide() end
+        return
+    end
+    if S.mode == "prepare" then
+        local name = Trim(S.prepName)
+        if name == "" then name = S.DefaultName(key) end
+        local entry = BananaLoot:SavePreparedRaid(S.editId, name, key, S.selHR, S.selRR)
+        S.editId = entry.id
+        BananaLoot:SelectPreparedRaid(entry.id)
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("SETUP_SAVED"),
+            name, BananaLoot:GetSetupRaidName(key), CountSet(entry.hr), CountSet(entry.rr)))
+        if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+        if BananaLoot_UI and BananaLoot_UI.RefreshRaidPicker then BananaLoot_UI:RefreshRaidPicker() end
+        F:Hide()
         return
     end
     local nHR, nRR = BananaLoot:ApplyRaidSetup(key, S.selHR, S.selRR)
@@ -967,41 +1168,257 @@ function S.Open()
     S.search = ""
     S.loading = false
     S.offset = 0
+    S.qual = {}
     F:Show()
     S.Refresh()
 end
 
 F:SetScript("OnShow", function() S.Refresh() end)
 
+-- ------------------------------------------------------------
+-- 2d) Raid-Verwaltung: vorbereitete Raids auswaehlen / bearbeiten / loeschen
+-- ------------------------------------------------------------
+local P = { offset = 0, rows = {} }
+local PROWS, PROW_H = 8, 36
+P.frame = MakeWindow("BananaLootRaidPicker", 560, 440)
+local PF = P.frame
+PF.hint = PF:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+PF.hint:SetPoint("TOP", PF, "TOP", 0, -38)
+PF.hint:SetWidth(500)
+PF.empty = PF:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+PF.empty:SetPoint("TOP", PF, "TOP", 0, -120)
+PF.empty:SetWidth(460)
+PF.more = PF:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+PF.more:SetPoint("BOTTOM", PF, "BOTTOM", 0, 62)
+
+PF.list = CreateFrame("Frame", "BananaLootRaidPickerList", PF)
+PF.list:SetWidth(520)
+PF.list:SetHeight(PROWS * PROW_H)
+PF.list:SetPoint("TOPLEFT", PF, "TOPLEFT", 20, -62)
+PF.list:EnableMouseWheel(true)
+PF.list:SetScript("OnMouseWheel", function()
+    P.offset = P.offset - arg1
+    P.Refresh()
+end)
+
+for i = 1, PROWS do
+    local r = CreateFrame("Button", "BananaLootRaidPickerRow" .. i, PF.list)
+    r:SetWidth(520)
+    r:SetHeight(PROW_H - 2)
+    r:SetPoint("TOPLEFT", PF.list, "TOPLEFT", 0, -(i - 1) * PROW_H)
+    r:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+    r.sel = r:CreateTexture(nil, "BACKGROUND")
+    r.sel:SetAllPoints(r)
+    r.sel:SetTexture(1, 0.82, 0, 0.25)
+    r.sel:Hide()
+    r.name = r:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    r.name:SetPoint("TOPLEFT", r, "TOPLEFT", 8, -4)
+    r.name:SetWidth(330)
+    r.name:SetJustifyH("LEFT")
+    r.info = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    r.info:SetPoint("TOPLEFT", r, "TOPLEFT", 8, -19)
+    r.info:SetWidth(330)
+    r.info:SetJustifyH("LEFT")
+    r.editBtn = MakeButton("BananaLootRaidPickerEdit" .. i, r, 90, 20)
+    r.editBtn:SetPoint("RIGHT", r, "RIGHT", -80, 0)
+    r.delBtn = MakeButton("BananaLootRaidPickerDel" .. i, r, 74, 20)
+    r.delBtn:SetPoint("RIGHT", r, "RIGHT", -2, 0)
+    r:SetScript("OnClick", function()
+        if this.raidId then
+            BananaLoot:PlayClickSound()
+            BananaLoot:SelectPreparedRaid(this.raidId)
+            P.Refresh()
+            if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+        end
+    end)
+    r.editBtn:SetScript("OnClick", function()
+        local row = this:GetParent()
+        local e = BananaLoot:GetPreparedRaid(row.raidId)
+        if not e then return end
+        BananaLoot:PlayClickSound()
+        BananaLoot:SelectPreparedRaid(e.id)
+        S.PrefetchRaid(e.raidKey)
+        S.BeginPrepare(e.raidKey, nil, e)
+    end)
+    r.delBtn:SetScript("OnClick", function()
+        local row = this:GetParent()
+        local e = BananaLoot:GetPreparedRaid(row.raidId)
+        if not e then return end
+        BananaLoot:PlayClickSound()
+        P.pendingDelete = e.id
+        local d = StaticPopupDialogs["BANANALOOT_DELETE_PREPARED"]
+        d.text = string.format(BananaLoot:L("SETUP_DELETE_ASK"), e.name or "?")
+        d.button1 = BananaLoot:L("UI_POPUP_YES")
+        d.button2 = BananaLoot:L("UI_POPUP_CANCEL")
+        StaticPopup_Show("BANANALOOT_DELETE_PREPARED")
+    end)
+    P.rows[i] = r
+end
+
+StaticPopupDialogs["BANANALOOT_DELETE_PREPARED"] = {
+    text = "",
+    button1 = "",
+    button2 = "",
+    OnAccept = function()
+        if P.pendingDelete then BananaLoot:DeletePreparedRaid(P.pendingDelete) end
+        P.pendingDelete = nil
+        P.Refresh()
+        if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+PF.newBtn = MakeButton("BananaLootRaidPickerNew", PF, 150, 26)
+PF.newBtn:SetPoint("BOTTOMLEFT", PF, "BOTTOMLEFT", 20, 22)
+PF.newBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot_UI:ShowRaidChooser()
+end)
+PF.startBtn = MakeButton("BananaLootRaidPickerStart", PF, 150, 26)
+PF.startBtn:SetPoint("LEFT", PF.newBtn, "RIGHT", 8, 0)
+PF.startBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    local e = BananaLoot:GetSelectedPreparedRaid()
+    if e and BananaLoot_UI:StartPreparedRaid(e.id) then PF:Hide() end
+end)
+PF.quickBtn = MakeButton("BananaLootRaidPickerQuick", PF, 190, 26)
+PF.quickBtn:SetPoint("LEFT", PF.startBtn, "RIGHT", 8, 0)
+PF.quickBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI:DoStartRaid(nil) then PF:Hide() end
+end)
+
+function P.Refresh()
+    if not PF:IsShown() then return end
+    local list = BananaLoot:GetPreparedRaids()
+    local n = table.getn(list)
+    local maxOff = math.max(0, n - PROWS)
+    if P.offset > maxOff then P.offset = maxOff end
+    if P.offset < 0 then P.offset = 0 end
+    local selId = BananaLoot_DB and BananaLoot_DB.selectedPreparedRaid
+    PF.title:SetText(BananaLoot:L("SETUP_PICK_TITLE"))
+    PF.hint:SetText(BananaLoot:L("SETUP_PICK_HINT"))
+    for i = 1, PROWS do
+        local r = P.rows[i]
+        local e = list[n - P.offset - i + 1]   -- neueste zuerst
+        if e then
+            r.raidId = e.id
+            r.name:SetText(e.name or "?")
+            r.info:SetText(string.format(BananaLoot:L("SETUP_PICK_ROW"),
+                BananaLoot:GetSetupRaidName(e.raidKey) or "?", CountSet(e.hr), CountSet(e.rr)))
+            r.editBtn:SetText(BananaLoot:L("SETUP_PICK_EDIT"))
+            r.delBtn:SetText(BananaLoot:L("SETUP_PICK_DELETE"))
+            if e.id == selId then r.sel:Show() else r.sel:Hide() end
+            r:Show()
+        else
+            r.raidId = nil
+            r:Hide()
+        end
+    end
+    if n == 0 then PF.empty:SetText(BananaLoot:L("SETUP_PICK_EMPTY")) else PF.empty:SetText("") end
+    if n > PROWS then PF.more:SetText(string.format(BananaLoot:L("SETUP_PICK_MORE"), n)) else PF.more:SetText("") end
+    PF.newBtn:SetText(BananaLoot:L("SETUP_PICK_NEW"))
+    PF.startBtn:SetText(BananaLoot:L("SETUP_PICK_START"))
+    PF.quickBtn:SetText(BananaLoot:L("SETUP_PICK_QUICK"))
+    local running = BananaLoot:IsRaidRunning()
+    if BananaLoot:GetSelectedPreparedRaid() and not running then PF.startBtn:Enable() else PF.startBtn:Disable() end
+    if running then PF.quickBtn:Disable() else PF.quickBtn:Enable() end
+end
+PF:SetScript("OnShow", function() P.Refresh() end)
+
 -- ============================================================
 -- 3) OEFFENTLICHE EINSTIEGSPUNKTE
 -- ============================================================
 
--- Raid-Auswahl vor dem Raid-Start (Button "Raid starten").
+-- Raid vorbereiten (Optionen > Neuer Raid): zuerst die Raid-Auswahl.
 function BananaLoot_UI:ShowRaidChooser()
-    S.chooserMode = "start"
+    if not BananaLoot_RaidLoot then return end
+    S.chooserMode = "prepare"
     S.BuildChooser()
     S.chooser:Show()
 end
 
--- Setup-Fenster oeffnen (Button im Seitenmenue, /bl setup). Ohne bekannten Raid
--- zuerst die Raid-Auswahl.
+-- Setup-Fenster (Seitenmenue-Button, /bl setup): im laufenden Raid die Listen
+-- des Raids bearbeiten, sonst einen neuen Raid vorbereiten.
 function BananaLoot_UI:ShowRaidSetup(tab)
     if not BananaLoot_RaidLoot then return end
-    local key = S.GetKey()
+    local session = BananaLoot:GetRaidSession()
+    if not (session and session.running) then
+        BananaLoot_UI:ShowRaidChooser()
+        return
+    end
+    local key = session.raidKey or S.setupKey
     if not key then
-        S.chooserMode = "setup"
+        S.chooserMode = "live"
         S.BuildChooser()
         S.chooser:Show()
         return
     end
+    S.mode = "live"
     S.LoadFromCurrent(key)
     S.tab = tab or "HR"
     S.bossIdx = 0
     S.Open()
 end
 
+-- Liste der vorbereiteten Raids (Hauptfenster-Ueberschrift, Seitenmenue).
+function BananaLoot_UI:ShowRaidPicker()
+    P.offset = 0
+    PF:Show()
+    P.Refresh()
+end
+
+function BananaLoot_UI:RefreshRaidPicker()
+    P.Refresh()
+end
+
+-- Startet den im Hauptfenster gewaehlten Raid; ohne Auswahl die Raid-Liste.
+function BananaLoot_UI:StartSelectedRaid()
+    local e = BananaLoot:GetSelectedPreparedRaid()
+    if e then
+        BananaLoot_UI:StartPreparedRaid(e.id)
+    else
+        BananaLoot_UI:ShowRaidPicker()
+    end
+end
+
+-- Vorbereiteten Raid starten: HR-/Raid-Roll-Listen setzen, Raid starten.
+function BananaLoot_UI:StartPreparedRaid(id)
+    local e = BananaLoot:GetPreparedRaid(id)
+    if not e or BananaLoot:IsRaidRunning() then return false end
+    local nHR, nRR = BananaLoot:ApplyRaidSetup(e.raidKey, e.hr, e.rr, true)
+    if not BananaLoot_UI:DoStartRaid(e.raidKey, e.name, e.id) then return false end
+    BananaLoot:SetCurrentRaidName(e.name)
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("SETUP_STARTED"), e.name, nHR, nRR))
+    S.PrefetchRaid(e.raidKey)
+    if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+    return true
+end
+
 function BananaLoot_UI:ApplyLocaleSetup()
     if F:IsShown() then S.Refresh() end
     if S.chooser:IsShown() then S.BuildChooser() end
+    if PF:IsShown() then P.Refresh() end
+end
+
+-- Die Ueberschrift im Hauptfenster (Raid-Name) ist anklickbar und oeffnet die
+-- Liste der vorbereiteten Raids.
+local srMain = getglobal("BananaLootSRFrame")
+if srMain then
+    local headBtn = CreateFrame("Button", "BananaLootSRHeadlineBtn", srMain)
+    headBtn:SetWidth(300)
+    headBtn:SetHeight(26)
+    headBtn:SetPoint("TOP", srMain, "TOP", 0, -58)
+    headBtn:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        BananaLoot_UI:ShowRaidPicker()
+    end)
+    headBtn:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(headBtn, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(BananaLoot:L("SETUP_SELECT_TIP"), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    headBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end

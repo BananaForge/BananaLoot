@@ -442,11 +442,13 @@ optResetBtn:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -252)
 RegisterLocaleText(optResetBtn, "UI_BTN_NEW_RAID")
 optResetBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
-    if StaticPopup_Show then
+    -- Neuer Raid = Raid VORBEREITEN (Raid waehlen, Hard Reserve / Raid-Roll
+    -- abhaken, benennen, speichern; siehe BananaLootRaidSetup.lua). Das
+    -- Leeren der Reservierungen geht weiterhin per "/bl reset".
+    if BananaLoot_UI and BananaLoot_UI.ShowRaidChooser then
+        BananaLoot_UI:ShowRaidChooser()
+    elseif StaticPopup_Show then
         StaticPopup_Show("BANANALOOT_CONFIRM_RESET")
-    else
-        BananaLoot:ClearAllReservations()
-        if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
     end
 end)
 

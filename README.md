@@ -321,26 +321,34 @@ BananaLoot never talks to the internet on its own.
   correctly colored item name and icon immediately, instead of just
   "Item #12345" until the item actually drops
 
-### Raid setup on raid start
+### Prepare raids ahead of time
 
-- "Start raid" first asks **which raid** you are starting (MC, Onyxia, BWL, ZG,
-  AQ20, AQ40, Naxxramas, Emerald Sanctum, Karazhan Halls, Timbermaw Hold, UBRS)
-- The **Raid Setup** window then guides you through three steps:
-  1. **Hard Reserve** – tick the items of the raid's loot tables (grouped by
+- **Options > Management > New Raid** prepares a raid before it starts:
+  1. Pick the **raid** (MC, Onyxia, BWL, ZG, AQ20, AQ40, Naxxramas, Emerald
+     Sanctum, Karazhan Halls, Timbermaw Hold, UBRS)
+  2. **Hard Reserve** – tick the items of the raid's loot tables (grouped by
      boss, with icon, quality color and the item tooltip on mouse-over; search
      field and select all/none per boss)
-  2. **Soft Reserve** – reminder: SR comes in by whisper or by importing the
+  3. **Soft Reserve** – reminder: SR comes in by whisper or by importing the
      raid request link (buttons to open the import / SR window)
-  3. **Raid Roll** – tick the items that are raid-rolled right from the start
-- Everything you tick is put on the Hard Reserve / Raid Roll list; items stay
-  on exactly one list (Bank Reserve > Hard Reserve > Raid Roll)
-- The selection is **saved per raid**. Next time you start the same raid,
-  BananaLoot asks whether to reuse it, so you only do the work once
-- **Drops tab:** shows the items that dropped in the running raid. Rolled one
+  4. **Raid Roll** – tick the items that are raid-rolled right from the start
+  5. Name the raid (default "<Raid> <date>") and save it
+- **Quality filter** (White / Green / Blue / Epic / Orange, several at once):
+  "All" / "None" act on the visible items only, so "Green" + "All" puts every
+  green item on the Raid Roll list with one click
+- Prepare **as many raids as you like**, e.g. "Molten Core 13.05.28" and
+  "BWL 05.10.18". The headline in the main window shows the selected raid;
+  click it to see all prepared raids (select, edit, delete)
+- **Start raid** starts the selected raid and sets its Hard Reserve and Raid
+  Roll lists (items stay on exactly one list: Bank Reserve > Hard Reserve >
+  Raid Roll). "Start without preparation" is available in the raid list
+- The last selection per raid type is offered as a **template** when you
+  prepare the next raid of the same type
+- **Drops tab** (running raid): shows the items that dropped. Rolled one
   normally by mistake? One click makes it a Raid Roll item from now on and
-  pre-selects it for the next run of that raid
-- Reopen the window any time via the **Raid Setup** button in the SR side menu
-  or `/bl setup`
+  stores it in the prepared raid for the next run
+- Reopen the setup for the running raid any time via the **Raid Setup** button
+  in the SR side menu or `/bl setup`
 - Data source: AtlasLoot Turtle WoW Edition, used with the developer's
   permission (see `THIRD_PARTY_NOTICES.md`)
 
@@ -454,7 +462,7 @@ The release ZIP also contains `ANLEITUNG.txt`, the full German manual.
 | `/bl history`                                       | Show the shared loot history for this session (Roll-Sync)                   |
 | `/bl clearlog`                                      | Clear the loot log (e.g. at the start of a season)                          |
 | `/bl lfm`                                           | Open the LFM window (timed posts in the world channel)                      |
-| `/bl setup`                                         | Open the Raid Setup window (Hard Reserve / Raid Roll from the raid's loot)
+| `/bl setup`                                         | Running raid: edit Hard Reserve / Raid Roll. Otherwise: prepare a new raid
 | `/bl prefetch` / `/bl prefetch on\|off`             | Preload the current instance's items now / toggle automatic preloading    
 | `/bl options`                                       | Open settings                                                               |
 
@@ -524,7 +532,7 @@ BananaLootRaidlead.lua    Raid lead window
 BananaLootZoneLoot.lua    Instance -> item IDs for item preloading (generated, don't edit by hand)
 BananaLootPrefetch.lua    Item preloading when entering an instance
 BananaLootRaidLoot.lua    Raid -> boss -> item IDs for the Raid Setup window (generated, don't edit by hand)
-BananaLootRaidSetup.lua   Raid Setup: raid chooser, Hard Reserve / Raid Roll picker, templates, Drops tab
+BananaLootRaidSetup.lua   Raid preparation: raid chooser, Hard Reserve / Raid Roll picker with quality filter, prepared raids, templates, Drops tab
 BananaLootTest.lua        Test mode (simulated loot drop)
 Icons/                    TGA textures loaded in-game
 docs/ANLEITUNG.txt        Full German user manual (shipped in the release ZIP)

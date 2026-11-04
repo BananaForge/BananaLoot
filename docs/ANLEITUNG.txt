@@ -81,10 +81,10 @@ BEDIENUNG (Masterlooter)
 /bl br          -> öffnet die Liste aller aktuellen Bankreserve-Items
                    (mit "Entfernen"-Button je Item)
 /bl br remove [Item] -> entfernt ein Item wieder von der Bankreserve
-/bl setup       -> oeffnet das Raid-Setup (Hard Reserve / Raid-Roll aus der
-                   Beute des Raids waehlen, siehe Abschnitt RAID-SETUP
-                   weiter unten). Auch per Button "Raid-Setup" im
-                   Seitenmenue des SR-Fensters erreichbar.
+/bl setup       -> im laufenden Raid: Hard Reserve / Raid-Roll des Raids
+                   bearbeiten; sonst: neuen Raid vorbereiten (siehe
+                   Abschnitt RAID VORBEREITEN weiter unten). Auch per
+                   Button "Raid-Setup" im Seitenmenue des SR-Fensters.
 /bl prefetch    -> laedt die Items der aktuellen Instanz jetzt vor (siehe
                    Abschnitt ITEM-VORLADEN weiter unten)
 /bl prefetch on|off -> schaltet das automatische Vorladen beim Betreten
@@ -500,21 +500,21 @@ bearbeitet. Zum Aktualisieren (z.B. nach einem Content-Patch) wird
 BananaLootItemDB.lua aus der Quelle neu erzeugt; Tabellenname ist
 BananaLoot_ItemDB, Format siehe Kommentar am Dateianfang.
 
-RAID-SETUP BEIM RAID-START
+RAID VORBEREITEN UND STARTEN
 -------------------------------------------------------------
-Ein Klick auf "Raid starten" fragt zuerst, WELCHER Raid gestartet wird
-(MC, Onyxia, BWL, ZG, AQ20, AQ40, Naxxramas, Emerald Sanctum,
-Karazhan-Hallen, Timbermaw Hold, UBRS). Der Raid der aktuellen Zone ist
-gruen markiert. "Anderer Raid / ohne Vorlage" startet den Raid wie frueher
-ohne Setup. Danach oeffnet sich das Raid-Setup-Fenster mit drei Schritten
-(Reiter oben, "Weiter"/"Zurueck" unten):
+Ein Raid wird VOR dem Raid vorbereitet und erst dann gestartet.
+
+VORBEREITEN: Optionen > Verwaltung > "Neuer Raid" fragt zuerst, WELCHER
+Raid vorbereitet wird (MC, Onyxia, BWL, ZG, AQ20, AQ40, Naxxramas, Emerald
+Sanctum, Karazhan-Hallen, Timbermaw Hold, UBRS; der Raid der aktuellen Zone
+ist gruen). Danach oeffnet sich das Fenster mit drei Schritten (Reiter oben,
+"Weiter"/"Zurueck" unten) und rechts oben dem Feld "Name":
 
  1. HARD RESERVE: Links die Bosse des Raids, rechts die Items der Beute-
     tabelle. Haken setzen = Item kommt auf die Hard-Reserve-Liste (wird
     nie verrollt, nur manuell vergeben). Maus ueber ein Item zeigt den
     Item-Tooltip. Ein Klick auf den Boss-Namen (im Bereich "Alle Bosse")
-    waehlt alle Items dieses Bosses; "Alle"/"Keine" wirken auf die
-    aktuell sichtbaren Items; das Suchfeld filtert nach Item-Namen.
+    waehlt alle Items dieses Bosses; das Suchfeld filtert nach Namen.
  2. SOFT RESERVE: Hinweis. SR kommt per Fluesterbefehl ("sr [Item]") oder
     per Import des Raid-Request-Links (raidres.top). Buttons oeffnen den
     Import bzw. das SR-Fenster.
@@ -523,25 +523,43 @@ ohne Setup. Danach oeffnet sich das Raid-Setup-Fenster mit drei Schritten
     die in Schritt 1 gewaehlt wurden, sind hier gesperrt (ein Item steht
     nie in beiden Listen). Bankreserve-Items sind ebenfalls gesperrt.
 
-"Anwenden & schliessen" uebernimmt die Auswahl: abgehakte Items kommen auf
-die jeweilige Liste, nicht mehr abgehakte Items DIESES Raids werden von der
-Liste entfernt. Alles andere (z.B. Items anderer Raids) bleibt unberuehrt.
+QUALITAETSFILTER: Ueber der Liste stehen die Filter Weiss / Gruen / Blau /
+Episch / Orange (mehrere gleichzeitig moeglich, keine Auswahl = alle). "Alle"
+und "Keine" wirken nur auf die SICHTBAREN Items. Beispiel: Filter "Gruen"
+plus "Alle" im Raid-Roll-Schritt setzt alle gruenen Items auf die Raid-Roll-
+Liste.
 
-VORLAGE: Die Auswahl wird pro Raid gespeichert. Beim naechsten Start
-desselben Raids fragt BananaLoot, ob die letzten Einstellungen uebernommen
-werden sollen. "Ja, uebernehmen" setzt alles mit einem Klick, "Nein, neu
-waehlen" oeffnet die Auswahl.
+SPEICHERN: Mit "Raid speichern" wird der Raid unter dem eingetragenen Namen
+abgelegt (Standard: "<Raid> <Datum>", z.B. "Molten Core 13.05.28"). Es
+koennen beliebig viele Raids vorbereitet werden. Die Listen (Hard Reserve /
+Raid-Roll) werden dabei NOCH NICHT veraendert, erst beim Start.
 
-DROPS-REITER: Zeigt alle Items, die im laufenden Raid gedroppt sind (neueste
-zuerst). Wurde ein Item versehentlich normal gerollt, obwohl es ein Raid-
-Roll-Item ist, setzt der Button "Kuenftig Raid-Roll" es ab sofort auf die
-Raid-Roll-Liste und merkt es in der Vorlage des Raids fuer den naechsten
-Start.
+AUSWAHL UND START: Die Ueberschrift ueber der SR-Liste im Hauptfenster zeigt
+den ausgewaehlten Raid. Ein Klick darauf (oder auf den Auswahl-Button im
+Seitenmenue) oeffnet die Liste aller vorbereiteten Raids: Raid anklicken =
+auswaehlen, "Bearbeiten" aendert Auswahl und Name, "Loeschen" entfernt ihn.
+"Raid starten" startet den ausgewaehlten Raid und setzt dabei dessen Hard-
+Reserve- und Raid-Roll-Listen (Items dieses Raids, die nicht abgehakt sind,
+werden von den Listen entfernt; alles andere bleibt unberuehrt). Ohne
+Auswahl oeffnet "Raid starten" die Raid-Liste; dort gibt es auch "Ohne
+Vorbereitung starten".
 
-Der im Setup gewaehlte Raid wird auch fuer die Raidlead-Ansagen benutzt
-(statt der Zonenerkennung). Datenquelle der Beutetabellen: AtlasLoot Turtle
-WoW Edition (mit Erlaubnis des Entwicklers verwendet);
-BananaLootRaidLoot.lua wird mit tools/gen_raid_loot.py erzeugt.
+VORLAGE: Pro Raid-Typ merkt sich BananaLoot die letzte gespeicherte Auswahl.
+Beim Vorbereiten eines weiteren Raids desselben Typs fragt BananaLoot, ob
+sie uebernommen werden soll ("Ja, uebernehmen" / "Nein, leer beginnen").
+
+DROPS-REITER (nur im laufenden Raid, ueber den Button "Raid-Setup" im
+Seitenmenue oder /bl setup): Zeigt alle Items, die im laufenden Raid
+gedroppt sind (neueste zuerst). Wurde ein Item versehentlich normal
+gerollt, obwohl es ein Raid-Roll-Item ist, setzt der Button "Kuenftig Raid-
+Roll" es ab sofort auf die Raid-Roll-Liste und merkt es im gestarteten Raid
+und in der Vorlage fuer den naechsten Start.
+
+HINWEIS: "Neuer Raid" in den Optionen leert nicht mehr die Reservierungen
+(dafuer weiterhin /bl reset). Der gestartete Raid wird auch fuer die
+Raidlead-Ansagen benutzt (statt der Zonenerkennung). Datenquelle der Beute-
+tabellen: AtlasLoot Turtle WoW Edition (mit Erlaubnis des Entwicklers
+verwendet); BananaLootRaidLoot.lua wird mit tools/gen_raid_loot.py erzeugt.
 
 ITEM-VORLADEN BEIM BETRETEN EINER INSTANZ
 -------------------------------------------------------------

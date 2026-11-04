@@ -578,7 +578,7 @@ end
 -- RefreshLoot fuer das separate Loot-Fenster.
 -- ------------------------------------------------------------
 function BananaLoot_UI:RefreshSR()
-    srRaidNameText:SetText(BananaLoot:GetCurrentRaidName() or "")
+    srRaidNameText:SetText((BananaLoot.GetRaidHeadline and BananaLoot:GetRaidHeadline()) or BananaLoot:GetCurrentRaidName() or "")
     UpdateLootMethodButtonText()
 
     local ids = {}
