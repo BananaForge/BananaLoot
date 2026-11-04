@@ -169,6 +169,7 @@ local LOCALE = {
             "/bl recover            SR+-Wiederherstellungsliste anzeigen\n" ..
             "/bl history            Geteilte Loot-Historie anzeigen (nur Session)\n" ..
             "/bl lfm                LFM-Fenster öffnen (Text im Weltkanal posten)\n" ..
+            "/bl setup             Raid-Setup: Hard Reserve / Raid-Roll aus der Raid-Beute waehlen\n" ..
             "/bl prefetch          Items der aktuellen Instanz jetzt vorladen\n" ..
             "/bl prefetch on|off   Automatisches Vorladen beim Betreten von Instanzen\n" ..
             "\n" ..
@@ -183,7 +184,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl prefetch [on|off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl prefetch [on|off]",
 
         -- Optionen (Chat-Feedback)
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ Bonus pro Stufe auf +%d gesetzt.",
@@ -195,6 +196,54 @@ local LOCALE = {
         OPT_LOOTPREVIEW_ON = "|cff33ff99BananaLoot|r: Loot-Vorschau im Raid-/Gruppenchat aktiviert.",
         OPT_LOOTPREVIEW_OFF = "|cff33ff99BananaLoot|r: Loot-Vorschau im Raid-/Gruppenchat deaktiviert.",
         OPT_LANGUAGE_SET = "|cff33ff99BananaLoot|r: Sprache umgestellt.",
+        SETUP_CHOOSE_TITLE = "Welcher Raid wird gestartet?",
+        SETUP_CHOOSE_TITLE_SETUP = "Für welchen Raid soll das Setup gelten?",
+        SETUP_CHOOSE_HINT = "Grün = Raid der aktuellen Zone. Danach legst du Hard Reserve und Raid-Roll-Items fest.",
+        SETUP_CHOOSE_NONE = "Anderer Raid / ohne Vorlage starten",
+        SETUP_CHOOSE_NONE_SETUP = "Abbrechen (kein Raid gewählt)",
+        SETUP_CANCEL = "Abbrechen",
+        SETUP_TITLE = "Raid-Setup: %s",
+        SETUP_TITLE_NONE = "Raid-Setup",
+        SETUP_TAB_HR = "1. Hard Reserve",
+        SETUP_TAB_SR = "2. Soft Reserve",
+        SETUP_TAB_RR = "3. Raid-Roll",
+        SETUP_TAB_DROPS = "Drops",
+        SETUP_HINT_HR = "Haken = Item kommt auf die Hard-Reserve-Liste (wird nie verrollt, nur manuell vergeben). Maus über ein Item zeigt den Tooltip.",
+        SETUP_HINT_SR = "Soft Reserve: Spieler reservieren per Flüsterbefehl oder du importierst die Liste aus dem Raid-Request-Link.",
+        SETUP_HINT_RR = "Haken = Item wird beim Looten automatisch per Raid-Roll unter allen Raidmitgliedern verlost.",
+        SETUP_HINT_DROPS = "Im laufenden Raid gefallene Items. Versehentlich normal gerollt? Per Klick künftig als Raid-Roll-Item setzen.",
+        SETUP_ALL_BOSSES = "Alle Bosse",
+        SETUP_SEARCH = "Suche:",
+        SETUP_COUNT_HR = "Hard Reserve: %d gewählt",
+        SETUP_COUNT_RR = "Raid-Roll: %d gewählt",
+        SETUP_COUNT_DROPS = "%d Drops",
+        SETUP_TAG_HR = "Hard Reserve",
+        SETUP_TAG_BR = "Bankreserve",
+        SETUP_BTN_ALL = "Alle",
+        SETUP_BTN_NONE = "Keine",
+        SETUP_BTN_BACK = "Zurück",
+        SETUP_BTN_NEXT = "Weiter",
+        SETUP_BTN_APPLY = "Anwenden & schließen",
+        SETUP_SR_TEXT = "Soft Reserve (SR) wird nicht hier ausgewählt:\n\n- Spieler schicken dir per Flüsterbefehl \"sr [Item]\" ihre Reservierung.\n- Oder du importierst die komplette Liste aus dem Raid-Request-Link (raidres.top Export).\n\nHard-Reserve-Items aus Schritt 1 können nicht per Flüsterbefehl reserviert werden.",
+        SETUP_SR_COUNT = "Aktuell reservierte Items: %d",
+        SETUP_SR_IMPORT = "SR importieren (Raid-Request-Link)",
+        SETUP_SR_OPEN = "SR-Fenster öffnen",
+        SETUP_DROPS_SIDE = "Hier erscheinen alle Items, die in diesem Raid gedroppt sind (neueste zuerst).",
+        SETUP_DROPS_EMPTY = "Noch keine Drops in diesem Raid.",
+        SETUP_DROPS_BTN = "Künftig Raid-Roll",
+        SETUP_DROPS_DONE = "Ist Raid-Roll",
+        SETUP_DROPS_MSG = "|cff33ff99BananaLoot|r: %s %s",
+        SETUP_DROPS_MSG_TPL = "ab jetzt Raid-Roll und beim nächsten %s-Start vorausgewählt.",
+        SETUP_DROPS_MSG_NOTPL = "ab jetzt Raid-Roll (kein Raid gewählt, daher keine Vorlage gespeichert).",
+        SETUP_APPLIED = "|cff33ff99BananaLoot|r: Raid-Setup %s übernommen: %d Hard Reserve, %d Raid-Roll.",
+        SETUP_TEMPLATE_ASK = "Letzte Einstellungen für %s übernehmen?\n(%d Hard Reserve, %d Raid-Roll)\n\nBei \"Nein, neu wählen\" öffnet sich die Auswahl.",
+        SETUP_TEMPLATE_YES = "Ja, übernehmen",
+        SETUP_TEMPLATE_NO = "Nein, neu wählen",
+        SETUP_TEMPLATE_APPLIED = "|cff33ff99BananaLoot|r: Letzte Einstellungen für %s übernommen: %d Hard Reserve, %d Raid-Roll. Anpassen mit /bl setup.",
+        SETUP_TIP_ILVL = "Item-Level %d",
+        SETUP_TIP_UNCACHED = "Details noch nicht im Client-Cache. Sie werden beim Betreten der Instanz geladen.",
+        SETUP_BTN_OPEN = "Raid-Setup",
+        SETUP_BTN_OPEN_TOOLTIP = "Hard Reserve und Raid-Roll-Items aus der Beute des Raids auswählen",
         PREFETCH_START = "|cff33ff99BananaLoot|r: Lade %d unbekannte Items für %s vor...",
         PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item-Cache für %s fertig (%d Items geladen).",
         PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: Keine Loot-Daten für '%s' (keine bekannte Instanz).",
@@ -731,6 +780,7 @@ local LOCALE = {
             "/bl recover            Show SR+ recovery list\n" ..
             "/bl history            Show shared loot history (session only)\n" ..
             "/bl lfm                Open the LFM window (post a text in the World channel)\n" ..
+            "/bl setup             Raid setup: pick Hard Reserve / Raid Roll items from the raid loot\n" ..
             "/bl prefetch          Preload the items of the current instance now\n" ..
             "/bl prefetch on|off   Automatic preloading when entering instances\n" ..
             "\n" ..
@@ -745,7 +795,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl prefetch [on|off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl prefetch [on|off]",
 
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ bonus per stack set to +%d.",
         OPT_BONUS_INVALID = "|cffff5555BananaLoot|r: Please enter a valid number.",
@@ -756,6 +806,54 @@ local LOCALE = {
         OPT_LOOTPREVIEW_ON = "|cff33ff99BananaLoot|r: Loot preview in raid/party chat enabled.",
         OPT_LOOTPREVIEW_OFF = "|cff33ff99BananaLoot|r: Loot preview in raid/party chat disabled.",
         OPT_LANGUAGE_SET = "|cff33ff99BananaLoot|r: Language switched.",
+        SETUP_CHOOSE_TITLE = "Which raid are you starting?",
+        SETUP_CHOOSE_TITLE_SETUP = "Which raid is this setup for?",
+        SETUP_CHOOSE_HINT = "Green = raid of your current zone. Afterwards you pick Hard Reserve and Raid Roll items.",
+        SETUP_CHOOSE_NONE = "Other raid / start without template",
+        SETUP_CHOOSE_NONE_SETUP = "Cancel (no raid selected)",
+        SETUP_CANCEL = "Cancel",
+        SETUP_TITLE = "Raid Setup: %s",
+        SETUP_TITLE_NONE = "Raid Setup",
+        SETUP_TAB_HR = "1. Hard Reserve",
+        SETUP_TAB_SR = "2. Soft Reserve",
+        SETUP_TAB_RR = "3. Raid Roll",
+        SETUP_TAB_DROPS = "Drops",
+        SETUP_HINT_HR = "Check = item goes on the Hard Reserve list (never rolled, only awarded manually). Hover an item for its tooltip.",
+        SETUP_HINT_SR = "Soft Reserve: players reserve by whisper command, or you import the list from the raid request link.",
+        SETUP_HINT_RR = "Check = item is automatically raid-rolled among all raid members when looted.",
+        SETUP_HINT_DROPS = "Items that dropped in the running raid. Rolled normally by mistake? One click makes it a Raid Roll item from now on.",
+        SETUP_ALL_BOSSES = "All bosses",
+        SETUP_SEARCH = "Search:",
+        SETUP_COUNT_HR = "Hard Reserve: %d selected",
+        SETUP_COUNT_RR = "Raid Roll: %d selected",
+        SETUP_COUNT_DROPS = "%d drops",
+        SETUP_TAG_HR = "Hard Reserve",
+        SETUP_TAG_BR = "Bank Reserve",
+        SETUP_BTN_ALL = "All",
+        SETUP_BTN_NONE = "None",
+        SETUP_BTN_BACK = "Back",
+        SETUP_BTN_NEXT = "Next",
+        SETUP_BTN_APPLY = "Apply & close",
+        SETUP_SR_TEXT = "Soft Reserve (SR) is not picked here:\n\n- Players whisper you \"sr [Item]\" to reserve.\n- Or you import the whole list from the raid request link (raidres.top export).\n\nHard Reserve items from step 1 cannot be reserved by whisper.",
+        SETUP_SR_COUNT = "Currently reserved items: %d",
+        SETUP_SR_IMPORT = "Import SR (raid request link)",
+        SETUP_SR_OPEN = "Open SR window",
+        SETUP_DROPS_SIDE = "All items that dropped in this raid appear here (newest first).",
+        SETUP_DROPS_EMPTY = "No drops in this raid yet.",
+        SETUP_DROPS_BTN = "Raid Roll from now on",
+        SETUP_DROPS_DONE = "Is Raid Roll",
+        SETUP_DROPS_MSG = "|cff33ff99BananaLoot|r: %s %s",
+        SETUP_DROPS_MSG_TPL = "is a Raid Roll item from now on and preselected at the next %s start.",
+        SETUP_DROPS_MSG_NOTPL = "is a Raid Roll item from now on (no raid selected, so no template saved).",
+        SETUP_APPLIED = "|cff33ff99BananaLoot|r: Raid setup %s applied: %d Hard Reserve, %d Raid Roll.",
+        SETUP_TEMPLATE_ASK = "Reuse your last settings for %s?\n(%d Hard Reserve, %d Raid Roll)\n\n\"No, choose again\" opens the selection.",
+        SETUP_TEMPLATE_YES = "Yes, reuse",
+        SETUP_TEMPLATE_NO = "No, choose again",
+        SETUP_TEMPLATE_APPLIED = "|cff33ff99BananaLoot|r: Last settings for %s applied: %d Hard Reserve, %d Raid Roll. Adjust with /bl setup.",
+        SETUP_TIP_ILVL = "Item level %d",
+        SETUP_TIP_UNCACHED = "Details not in the client cache yet. They are loaded when you enter the instance.",
+        SETUP_BTN_OPEN = "Raid Setup",
+        SETUP_BTN_OPEN_TOOLTIP = "Pick Hard Reserve and Raid Roll items from the raid's loot",
         PREFETCH_START = "|cff33ff99BananaLoot|r: Preloading %d unknown items for %s...",
         PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item cache for %s ready (%d items loaded).",
         PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: No loot data for '%s' (not a known instance).",
@@ -3649,6 +3747,9 @@ function BananaLoot:OnLootOpened()
     local items = self:ScanLootWindow()
     if table.getn(items) == 0 then return end
 
+    -- Fuer den Drops-Tab im Raid-Setup (siehe BananaLootRaidSetup.lua)
+    if self.SetupRecordDrops then self:SetupRecordDrops(items) end
+
     items = self:ProcessBankReserveItems(items)
     items = self:ProcessRaidRollItems(items)
     if table.getn(items) == 0 then return end
@@ -4505,10 +4606,11 @@ function BananaLoot:ScanRaidAttendees()
     return added
 end
 
-function BananaLoot:StartRaid()
+function BananaLoot:StartRaid(raidKey)
     if self:IsRaidRunning() then return false end
     EnsureDB()
-    BananaLoot_DB.raidSession = { running = true, startTime = time(), attendees = {}, rr = {} }
+    -- raidKey: im Raid-Setup gewaehlter Raid (MC, BWL, ...), sonst nil
+    BananaLoot_DB.raidSession = { running = true, startTime = time(), attendees = {}, rr = {}, raidKey = raidKey }
     self:ScanRaidAttendees()
     self.raidNextScan = GetTime() + 3
     return true, self:CountRaidAttendees()
@@ -5523,7 +5625,8 @@ end
 function BananaLoot:RaidleadOnRaidStart()
     local rl = self:RLEnsure()
     local session = self:GetRaidSession()
-    local raidKey = self:RLDetectRaidKey()
+    -- Im Raid-Setup gewaehlter Raid hat Vorrang vor der Zonenerkennung.
+    local raidKey = (session and session.raidKey) or self:RLDetectRaidKey()
     if session then session.raidKey = raidKey end
     self:RLClearBossPosted()
     if not rl.enabled or not self:RLCanSend() then return end
@@ -6138,6 +6241,9 @@ SlashCmdList["BANANALOOT"] = function(msg)
 
     elseif cmd == "history" then
         if BananaLoot_UI and BananaLoot_UI.ShowHistory then BananaLoot_UI:ShowHistory() end
+
+    elseif cmd == "setup" then
+        if BananaLoot_UI and BananaLoot_UI.ShowRaidSetup then BananaLoot_UI:ShowRaidSetup() end
 
     elseif cmd == "prefetch" then
         if BananaLoot.PrefetchZoneItems then BananaLoot:PrefetchZoneItems(nil, true) end

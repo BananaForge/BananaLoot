@@ -81,6 +81,10 @@ BEDIENUNG (Masterlooter)
 /bl br          -> öffnet die Liste aller aktuellen Bankreserve-Items
                    (mit "Entfernen"-Button je Item)
 /bl br remove [Item] -> entfernt ein Item wieder von der Bankreserve
+/bl setup       -> oeffnet das Raid-Setup (Hard Reserve / Raid-Roll aus der
+                   Beute des Raids waehlen, siehe Abschnitt RAID-SETUP
+                   weiter unten). Auch per Button "Raid-Setup" im
+                   Seitenmenue des SR-Fensters erreichbar.
 /bl prefetch    -> laedt die Items der aktuellen Instanz jetzt vor (siehe
                    Abschnitt ITEM-VORLADEN weiter unten)
 /bl prefetch on|off -> schaltet das automatische Vorladen beim Betreten
@@ -495,6 +499,49 @@ Die Datenbank ist reine, generierte Daten und wird nicht von Hand
 bearbeitet. Zum Aktualisieren (z.B. nach einem Content-Patch) wird
 BananaLootItemDB.lua aus der Quelle neu erzeugt; Tabellenname ist
 BananaLoot_ItemDB, Format siehe Kommentar am Dateianfang.
+
+RAID-SETUP BEIM RAID-START
+-------------------------------------------------------------
+Ein Klick auf "Raid starten" fragt zuerst, WELCHER Raid gestartet wird
+(MC, Onyxia, BWL, ZG, AQ20, AQ40, Naxxramas, Emerald Sanctum,
+Karazhan-Hallen, Timbermaw Hold, UBRS). Der Raid der aktuellen Zone ist
+gruen markiert. "Anderer Raid / ohne Vorlage" startet den Raid wie frueher
+ohne Setup. Danach oeffnet sich das Raid-Setup-Fenster mit drei Schritten
+(Reiter oben, "Weiter"/"Zurueck" unten):
+
+ 1. HARD RESERVE: Links die Bosse des Raids, rechts die Items der Beute-
+    tabelle. Haken setzen = Item kommt auf die Hard-Reserve-Liste (wird
+    nie verrollt, nur manuell vergeben). Maus ueber ein Item zeigt den
+    Item-Tooltip. Ein Klick auf den Boss-Namen (im Bereich "Alle Bosse")
+    waehlt alle Items dieses Bosses; "Alle"/"Keine" wirken auf die
+    aktuell sichtbaren Items; das Suchfeld filtert nach Item-Namen.
+ 2. SOFT RESERVE: Hinweis. SR kommt per Fluesterbefehl ("sr [Item]") oder
+    per Import des Raid-Request-Links (raidres.top). Buttons oeffnen den
+    Import bzw. das SR-Fenster.
+ 3. RAID-ROLL: Gleiche Auswahl wie bei Hard Reserve. Abgehakte Items werden
+    beim Looten automatisch unter allen Raidmitgliedern verlost. Items,
+    die in Schritt 1 gewaehlt wurden, sind hier gesperrt (ein Item steht
+    nie in beiden Listen). Bankreserve-Items sind ebenfalls gesperrt.
+
+"Anwenden & schliessen" uebernimmt die Auswahl: abgehakte Items kommen auf
+die jeweilige Liste, nicht mehr abgehakte Items DIESES Raids werden von der
+Liste entfernt. Alles andere (z.B. Items anderer Raids) bleibt unberuehrt.
+
+VORLAGE: Die Auswahl wird pro Raid gespeichert. Beim naechsten Start
+desselben Raids fragt BananaLoot, ob die letzten Einstellungen uebernommen
+werden sollen. "Ja, uebernehmen" setzt alles mit einem Klick, "Nein, neu
+waehlen" oeffnet die Auswahl.
+
+DROPS-REITER: Zeigt alle Items, die im laufenden Raid gedroppt sind (neueste
+zuerst). Wurde ein Item versehentlich normal gerollt, obwohl es ein Raid-
+Roll-Item ist, setzt der Button "Kuenftig Raid-Roll" es ab sofort auf die
+Raid-Roll-Liste und merkt es in der Vorlage des Raids fuer den naechsten
+Start.
+
+Der im Setup gewaehlte Raid wird auch fuer die Raidlead-Ansagen benutzt
+(statt der Zonenerkennung). Datenquelle der Beutetabellen: AtlasLoot Turtle
+WoW Edition (mit Erlaubnis des Entwicklers verwendet);
+BananaLootRaidLoot.lua wird mit tools/gen_raid_loot.py erzeugt.
 
 ITEM-VORLADEN BEIM BETRETEN EINER INSTANZ
 -------------------------------------------------------------

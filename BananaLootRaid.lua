@@ -23,7 +23,7 @@ local PANEL_PAD = 12
 -- ============================================================
 local panel = CreateFrame("Frame", "BananaLootSRMenuPanel", srFrame)
 panel:SetWidth(PANEL_W)
-panel:SetHeight(392)
+panel:SetHeight(424)
 -- Der Fensterrahmen des SR-Fensters liegt optisch einige Pixel innerhalb der
 -- Frame-Kante, daher negativer Versatz, damit das Panel buendig anliegt.
 panel:SetPoint("TOPLEFT", srFrame, "TOPRIGHT", -5, -60)
@@ -67,6 +67,7 @@ end
 AddSeparator(-52)
 AddSeparator(-194)
 AddSeparator(-274)
+AddSeparator(-380)
 
 -- Hauptfenster neu ordnen: Sperren/ML-GL/Loot-Fenster in eine Zeile, Liste
 -- rueckt hoch, unten bleibt Platz fuer den Timer.
@@ -249,6 +250,22 @@ brBtn:SetScript("OnClick", function()
     OpenSetFrame("br")
 end)
 
+-- Raid-Setup (Hard Reserve / Raid-Roll aus der Raid-Beute, siehe BananaLootRaidSetup.lua)
+local setupBtn = CreateFrame("Button", "BananaLootRaidSetupMenuBtn", panel, "UIPanelButtonTemplate")
+setupBtn:SetWidth(BTN_W)
+setupBtn:SetHeight(BTN_H)
+setupBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -388)
+setupBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.ShowRaidSetup then BananaLoot_UI:ShowRaidSetup() end
+end)
+setupBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(setupBtn, "ANCHOR_RIGHT")
+    GameTooltip:SetText(BananaLoot:L("SETUP_BTN_OPEN_TOOLTIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+setupBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
 -- Auto-Masterloot bei Boss-Target (alle Raidbosse) an/aus, Standard: an
 local autoMLBtn = CreateFrame("Button", "BananaLootAutoMLMenuBtn", panel, "UIPanelButtonTemplate")
 autoMLBtn:SetWidth(BTN_W)
@@ -274,6 +291,7 @@ local function RefreshSetButtonTexts()
     UpdateAutoMLBtn()
     deBtn:SetText(BananaLoot:L("RAID_BTN_SET_DE"))
     brBtn:SetText(BananaLoot:L("RAID_BTN_SET_BR"))
+    setupBtn:SetText(BananaLoot:L("SETUP_BTN_OPEN"))
     RefreshSetFrame()
 end
 
@@ -373,17 +391,28 @@ raidBtn:SetScript("OnClick", function()
         d.button2 = BananaLoot:L("UI_POPUP_CANCEL")
         StaticPopup_Show("BANANALOOT_CONFIRM_END_RAID")
     else
-        local ok, count = BananaLoot:StartRaid()
-        if ok then
-            BananaLoot:RaidleadOnRaidStart()
-            DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("RAID_STARTED"), count))
-            if BananaLoot:IsRoundRobinActive() then
-                DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("RR_RAID_START_ACTIVE"))
-            end
+        -- Raid-Auswahl + Setup (BananaLootRaidSetup.lua); ohne Raid-Daten wie bisher.
+        if BananaLoot_UI.ShowRaidChooser and table.getn(BananaLoot:GetSetupRaids()) > 0 then
+            BananaLoot_UI:ShowRaidChooser()
+        else
+            BananaLoot_UI:DoStartRaid(nil)
         end
-        RefreshRaidUI()
     end
 end)
+
+-- Startet den Raid (raidKey = im Setup gewaehlter Raid oder nil). Rueckgabe: ok.
+function BananaLoot_UI:DoStartRaid(raidKey)
+    local ok, count = BananaLoot:StartRaid(raidKey)
+    if ok then
+        BananaLoot:RaidleadOnRaidStart()
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("RAID_STARTED"), count))
+        if BananaLoot:IsRoundRobinActive() then
+            DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("RR_RAID_START_ACTIVE"))
+        end
+    end
+    RefreshRaidUI()
+    return ok
+end
 
 -- ============================================================
 -- Aus-/Einklapp-Button am rechten Fensterrand
