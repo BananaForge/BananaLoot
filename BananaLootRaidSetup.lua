@@ -180,6 +180,7 @@ function BananaLoot:SavePreparedRaid(id, name, key, hrSet, rrSet)
     entry.raidKey = key
     entry.hr = CopySet(hrSet)
     entry.rr = CopySet(rrSet)
+    if self.EnsurePreparedCode then self:EnsurePreparedCode(entry) end   -- Raid-Code, SR-Status
     self:SaveRaidTemplate(key, hrSet, rrSet)
     return entry
 end
@@ -1180,11 +1181,11 @@ F:SetScript("OnShow", function() S.Refresh() end)
 -- ------------------------------------------------------------
 local P = { offset = 0, rows = {} }
 local PROWS, PROW_H = 8, 36
-P.frame = MakeWindow("BananaLootRaidPicker", 560, 440)
+P.frame = MakeWindow("BananaLootRaidPicker", 720, 440)
 local PF = P.frame
 PF.hint = PF:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 PF.hint:SetPoint("TOP", PF, "TOP", 0, -38)
-PF.hint:SetWidth(500)
+PF.hint:SetWidth(660)
 PF.empty = PF:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 PF.empty:SetPoint("TOP", PF, "TOP", 0, -120)
 PF.empty:SetWidth(460)
@@ -1192,7 +1193,7 @@ PF.more = PF:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 PF.more:SetPoint("BOTTOM", PF, "BOTTOM", 0, 62)
 
 PF.list = CreateFrame("Frame", "BananaLootRaidPickerList", PF)
-PF.list:SetWidth(520)
+PF.list:SetWidth(680)
 PF.list:SetHeight(PROWS * PROW_H)
 PF.list:SetPoint("TOPLEFT", PF, "TOPLEFT", 20, -62)
 PF.list:EnableMouseWheel(true)
@@ -1203,7 +1204,7 @@ end)
 
 for i = 1, PROWS do
     local r = CreateFrame("Button", "BananaLootRaidPickerRow" .. i, PF.list)
-    r:SetWidth(520)
+    r:SetWidth(680)
     r:SetHeight(PROW_H - 2)
     r:SetPoint("TOPLEFT", PF.list, "TOPLEFT", 0, -(i - 1) * PROW_H)
     r:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
@@ -1213,16 +1214,47 @@ for i = 1, PROWS do
     r.sel:Hide()
     r.name = r:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     r.name:SetPoint("TOPLEFT", r, "TOPLEFT", 8, -4)
-    r.name:SetWidth(330)
+    r.name:SetWidth(350)
     r.name:SetJustifyH("LEFT")
     r.info = r:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     r.info:SetPoint("TOPLEFT", r, "TOPLEFT", 8, -19)
-    r.info:SetWidth(330)
+    r.info:SetWidth(350)
     r.info:SetJustifyH("LEFT")
-    r.editBtn = MakeButton("BananaLootRaidPickerEdit" .. i, r, 90, 20)
-    r.editBtn:SetPoint("RIGHT", r, "RIGHT", -80, 0)
-    r.delBtn = MakeButton("BananaLootRaidPickerDel" .. i, r, 74, 20)
+    r.delBtn = MakeButton("BananaLootRaidPickerDel" .. i, r, 70, 20)
     r.delBtn:SetPoint("RIGHT", r, "RIGHT", -2, 0)
+    r.editBtn = MakeButton("BananaLootRaidPickerEdit" .. i, r, 80, 20)
+    r.editBtn:SetPoint("RIGHT", r, "RIGHT", -76, 0)
+    r.srBtn = MakeButton("BananaLootRaidPickerSR" .. i, r, 84, 20)
+    r.srBtn:SetPoint("RIGHT", r, "RIGHT", -160, 0)
+    r.codeBtn = MakeButton("BananaLootRaidPickerCode" .. i, r, 76, 20)
+    r.codeBtn:SetPoint("RIGHT", r, "RIGHT", -248, 0)
+    r.srBtn:SetScript("OnClick", function()
+        local row = this:GetParent()
+        local e = BananaLoot:GetPreparedRaid(row.raidId)
+        if not e then return end
+        BananaLoot:PlayClickSound()
+        BananaLoot:SetPreparedSROpen(e, e.srOpen == false)
+        P.Refresh()
+    end)
+    r.srBtn:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        GameTooltip:SetText(BananaLoot:L("SETUP_PICK_SR_TIP"), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    r.srBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    r.codeBtn:SetScript("OnClick", function()
+        local row = this:GetParent()
+        local e = BananaLoot:GetPreparedRaid(row.raidId)
+        if not e then return end
+        BananaLoot:PlayClickSound()
+        BananaLoot:PostRaidCode(e)
+    end)
+    r.codeBtn:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        GameTooltip:SetText(BananaLoot:L("SETUP_PICK_CODE_TIP"), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    r.codeBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
     r:SetScript("OnClick", function()
         if this.raidId then
             BananaLoot:PlayClickSound()
@@ -1289,6 +1321,38 @@ PF.quickBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     if BananaLoot_UI:DoStartRaid(nil) then PF:Hide() end
 end)
+PF.joinBtn = MakeButton("BananaLootRaidPickerJoin", PF, 110, 26)
+PF.joinBtn:SetPoint("LEFT", PF.quickBtn, "RIGHT", 8, 0)
+PF.joinBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    local d = StaticPopupDialogs["BANANALOOT_JOIN_CODE"]
+    d.text = BananaLoot:L("SETUP_JOIN_ASK")
+    d.button1 = BananaLoot:L("UI_POPUP_YES")
+    d.button2 = BananaLoot:L("UI_POPUP_CANCEL")
+    StaticPopup_Show("BANANALOOT_JOIN_CODE")
+end)
+
+-- Raid-Code eingeben (Stellvertreter laedt den Raid vom Loot-Master)
+StaticPopupDialogs["BANANALOOT_JOIN_CODE"] = {
+    text = "",
+    button1 = "",
+    button2 = "",
+    hasEditBox = 1,
+    maxLetters = 16,
+    OnAccept = function()
+        local box = getglobal(this:GetParent():GetName() .. "EditBox")
+        if box and BananaLoot.JoinRaidCode then BananaLoot:JoinRaidCode(box:GetText()) end
+    end,
+    EditBoxOnEnterPressed = function()
+        local box = getglobal(this:GetParent():GetName() .. "EditBox")
+        if box and BananaLoot.JoinRaidCode then BananaLoot:JoinRaidCode(box:GetText()) end
+        this:GetParent():Hide()
+    end,
+    EditBoxOnEscapePressed = function() this:GetParent():Hide() end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
 
 function P.Refresh()
     if not PF:IsShown() then return end
@@ -1306,8 +1370,14 @@ function P.Refresh()
         if e then
             r.raidId = e.id
             r.name:SetText(e.name or "?")
+            if BananaLoot.EnsurePreparedCode then BananaLoot:EnsurePreparedCode(e) end
+            local srOpen = BananaLoot.IsSROpenFor and BananaLoot:IsSROpenFor(e)
             r.info:SetText(string.format(BananaLoot:L("SETUP_PICK_ROW"),
-                BananaLoot:GetSetupRaidName(e.raidKey) or "?", CountSet(e.hr), CountSet(e.rr)))
+                BananaLoot:GetSetupRaidName(e.raidKey) or "?", CountSet(e.hr), CountSet(e.rr),
+                e.code or "-", BananaLoot.CountPreparedSR and BananaLoot:CountPreparedSR(e) or 0,
+                BananaLoot:L(srOpen and "SETUP_STATE_OPEN" or "SETUP_STATE_CLOSED")))
+            r.srBtn:SetText(BananaLoot:L(srOpen and "SETUP_PICK_SR_OPEN" or "SETUP_PICK_SR_CLOSED"))
+            r.codeBtn:SetText(BananaLoot:L("SETUP_PICK_CODE"))
             r.editBtn:SetText(BananaLoot:L("SETUP_PICK_EDIT"))
             r.delBtn:SetText(BananaLoot:L("SETUP_PICK_DELETE"))
             if e.id == selId then r.sel:Show() else r.sel:Hide() end
@@ -1322,6 +1392,7 @@ function P.Refresh()
     PF.newBtn:SetText(BananaLoot:L("SETUP_PICK_NEW"))
     PF.startBtn:SetText(BananaLoot:L("SETUP_PICK_START"))
     PF.quickBtn:SetText(BananaLoot:L("SETUP_PICK_QUICK"))
+    PF.joinBtn:SetText(BananaLoot:L("SETUP_PICK_JOIN"))
     local running = BananaLoot:IsRaidRunning()
     if BananaLoot:GetSelectedPreparedRaid() and not running then PF.startBtn:Enable() else PF.startBtn:Disable() end
     if running then PF.quickBtn:Disable() else PF.quickBtn:Enable() end
@@ -1392,6 +1463,11 @@ function BananaLoot_UI:StartPreparedRaid(id)
     if not BananaLoot_UI:DoStartRaid(e.raidKey, e.name, e.id) then return false end
     BananaLoot:SetCurrentRaidName(e.name)
     DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("SETUP_STARTED"), e.name, nHR, nRR))
+    -- Per Raid-Code eingegangene SR uebernehmen, SR-Liste sperren
+    if BananaLoot.CodeOnRaidStart then
+        local players = BananaLoot:CodeOnRaidStart(e)
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("CODE_START_SR"), players))
+    end
     S.PrefetchRaid(e.raidKey)
     if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
     return true

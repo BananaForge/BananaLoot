@@ -352,6 +352,26 @@ BananaLoot never talks to the internet on its own.
 - Data source: AtlasLoot Turtle WoW Edition, used with the developer's
   permission (see `THIRD_PARTY_NOTICES.md`)
 
+### Raid code: SR from BananaLoot Raider
+
+- Every prepared raid has a **raid code** (e.g. `MC-7K3Q`). Raiders enter it in
+  [BananaLoot Raider](https://github.com/BananaForge/BananaLoot-Raider)
+  (`/blr code`), pick their SR items from the raid's loot and send them
+- The SR is sent as an **addon message** through the raid chat (without a raid:
+  party, otherwise guild), so SR can be collected **before the raid** and
+  without whispers. The raider gets a confirmation or the reason for a rejection
+- In the raid list (click the headline): **Post code** shares the code in
+  raid/party/guild chat, **SR open/closed** opens or closes submissions
+- **Stand-in loot master:** loads the raid with **Load code** (or
+  `/bl join <code>`) and gets Hard Reserve, Raid Roll, name and all SR so far.
+  New SR go to every client that knows the raid, so nothing is lost if the loot
+  master is offline
+- **Starting the raid** takes over the collected SR and locks the SR list. The
+  lock button in the main window reopens it (e.g. before a certain boss); SR
+  sent via the code then go straight into the reservations
+- **Hand over lead:** button in the main window; the chosen raid/party member
+  becomes raid leader (and loot master, if that was you)
+
 ### Item preloading per instance
 
 - When you enter a dungeon or raid, BananaLoot asks the server (slowly, in the
@@ -462,6 +482,7 @@ The release ZIP also contains `ANLEITUNG.txt`, the full German manual.
 | `/bl history`                                       | Show the shared loot history for this session (Roll-Sync)                   |
 | `/bl clearlog`                                      | Clear the loot log (e.g. at the start of a season)                          |
 | `/bl lfm`                                           | Open the LFM window (timed posts in the world channel)                      |
+| `/bl join <code>`                                   | Load a raid by raid code from another loot master (stand-in)              
 | `/bl setup`                                         | Running raid: edit Hard Reserve / Raid Roll. Otherwise: prepare a new raid
 | `/bl prefetch` / `/bl prefetch on\|off`             | Preload the current instance's items now / toggle automatic preloading    
 | `/bl options`                                       | Open settings                                                               |
@@ -532,6 +553,7 @@ BananaLootRaidlead.lua    Raid lead window
 BananaLootZoneLoot.lua    Instance -> item IDs for item preloading (generated, don't edit by hand)
 BananaLootPrefetch.lua    Item preloading when entering an instance
 BananaLootRaidLoot.lua    Raid -> boss -> item IDs for the Raid Setup window (generated, don't edit by hand)
+BananaLootRaidCode.lua    Raid code: SR from BananaLoot Raider, stand-in sync, hand over raid lead
 BananaLootRaidSetup.lua   Raid preparation: raid chooser, Hard Reserve / Raid Roll picker with quality filter, prepared raids, templates, Drops tab
 BananaLootTest.lua        Test mode (simulated loot drop)
 Icons/                    TGA textures loaded in-game

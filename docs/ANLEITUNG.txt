@@ -555,6 +555,34 @@ gerollt, obwohl es ein Raid-Roll-Item ist, setzt der Button "Kuenftig Raid-
 Roll" es ab sofort auf die Raid-Roll-Liste und merkt es im gestarteten Raid
 und in der Vorlage fuer den naechsten Start.
 
+RAID-CODE: SR VON BANANALOOT RAIDER
+-------------------------------------------------------------
+Jeder vorbereitete Raid hat einen Raid-Code (z.B. MC-7K3Q), sichtbar in der
+Raid-Liste (Klick auf die Ueberschrift im Hauptfenster).
+
+ - "Code posten" schreibt den Code in den Raid-, Gruppen- oder Gildenchat.
+ - Raider geben ihn in BananaLoot Raider ein (/blr code), waehlen ihre SR-
+   Items aus der Beute des Raids und senden sie. Die SR geht als Addon-
+   Nachricht in den Raid-Chat (ohne Raid: Gruppe, sonst Gilde), funktioniert
+   also schon VOR dem Raid und ohne Fluestern. Der Raider bekommt eine
+   Bestaetigung bzw. den Ablehnungsgrund (SR geschlossen, zu viele Items,
+   Hard-Reserve-/Raid-Roll-Items werden uebersprungen).
+ - "SR offen/zu" in der Raid-Liste oeffnet bzw. schliesst die Einreichung
+   vor dem Start. Eine erneute Einreichung ersetzt die alte SR des Spielers.
+ - STELLVERTRETER: Ein anderer Loot-Master laedt den Raid mit "Code laden"
+   (oder /bl join CODE) und bekommt Hard Reserve, Raid-Roll, Namen und alle
+   bisherigen SR. Neue SR nehmen alle Clients an, die den Raid kennen --
+   faellt der Loot-Master aus, geht nichts verloren.
+ - RAID STARTEN uebernimmt die gesammelten SR in die Reservierungen und
+   sperrt die SR-Liste. Der Sperr-Button im Hauptfenster oeffnet sie wieder
+   (z.B. vor einem bestimmten Boss); dann gehen SR ueber den Code direkt in
+   die Reservierungen. Raider sehen live, ob die SR offen oder geschlossen ist.
+
+RAID-LEAD ABGEBEN: Der Button "Raid-Lead abgeben" (unten rechts im Haupt-
+fenster) listet die anderen Raid-/Gruppenmitglieder. Der gewaehlte Spieler
+wird Raid-Leiter (und Loot-Master, falls du es warst). Nur der Raid-/
+Gruppenleiter kann die Leitung abgeben.
+
 HINWEIS: "Neuer Raid" in den Optionen leert nicht mehr die Reservierungen
 (dafuer weiterhin /bl reset). Der gestartete Raid wird auch fuer die
 Raidlead-Ansagen benutzt (statt der Zonenerkennung). Datenquelle der Beute-
