@@ -362,7 +362,9 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
     end
 
     if t == "SQ" then
-        if entry and not isSelf then
+        -- Auch die eigene Anfrage beantworten: Loot-Master mit installiertem
+        -- BananaLoot Raider (gleicher Charakter) fragt sich selbst an.
+        if entry then
             self:EnsurePreparedCode(entry)
             ScheduleReply(entry, "S|" .. code, function()
                 SendStatus(entry, channel)
