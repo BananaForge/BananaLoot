@@ -29,6 +29,7 @@ frame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(frame)
 frame:SetMovable(true)
 frame:EnableMouse(true)
 frame:RegisterForDrag("LeftButton")
@@ -158,7 +159,7 @@ local function MakeBox(width, height, onChange, tag)
         tile = true, tileSize = 16, edgeSize = 12,
         insets = { left = 3, right = 3, top = 3, bottom = 3 },
     })
-    holder:SetBackdropColor(0, 0, 0, 0.6)
+    holder:SetBackdropColor(0, 0, 0, 0.9)
     holder:EnableMouse(true)
 
     local sf = CreateFrame("ScrollFrame", nil, holder)

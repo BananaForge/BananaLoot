@@ -30,6 +30,7 @@ optFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(optFrame)
 optFrame:SetMovable(true)
 optFrame:EnableMouse(true)
 optFrame:RegisterForDrag("LeftButton")
@@ -913,6 +914,7 @@ local function CreateCopyBoxFrame(name, titleKey, width, height)
         tile = true, tileSize = 32, edgeSize = 32,
         insets = { left = 11, right = 11, top = 11, bottom = 11 },
     })
+    BananaLoot_Theme.Darken(f)
     f:SetMovable(true)
     f:EnableMouse(true)
     f:RegisterForDrag("LeftButton")
@@ -1165,6 +1167,7 @@ manageFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(manageFrame)
 manageFrame:SetMovable(true)
 manageFrame:EnableMouse(true)
 manageFrame:RegisterForDrag("LeftButton")
@@ -1425,7 +1428,8 @@ do
         tile = true, tileSize = 32, edgeSize = 32,
         insets = { left = 11, right = 11, top = 11, bottom = 11 },
     })
-    f:SetFrameStrata("FULLSCREEN_DIALOG")
+    BananaLoot_Theme.Darken(f)
+    f:SetFrameStrata("DIALOG")
     f:EnableMouse(true)
     f:Hide()
     tinsert(UISpecialFrames, "BananaLootManageChoiceFrame")
@@ -1603,6 +1607,7 @@ hrFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(hrFrame)
 hrFrame:SetMovable(true)
 hrFrame:EnableMouse(true)
 hrFrame:RegisterForDrag("LeftButton")
@@ -1729,6 +1734,7 @@ brFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(brFrame)
 brFrame:SetMovable(true)
 brFrame:EnableMouse(true)
 brFrame:RegisterForDrag("LeftButton")
@@ -1855,6 +1861,7 @@ do
         tile = true, tileSize = 32, edgeSize = 32,
         insets = { left = 11, right = 11, top = 11, bottom = 11 },
     })
+    BananaLoot_Theme.Darken(rlFrame)
     rlFrame:SetMovable(true)
     rlFrame:EnableMouse(true)
     rlFrame:RegisterForDrag("LeftButton")
@@ -1975,6 +1982,7 @@ recoveryFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(recoveryFrame)
 recoveryFrame:SetMovable(true)
 recoveryFrame:EnableMouse(true)
 recoveryFrame:RegisterForDrag("LeftButton")
@@ -2118,6 +2126,7 @@ historyFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(historyFrame)
 historyFrame:SetMovable(true)
 historyFrame:EnableMouse(true)
 historyFrame:RegisterForDrag("LeftButton")
@@ -2305,6 +2314,7 @@ saveRaidFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(saveRaidFrame)
 saveRaidFrame:SetMovable(true)
 saveRaidFrame:EnableMouse(true)
 saveRaidFrame:RegisterForDrag("LeftButton")
@@ -2418,6 +2428,7 @@ loadRaidFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(loadRaidFrame)
 loadRaidFrame:SetMovable(true)
 loadRaidFrame:EnableMouse(true)
 loadRaidFrame:RegisterForDrag("LeftButton")
@@ -2630,6 +2641,7 @@ LFM.frame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(LFM.frame)
 LFM.frame:SetMovable(true)
 LFM.frame:EnableMouse(true)
 LFM.frame:RegisterForDrag("LeftButton")

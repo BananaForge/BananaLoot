@@ -615,6 +615,7 @@ H.frame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(H.frame)
 H.frame:SetMovable(true)
 H.frame:EnableMouse(true)
 H.frame:RegisterForDrag("LeftButton")

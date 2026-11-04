@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Changed:** All windows now have a dark, nearly opaque background (easier to read, no text of other windows showing through) and are brought fully to the front when clicked or opened. Layers unified: SR window, loot window, roll-sync popup and test mode are `HIGH`, every other window is `DIALOG` (`BananaLootTheme.lua`).
 - **New:** Raid code. Every prepared raid gets a code (e.g. `MC-7K3Q`). Raiders enter it in BananaLoot Raider, pick their SR items from the raid's loot (icons, tooltips, search, quality filter) and send them. The SR travels as an addon message through the raid chat (without a raid: party, otherwise guild), so it works before the raid and without whispers. The loot master and every stand-in who loaded the raid by code receive it; the raider gets a confirmation (items accepted, skipped Hard Reserve / Raid Roll items, limit, closed). In the raid list: "Post code" (posts the code in raid/party/guild chat), "SR open/closed" (open or close submissions before the start) and "Load code" for a stand-in (`/bl join <code>`), who then gets the full raid: Hard Reserve, Raid Roll, name and all SR so far.
 - **New:** SR sent via the raid code show up in the main window right away for the selected raid (before the raid starts). Switching the selected raid swaps the displayed SR.
 - **Changed:** "SR open/closed" in the raid list and the "Open/Locked" button in the main window are now the same switch for the selected or running raid: toggling one updates the other (and the raiders see the new state).

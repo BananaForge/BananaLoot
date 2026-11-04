@@ -5,6 +5,7 @@
 ## Version: 3.42
 ## SavedVariables: BananaLoot_DB
 
+BananaLootTheme.lua
 BananaLootItemDB.lua
 BananaLootBossData.lua
 BananaLoot.lua

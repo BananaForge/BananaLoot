@@ -505,6 +505,7 @@ TEST.frame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(TEST.frame)
 TEST.frame:SetMovable(true)
 TEST.frame:EnableMouse(true)
 TEST.frame:RegisterForDrag("LeftButton")

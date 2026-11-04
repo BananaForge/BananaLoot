@@ -165,6 +165,7 @@ srFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(srFrame)
 srFrame:SetMovable(true)
 srFrame:EnableMouse(true)
 srFrame:RegisterForDrag("LeftButton")
@@ -670,6 +671,7 @@ lootFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(lootFrame)
 lootFrame:SetMovable(true)
 lootFrame:EnableMouse(true)
 lootFrame:RegisterForDrag("LeftButton")
@@ -1112,6 +1114,7 @@ rollSyncFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(rollSyncFrame)
 rollSyncFrame:SetMovable(true)
 rollSyncFrame:EnableMouse(true)
 rollSyncFrame:RegisterForDrag("LeftButton")

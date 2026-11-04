@@ -33,7 +33,7 @@ panel:SetBackdrop({
     tile = true, tileSize = 16, edgeSize = 16,
     insets = { left = 4, right = 4, top = 4, bottom = 4 },
 })
-panel:SetBackdropColor(0, 0, 0, 0.9)
+panel:SetBackdropColor(0, 0, 0, 0.97)
 panel:Hide()
 
 -- Umhaengen der bestehenden Buttons ins Panel
@@ -105,6 +105,7 @@ setFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(setFrame)
 setFrame:SetMovable(true)
 setFrame:EnableMouse(true)
 setFrame:RegisterForDrag("LeftButton")

@@ -76,12 +76,13 @@ pickFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(pickFrame)
 pickFrame:SetMovable(true)
 pickFrame:EnableMouse(true)
 pickFrame:RegisterForDrag("LeftButton")
 pickFrame:SetScript("OnDragStart", function() pickFrame:StartMoving() end)
 pickFrame:SetScript("OnDragStop", function() pickFrame:StopMovingOrSizing() end)
-pickFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+pickFrame:SetFrameStrata("DIALOG")
 pickFrame:Hide()
 
 local pickClose = CreateFrame("Button", "BananaLootAliasPickClose", pickFrame, "UIPanelCloseButton")
@@ -126,6 +127,7 @@ frame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(frame)
 frame:SetMovable(true)
 frame:EnableMouse(true)
 frame:RegisterForDrag("LeftButton")
@@ -365,12 +367,13 @@ mgrFrame:SetBackdrop({
     tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 11, top = 11, bottom = 11 },
 })
+BananaLoot_Theme.Darken(mgrFrame)
 mgrFrame:SetMovable(true)
 mgrFrame:EnableMouse(true)
 mgrFrame:RegisterForDrag("LeftButton")
 mgrFrame:SetScript("OnDragStart", function() mgrFrame:StartMoving() end)
 mgrFrame:SetScript("OnDragStop", function() mgrFrame:StopMovingOrSizing() end)
-mgrFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+mgrFrame:SetFrameStrata("DIALOG")
 mgrFrame:Hide()
 
 local mgrClose = CreateFrame("Button", "BananaLootAliasMgrClose", mgrFrame, "UIPanelCloseButton")
