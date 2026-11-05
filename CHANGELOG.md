@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.52 (vs. v3.51)
+
+- **New:** raidres.top **CSV export** can be imported (header `ID,Item,Boss,Attendee,Class,Specialization,Comment,Date (GMT)`, one reservation per line, quoted fields supported). Paste the CSV into the import window and click "Import" - non-BananaLoot text is detected automatically and goes the raidres.top way (the old Base64/JSON export still works, the "raidres.top" button too). Item names come from the file. The CSV carries no SR+ values, so SR+ stays as it is locally.
+- **Changed:** Wording: the raid setup button says "Import SR (raidres.top)" instead of "raid request link", and the hints explain the steps (open the page in the browser, copy the export, paste it into the import window).
+
 ## v3.51 (vs. v3.50)
 
 - **Changed:** Raid lead boss explanations are no longer posted to raid chat. Targeting a boss (or the "send" buttons in the raid lead window) now sends them as an addon message to BananaLoot Raider, which shows each player a small window with only the explanation for their role. Edited texts are sent along and stored by Raider. Welcome/trash/closing messages still go to chat.

@@ -1038,6 +1038,15 @@ RegisterLocaleText(importBtn, "WIN_IMPORT_BTN")
 importBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     local text = importFrame.editBox:GetText()
+    -- Kein BananaLoot-Export (MSRv2~...)? Dann ist es ein raidres.top-Export (CSV/Base64): gleicher Weg wie der raidres.top-Button.
+    if text and text ~= "" and string.sub(text, 1, 6) ~= "MSRv2~" then
+        local rb = getglobal("BananaLootImportRaidResBtn")
+        if rb and rb:GetScript("OnClick") then
+            this = rb
+            rb:GetScript("OnClick")()
+            return
+        end
+    end
     local ok, err, count, hrCount, ageMinutes, droppedCount = BananaLoot:ImportSRList(text)
     if ok then
         DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("IMPORT_SUCCESS"), count or 0, hrCount or 0))

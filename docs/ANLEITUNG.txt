@@ -1425,3 +1425,13 @@ Die Boss-Texte des Raidlead-Fensters gehen nicht mehr in den Chat, sondern als A
 BananaLoot Raider. Dort oeffnet sich ein kleines Fenster mit der Erklaerung fuer die Rolle des
 Spielers (Tank/DD/Heiler). Bearbeitete Texte werden mitgeschickt. Willkommens-, Trash- und
 Abschlussnachricht bleiben im Chat.
+
+
+raidres.top-Import (ab v3.52)
+-----------------------------
+Das Addon kann einen Link nicht selbst laden (WoW hat keinen Webzugriff). So geht es:
+1. Die raidres.top-Seite im Browser oeffnen und den Export (CSV) kopieren.
+2. Im Import-Fenster einfuegen (Strg+V) und "Importieren" klicken - das Format wird erkannt
+   (CSV: ID,Item,Boss,Attendee,...; auch der alte Base64-Export und der Button "raidres.top").
+3. Namen, die nicht im Raid sind, koennen im Zuordnungs-Fenster (Alias) korrigiert werden.
+Die CSV enthaelt kein SR+, ein lokales SR+ bleibt unveraendert.

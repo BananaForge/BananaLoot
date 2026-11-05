@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.51"
+BananaLoot.VERSION = "3.52"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -341,9 +341,9 @@ local LOCALE = {
         SETUP_BTN_BACK = "Zurück",
         SETUP_BTN_NEXT = "Weiter",
         SETUP_BTN_APPLY = "Anwenden & schließen",
-        SETUP_SR_TEXT = "Soft Reserve (SR) wird nicht hier ausgewählt:\n\n- Spieler schicken dir per Flüsterbefehl \"sr [Item]\" ihre Reservierung.\n- Oder du importierst die komplette Liste aus dem Raid-Request-Link (raidres.top Export).\n\nHard-Reserve-Items aus Schritt 1 können nicht per Flüsterbefehl reserviert werden.",
+        SETUP_SR_TEXT = "Soft Reserve (SR) wird nicht hier ausgewählt:\n\n- Spieler schicken dir per Flüsterbefehl \"sr [Item]\" ihre Reservierung.\n- Oder du importierst die komplette Liste von raidres.top: Seite im Browser öffnen, Export (CSV) kopieren und im Import-Fenster einfügen.\n\nHard-Reserve-Items aus Schritt 1 können nicht per Flüsterbefehl reserviert werden.",
         SETUP_SR_COUNT = "Aktuell reservierte Items: %d",
-        SETUP_SR_IMPORT = "SR importieren (Raid-Request-Link)",
+        SETUP_SR_IMPORT = "SR importieren (raidres.top)",
         SETUP_SR_OPEN = "SR-Fenster öffnen",
         SETUP_DROPS_SIDE = "Hier erscheinen alle Items, die in diesem Raid gedroppt sind (neueste zuerst).",
         SETUP_DROPS_EMPTY = "Noch keine Drops in diesem Raid.",
@@ -663,7 +663,7 @@ local LOCALE = {
         WIN_EXPORT_TITLE = "SR-Liste exportieren",
         WIN_EXPORT_HINT = "Strg+A, Strg+C zum Kopieren - dann deiner Vertretung schicken",
         WIN_IMPORT_TITLE = "SR-Liste importieren",
-        WIN_IMPORT_HINT = "Text hier einfügen (Strg+V), dann Importieren klicken",
+        WIN_IMPORT_HINT = "Export einfügen (Strg+V): BananaLoot-Export oder raidres.top (CSV/Export), dann Importieren klicken",
         WIN_IMPORT_BTN = "Importieren",
         WIN_CSV_SR_TITLE = "SR-Liste als CSV (für Google Sheets)",
         WIN_CSV_HINT = "Strg+A, Strg+C - dann in eine leere Google-Sheets-Zelle einfügen (Strg+V)",
@@ -1094,9 +1094,9 @@ local LOCALE = {
         SETUP_BTN_BACK = "Back",
         SETUP_BTN_NEXT = "Next",
         SETUP_BTN_APPLY = "Apply & close",
-        SETUP_SR_TEXT = "Soft Reserve (SR) is not picked here:\n\n- Players whisper you \"sr [Item]\" to reserve.\n- Or you import the whole list from the raid request link (raidres.top export).\n\nHard Reserve items from step 1 cannot be reserved by whisper.",
+        SETUP_SR_TEXT = "Soft Reserve (SR) is not picked here:\n\n- Players whisper you \"sr [Item]\" to reserve.\n- Or you import the whole list from raidres.top: open the page in your browser, copy the export (CSV) and paste it into the import window.\n\nHard Reserve items from step 1 cannot be reserved by whisper.",
         SETUP_SR_COUNT = "Currently reserved items: %d",
-        SETUP_SR_IMPORT = "Import SR (raid request link)",
+        SETUP_SR_IMPORT = "Import SR (raidres.top)",
         SETUP_SR_OPEN = "Open SR window",
         SETUP_DROPS_SIDE = "All items that dropped in this raid appear here (newest first).",
         SETUP_DROPS_EMPTY = "No drops in this raid yet.",
@@ -1413,7 +1413,7 @@ local LOCALE = {
         WIN_EXPORT_TITLE = "Export SR List",
         WIN_EXPORT_HINT = "Ctrl+A, Ctrl+C to copy - then send to your stand-in",
         WIN_IMPORT_TITLE = "Import SR List",
-        WIN_IMPORT_HINT = "Paste text here (Ctrl+V), then click Import",
+        WIN_IMPORT_HINT = "Paste an export (Ctrl+V): BananaLoot export or raidres.top (CSV/export), then click Import",
         WIN_IMPORT_BTN = "Import",
         WIN_CSV_SR_TITLE = "SR List as CSV (for Google Sheets)",
         WIN_CSV_HINT = "Ctrl+A, Ctrl+C - then paste into an empty Google Sheets cell (Ctrl+V)",
@@ -5230,23 +5230,96 @@ function BananaLoot:TickWhisperQueue()
     self.whisperNextTime = now + 1
 end
 
+-- CSV-Export von raidres.top: Kopfzeile "ID,Item,Boss,Attendee,Class,Specialization,Comment,Date (GMT)",
+-- je Zeile eine Reservierung (Attendee reserviert Item ID). Felder koennen in "..." stehen.
+-- Rueckgabe: Liste { name=, itemId=, itemName= } oder nil, wenn der Text kein solches CSV ist.
+function BananaLoot:ParseRaidResCSV(text)
+    if not text then return nil end
+    text = string.gsub(text, "^\239\187\191", "")
+    text = string.gsub(text, "\r", "")
+    local rows, row, field = {}, {}, ""
+    local inQuotes = false
+    local i, n = 1, string.len(text)
+    while i <= n do
+        local c = string.sub(text, i, i)
+        if inQuotes then
+            if c == '"' then
+                if string.sub(text, i + 1, i + 1) == '"' then
+                    field = field .. '"'
+                    i = i + 1
+                else
+                    inQuotes = false
+                end
+            else
+                field = field .. c
+            end
+        elseif c == '"' then
+            inQuotes = true
+        elseif c == "," then
+            table.insert(row, field)
+            field = ""
+        elseif c == "\n" then
+            table.insert(row, field)
+            field = ""
+            if table.getn(row) > 1 or row[1] ~= "" then table.insert(rows, row) end
+            row = {}
+        else
+            field = field .. c
+        end
+        i = i + 1
+    end
+    if field ~= "" or table.getn(row) > 0 then
+        table.insert(row, field)
+        table.insert(rows, row)
+    end
+    if table.getn(rows) < 1 then return nil end
+
+    local header = rows[1]
+    local colId, colItem, colName
+    for c = 1, table.getn(header) do
+        local h = string.lower(Trim(header[c]) or "")
+        if h == "id" then colId = c
+        elseif h == "item" then colItem = c
+        elseif h == "attendee" then colName = c end
+    end
+    if not colId or not colName then return nil end
+
+    local list = {}
+    for r = 2, table.getn(rows) do
+        local rw = rows[r]
+        local id = tonumber(Trim(rw[colId] or ""))
+        local who = Trim(rw[colName] or "")
+        if id and who and who ~= "" then
+            table.insert(list, { name = who, itemId = id, itemName = colItem and Trim(rw[colItem] or "") or nil })
+        end
+    end
+    return list
+end
+
 function BananaLoot:ImportRaidResData(rawText)
     if not rawText or Trim(rawText) == "" then
         return false, "empty"
     end
 
-    -- Zeilenumbrüche/Leerzeichen entfernen, die beim Copy&Paste aus dem
-    -- Browser leicht mit reinrutschen und die Base64-Dekodierung stören.
-    local cleaned = string.gsub(rawText, "%s+", "")
+    local data
+    local csvList = self:ParseRaidResCSV(rawText)
+    if csvList then
+        -- CSV-Export (ID,Item,Boss,Attendee,...)
+        data = { softReserves = csvList }
+    else
+        -- Zeilenumbrüche/Leerzeichen entfernen, die beim Copy&Paste aus dem
+        -- Browser leicht mit reinrutschen und die Base64-Dekodierung stören.
+        local cleaned = string.gsub(rawText, "%s+", "")
 
-    local decoded = Base64Decode(cleaned)
-    if not decoded or decoded == "" then
-        return false, "base64_failed"
-    end
+        local decoded = Base64Decode(cleaned)
+        if not decoded or decoded == "" then
+            return false, "base64_failed"
+        end
 
-    local data = JSONDecode(decoded)
-    if type(data) ~= "table" then
-        return false, "json_failed"
+        data = JSONDecode(decoded)
+        if type(data) ~= "table" then
+            return false, "json_failed"
+        end
     end
 
     local softList = FindFirstTable(data, { "softReserves", "softreserves", "softRes", "reserves", "items", "SoftReserves" })
@@ -5257,7 +5330,7 @@ function BananaLoot:ImportRaidResData(rawText)
     local hardList = FindFirstTable(data, { "hardReserves", "hardreserves", "hardRes", "HardReserves" })
 
     if not softList and not hardList then
-        return false, "no_entries_found", { rawJson = decoded }
+        return false, "no_entries_found", { rawJson = decoded or rawText }
     end
 
     local maxCount = self:GetMaxSRCount()

@@ -189,6 +189,9 @@ BananaLoot never talks to the internet on its own.
   If the winner cannot receive the item, auto mode pauses. Under Options >
   Automation, "Auto mode awards automatically" can be switched off so that it
   waits for "Award" after every winner, as before
+- **raidres.top import**: open your raidres.top page in the browser, copy the export (CSV or the
+  Base64 export) and paste it into the import window ("Import" detects the format). The addon
+  cannot load the link itself (no web access in WoW). CSV has no SR+ values.
 - **"Assign" button** (not for Hard Reserve): pick a raid member, then two confirmations
   before the item is awarded manually.
 - Every item also has a **"BR" check box**: puts the item on the bank character list, it
