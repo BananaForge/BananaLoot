@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.50"
+BananaLoot.VERSION = "3.51"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -503,7 +503,7 @@ local LOCALE = {
         RL_ENABLE = "Automatische Raidlead-Ansagen aktivieren",
         RL_SENDER_LABEL = "Absender (leer = nur Raidleiter):",
         RL_DELAY_LABEL = "Nachricht 2 automatisch nach (Sek., 0 = nur Button):",
-        RL_HINT = "Es sendet nur der Raidleiter oder der eingetragene Absender. Jede Boss-Ansage wird pro Raid nur einmal gepostet (auch andere BananaLoot-Clients werden informiert). Feld 1 geht beim ersten Anvisieren raus, Feld 2 per Button oder Verzögerung.",
+        RL_HINT = "Es sendet nur der Raidleiter oder der eingetragene Absender. Jede Boss-Ansage wird pro Raid nur einmal gepostet (auch andere BananaLoot-Clients werden informiert). Die Boss-Texte erscheinen NICHT im Chat, sondern als Info-Fenster bei Spielern mit BananaLoot Raider (jeder sieht nur die Erklärung seiner Rolle). Feld 1 geht beim ersten Anvisieren raus, Feld 2 per Button oder Verzögerung.",
         RL_GENERAL = "Allgemein",
         RL_GENERAL_NOTE = "Fallback für Raids ohne eigenen Text.",
         RL_UNVERIFIED = "Zonen-/Bossnamen dieses Raids sind nicht im Spiel geprüft.",
@@ -1256,7 +1256,7 @@ local LOCALE = {
         RL_ENABLE = "Enable automatic raid lead announcements",
         RL_SENDER_LABEL = "Sender (empty = raid leader only):",
         RL_DELAY_LABEL = "Message 2 automatically after (sec., 0 = button only):",
-        RL_HINT = "Only the raid leader or the entered sender posts. Each boss announcement is posted only once per raid (other BananaLoot clients are informed, too). Field 1 goes out when the boss is first targeted, field 2 via button or delay.",
+        RL_HINT = "Only the raid leader or the entered sender posts. Each boss announcement is posted only once per raid (other BananaLoot clients are informed, too). The boss texts are NOT posted to chat; they appear as an info window for players with BananaLoot Raider (everyone sees only the explanation for their role). Field 1 goes out when the boss is first targeted, field 2 via button or delay.",
         RL_GENERAL = "General",
         RL_GENERAL_NOTE = "Fallback for raids without their own text.",
         RL_UNVERIFIED = "Zone/boss names of this raid have not been verified in game.",
@@ -6019,19 +6019,68 @@ function BananaLoot:RaidleadOnTarget()
     if not self:RLCanSend() then return end
     local m1 = self:RLGetBossText(raid.key, boss, "m1")
     if m1 == "" then return end
+    -- Boss-Erklaerungen gehen NICHT mehr in den Chat, sondern als Addon-Nachricht an BananaLoot Raider
+    -- (kleines Info-Fenster pro Spieler, Rolle des Spielers hervorgehoben).
     self.rlPending[key] = true
     local m2 = self:RLGetBossText(raid.key, boss, "m2")
     local delay2 = rl.msg2delay or 0
-    local me = self
-    local channel = self:RLChannel()
-    local extra = nil
-    if m2 ~= "" and delay2 > 0 and channel then
-        extra = function() me:ScheduleChat(delay2, channel, m2) end
-    end
-    if self:RLSendLines(key, { m1 }, 14400, extra) then
+    if self:RLAnnounceBoss(raid, boss, "m1") then
+        self:RLMarkPosted(key, true)
+        self.rlPending[key] = nil
         DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L("RL_ANNOUNCING"), boss.label))
+        if m2 ~= "" and delay2 > 0 then
+            self.rlTimers = self.rlTimers or {}
+            table.insert(self.rlTimers, { due = GetTime() + delay2, raid = raid, boss = boss, field = "m2" })
+        end
     else
         self.rlPending[key] = nil
+    end
+end
+
+-- Sendet eine Addon-Nachricht an Raid/Gruppe (im Testlauf lokal an Raider).
+function BananaLoot:RLSendAddon(text)
+    if self.testMode then
+        if self.TestRouteSync then self:TestRouteSync(text) end
+        return true
+    end
+    local channel = self:RLChannel()
+    if not channel then return false end
+    pcall(function() SendAddonMessage(ROLL_SYNC_PREFIX, text, channel) end)
+    return true
+end
+
+-- Boss-Info an BananaLoot Raider: vom Standard abweichende (bearbeitete) Texte als BT-Stuecke, danach
+-- BA (Feld 1) bzw. BB (Feld 2) als Ausloeser.
+--   BT~raid~boss~feld~nr~gesamt~stueck   BA~raid~boss   BB~raid~boss
+function BananaLoot:RLAnnounceBoss(raid, boss, field)
+    if not self.testMode and not self:RLChannel() then return false end
+    local fields = { "m1", "m2" }
+    for f = 1, 2 do
+        local fld = fields[f]
+        local cur = self:RLGetBossText(raid.key, boss, fld)
+        if cur ~= (boss[fld] or "") then
+            cur = string.gsub(cur, "~", "-")
+            local total = math.max(1, math.ceil(string.len(cur) / 150))
+            for i = 1, total do
+                local piece = string.sub(cur, (i - 1) * 150 + 1, i * 150)
+                self:RLSendAddon("BT~" .. raid.key .. "~" .. boss.key .. "~" .. fld .. "~" .. i .. "~" .. total .. "~" .. piece)
+            end
+        end
+    end
+    self:RLSendAddon((field == "m2" and "BB~" or "BA~") .. raid.key .. "~" .. boss.key)
+    return true
+end
+
+function BananaLoot:TickRLTimers()
+    local t = self.rlTimers
+    if not t or table.getn(t) == 0 then return end
+    local now = GetTime()
+    for i = table.getn(t), 1, -1 do
+        local e = t[i]
+        if now >= e.due then
+            table.remove(t, i)
+            self:RLAnnounceBoss(e.raid, e.boss, e.field)
+        end
     end
 end
 
@@ -6045,9 +6094,10 @@ function BananaLoot:RLSendBossMessage(raidKey, boss, field)
     local msg = self:RLGetBossText(raidKey, boss, field)
     if msg == "" then return end
     -- Manuell gesendetes Feld 1 zaehlt als Ansage: Boss gilt als gepostet,
-    -- damit das automatische Posten beim Anvisieren nicht doppelt ausloest.
+    -- damit das automatische Senden beim Anvisieren nicht doppelt ausloest.
     if field == "m1" then self:RLMarkPosted(raidKey .. ":" .. boss.key, true) end
-    self:ScheduleChat(0.1, channel, msg)
+    local raid = self:RLGetRaid(raidKey)
+    if raid then self:RLAnnounceBoss(raid, boss, field) end
 end
 
 function BananaLoot:RaidleadOnRaidStart()
@@ -6442,6 +6492,7 @@ eventFrame:SetScript("OnUpdate", function()
     BananaLoot:TickWhisperQueue()
     BananaLoot:TickRaid()
     BananaLoot:TickChatQueue()
+    BananaLoot:TickRLTimers()
     BananaLoot:TickAutoAward()
 
     local ar = BananaLoot.activeRoll

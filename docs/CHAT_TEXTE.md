@@ -48,7 +48,7 @@ Option: *Chat-Countdown* (`OPT_COUNTDOWN_*`). Kanal Ansage, bei 10, 5, 3, 2, 1 S
 ## 6) Raidlead-Ansagen – abschaltbar
 Option: *Automatische Raidlead-Ansagen* (nur Raidleiter bzw. eingetragener Absender; Kanal RAID/PARTY). Die Texte sind frei editierbar (Raidlead-Fenster), Standardtexte stehen in `BananaLootBossData.lua`.
 - **Raid starten**: Willkommensnachricht + Trash-Hinweis (je Raid, sonst "Allgemein")
-- **Boss anvisieren** (einmal pro Raid): Nachricht 1 des Bosses (≈113 Standardtexte, z. B. "Lucifron: Tank ihn mit den 2 Flamewaker Protectors ..."), danach optional Nachricht 2 nach Verzögerung/Button
+- **Boss anvisieren**: seit v3.51 **kein Chat-Text mehr**, sondern Addon-Nachricht an BananaLoot Raider (Info-Fenster mit der Erklärung für die Rolle des Spielers)
 - **Raid beenden**: Abschlussnachricht
 
 ## 7) Raid-Code

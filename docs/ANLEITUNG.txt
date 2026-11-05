@@ -1417,3 +1417,11 @@ Button "Zuweisen" (ab v3.49)
 Jede Loot-Zeile (ausser Hard Reserve) hat einen Button "Zuweisen": Raid-Mitglied aus der Liste
 waehlen, dann zwei Bestaetigungen ("Item an X vergeben?" und "ZWEITE BESTAETIGUNG"), erst danach
 wird vergeben. Alle Chat-Texte im Ueberblick: docs/CHAT_TEXTE.md.
+
+
+Boss-Erklaerungen (ab v3.51)
+----------------------------
+Die Boss-Texte des Raidlead-Fensters gehen nicht mehr in den Chat, sondern als Addon-Nachricht an
+BananaLoot Raider. Dort oeffnet sich ein kleines Fenster mit der Erklaerung fuer die Rolle des
+Spielers (Tank/DD/Heiler). Bearbeitete Texte werden mitgeschickt. Willkommens-, Trash- und
+Abschlussnachricht bleiben im Chat.

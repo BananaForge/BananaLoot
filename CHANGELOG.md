@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.51 (vs. v3.50)
+
+- **Changed:** Raid lead boss explanations are no longer posted to raid chat. Targeting a boss (or the "send" buttons in the raid lead window) now sends them as an addon message to BananaLoot Raider, which shows each player a small window with only the explanation for their role. Edited texts are sent along and stored by Raider. Welcome/trash/closing messages still go to chat.
+
 ## v3.50 (vs. v3.49)
 
 - **Changed:** The "ARF" wording is gone from everything players see: the raid chat announcement now says "Frei-Roll" / "Open Roll", as do the roll popup mode and tooltips. The `/bl arf` command still works.
