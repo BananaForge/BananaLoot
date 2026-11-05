@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.45 (vs. v3.44)
+
+- **New:** Check box "Raid Roll" on every item of the loot window. Checked = the item is on the Raid Roll list (set from the start, the box is already checked). If something drops that you do not want to roll, check the box: the item is raffled among the raid without a roll when you start auto mode, or immediately when auto mode reaches it if it is already running. Unchecking takes it off the list again. Hard Reserve items cannot be checked. The tick only changes the running list; at the next raid start the raid setup tidies the list for that raid's items again.
+
 ## v3.44 (vs. v3.43)
 
 - **New:** LFM assistant: the generated text is now always **English** (the world channel is English), regardless of the addon language; only the buttons follow your language. The raid's Hard Reserve items are posted as **clickable item links** in the world channel (the text shows `[Item]`, the links are inserted when posting). The length is counted with the links (a link costs about 44 more characters), so fewer items fit; the rest is shown as "+N".

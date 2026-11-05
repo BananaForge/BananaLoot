@@ -189,6 +189,11 @@ BananaLoot never talks to the internet on its own.
   If the winner cannot receive the item, auto mode pauses. Under Options >
   Automation, "Auto mode awards automatically" can be switched off so that it
   waits for "Award" after every winner, as before
+- Every item of the loot window has a **"Raid Roll" check box**: checked means the
+  item is on the Raid Roll list (already checked if it was set up from the
+  start). Check it when something drops that you do not want to roll, and auto
+  mode raffles it among the raid without a roll (also if auto mode is already
+  running). Hard Reserve items cannot be checked
 - Multiple drops of the same item are counted correctly and handled one by one
 - `/bl arf [Item]` suspends SR for a single roll (open to everyone)
 - Attempts to award automatically via the master loot API – if that fails,

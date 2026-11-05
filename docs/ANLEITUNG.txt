@@ -31,6 +31,14 @@ BEDIENUNG (Masterlooter)
                    er nach jedem Gewinner wie frueher auf "Vergeben".
                    Alternativ per "Auto: An/Aus"-Button oben im
                    Loot-Fenster umschaltbar, ohne den Befehl zu tippen.
+                   RAID-ROLL-HAKEN: Jedes Item im Loot-Fenster hat den Haken
+                   "Raid-Roll". Gesetzt = das Item steht auf der Raid-Roll-
+                   Liste (war es von Anfang an so eingestellt, ist der Haken
+                   schon gesetzt). Droppt etwas, das du nicht ausrollen willst,
+                   setzt du den Haken: Das Item wird beim Start des Auto-Modus
+                   ohne Roll unter dem Raid verlost, bei laufendem Auto-Modus
+                   sobald er das Item erreicht. Haken entfernen nimmt es wieder
+                   von der Liste. Hard-Reserve-Items lassen sich nicht abhaken.
 /bl stop       -> bricht Auto-Modus und einen laufenden Roll sofort ab.
                    Alternativ per "Stopp"-Button oben im Loot-Fenster,
                    direkt neben "Auto: An/Aus". Wichtig: der Auto-Button

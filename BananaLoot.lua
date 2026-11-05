@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.44"
+BananaLoot.VERSION = "3.45"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -536,6 +536,11 @@ local LOCALE = {
         UI_POPUP_WIPE_YES = "Ja, komplett leeren",
         UI_OVERFLOW = "|cffff5555%d weitere Item(s) werden nicht angezeigt (Limit %d)|r",
         UI_BTN_MANAGE = "Verwalten",
+        UI_CHECK_RAIDROLL = "Raid-Roll",
+        UI_CHECK_RAIDROLL_TIP = "Haken = Item steht auf der Raid-Roll-Liste: Es wird beim Start des Auto-Modus (oder beim nächsten Öffnen der Beute) ohne Roll unter dem Raid verlost.",
+        UI_CHECK_RAIDROLL_HR = "Dieses Item ist Hard Reserve und wird nie verlost. Ändern über \"Verwalten\".",
+        UI_RAIDROLL_SET = "|cff33ff99BananaLoot|r: %s steht jetzt auf der Raid-Roll-Liste (wird im Auto-Modus automatisch verlost).",
+        UI_RAIDROLL_UNSET = "|cff33ff99BananaLoot|r: %s ist nicht mehr auf der Raid-Roll-Liste.",
         UI_BTN_MANAGE_TIP = "Reservierungen dieses Items ansehen und ändern, Gewinner von Hand eintragen",
         UI_BTN_ROLL_TIP = "Roll für dieses Item starten (mit SR: nur die Reservierer dürfen würfeln)",
         UI_BTN_ARF_TIP = "Frei-Roll (ARF = Alle Rollen Frei): offener Roll für ALLE, die SR werden für diesen Roll ausgesetzt",
@@ -1266,6 +1271,11 @@ local LOCALE = {
         UI_POPUP_WIPE_YES = "Yes, clear everything",
         UI_OVERFLOW = "|cffff5555%d more item(s) not shown (limit %d)|r",
         UI_BTN_MANAGE = "Manage",
+        UI_CHECK_RAIDROLL = "Raid Roll",
+        UI_CHECK_RAIDROLL_TIP = "Check = item is on the Raid Roll list: it is raffled among the raid without a roll when auto mode starts (or the next time the loot opens).",
+        UI_CHECK_RAIDROLL_HR = "This item is Hard Reserve and is never raffled. Change it via \"Manage\".",
+        UI_RAIDROLL_SET = "|cff33ff99BananaLoot|r: %s is now on the Raid Roll list (raffled automatically in auto mode).",
+        UI_RAIDROLL_UNSET = "|cff33ff99BananaLoot|r: %s is no longer on the Raid Roll list.",
         UI_BTN_MANAGE_TIP = "View and change the reservations of this item, enter a winner by hand",
         UI_BTN_ROLL_TIP = "Start a roll for this item (with SR: only the reservers may roll)",
         UI_BTN_ARF_TIP = "Open Roll (ARF = All Rolls Free): open roll for EVERYONE, SR is suspended for this roll",
@@ -2219,6 +2229,20 @@ function BananaLoot:RemoveRaidRollItem(itemID)
         return true
     end
     return false
+end
+
+-- Haken "Raid-Roll" in der Loot-Ansicht: Item auf die Raid-Roll-Liste setzen bzw. wieder
+-- entfernen. Gilt nur fuer die laufende Liste (beim naechsten Raid-Start raeumt der Raid-Setup die
+-- Liste fuer die Items des Raids ohnehin neu auf). Hard-Reserve-Items bleiben unberuehrt.
+function BananaLoot:SetRaidRollFromLoot(itemID, link, on)
+    EnsureDB()
+    if on then
+        if self:IsHardReserve(itemID) then return false end
+        local ok = self:AddRaidRollItem(link or ("item:" .. itemID))
+        return ok and true or false
+    end
+    self:RemoveRaidRollItem(itemID)
+    return true
 end
 
 function BananaLoot:GetRaidRollList()
@@ -4163,6 +4187,20 @@ function BananaLoot:AutoAdvance()
 
     self.autoRunning = true
     local nextItem = table.remove(self.lootQueue, 1)
+
+    -- Steht das Item (inzwischen) auf der Raid-Roll-Liste, wird es sofort unter dem Raid verlost
+    -- statt gerollt, z.B. wenn der Haken "Raid-Roll" erst nach dem Start des Auto-Modus gesetzt wurde.
+    if self:IsRaidRollItem(nextItem.itemID) and not self:IsHardReserve(nextItem.itemID)
+        and not self:IsBankReserve(nextItem.itemID) and (self.lootCounts[nextItem.itemID] or 0) > 0 then
+        if self:AwardRaidRollItem(nextItem.itemID, nextItem.link, {}) then
+            local c = (self.lootCounts[nextItem.itemID] or 1) - 1
+            if c <= 0 then self.lootCounts[nextItem.itemID] = nil else self.lootCounts[nextItem.itemID] = c end
+            self:RefreshKnownLootItems()
+            if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+            self:AutoAdvance()
+            return
+        end
+    end
 
     -- lootCounts wird bei vollständiger Vergabe (auch manuell über "Verwalten")
     -- auf nil gesetzt. Ist das hier schon der Fall, wurde das Item bereits

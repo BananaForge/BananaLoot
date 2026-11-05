@@ -862,14 +862,46 @@ local function CreateLootRow(index)
     row.playersText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.playersText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -31)
     row.playersText:SetJustifyH("LEFT")
-    row.playersText:SetWidth(480)
+    row.playersText:SetWidth(380)
     row.playersText:SetHeight(12)
+
+    -- Haken "Raid-Roll" (rechts neben den Textzeilen 2/3): Item auf die Raid-Roll-Liste setzen
+    row.rrCheck = CreateFrame("CheckButton", "BananaLootRow" .. index .. "RRCheck", row, "UICheckButtonTemplate")
+    row.rrCheck:SetWidth(24)
+    row.rrCheck:SetHeight(24)
+    row.rrCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -84, -32)
+    row.rrLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.rrLabel:SetPoint("LEFT", row.rrCheck, "RIGHT", 0, 1)
+    row.rrCheck:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        local r = this:GetParent()
+        local want = this:GetChecked() and true or false
+        if not r.itemID then return end
+        local ok = BananaLoot:SetRaidRollFromLoot(r.itemID, r.currentLink, want)
+        if want and ok then
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("UI_RAIDROLL_SET"), r.currentLink or ("Item " .. r.itemID)))
+        elseif not want then
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("UI_RAIDROLL_UNSET"), r.currentLink or ("Item " .. r.itemID)))
+        end
+        BananaLoot_UI:Refresh()
+    end)
+    row.rrCheck:SetScript("OnEnter", function()
+        local r = this:GetParent()
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        if r.itemID and BananaLoot:IsHardReserve(r.itemID) then
+            GameTooltip:SetText(BananaLoot:L("UI_CHECK_RAIDROLL_HR"), 1, 0.5, 0.5, 1, 1)
+        else
+            GameTooltip:SetText(BananaLoot:L("UI_CHECK_RAIDROLL_TIP"), 1, 1, 1, 1, 1)
+        end
+        GameTooltip:Show()
+    end)
+    row.rrCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Zeile 3: Status
     row.statusText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.statusText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -46)
     row.statusText:SetJustifyH("LEFT")
-    row.statusText:SetWidth(480)
+    row.statusText:SetWidth(380)
     row.statusText:SetHeight(12)
 
     -- Zeile 4: Gewinner/Disenchanter links, "Vergeben" rechts
@@ -967,6 +999,18 @@ function BananaLoot_UI:RefreshLoot()
         local qty = BananaLoot.lootCounts[id]
         local qtyTxt = (qty and qty > 1) and string.format(BananaLoot:L("UI_QTY"), qty) or ""
         row.itemText:SetText(prettyDisplay .. tag .. qtyTxt)
+
+        -- Haken "Raid-Roll": gesetzt, wenn das Item auf der Raid-Roll-Liste steht; bei Hard
+        -- Reserve gesperrt (wird nie verlost)
+        row.rrLabel:SetText(BananaLoot:L("UI_CHECK_RAIDROLL"))
+        row.rrCheck:SetChecked(BananaLoot:IsRaidRollItem(id))
+        if isHR then
+            row.rrCheck:Disable()
+            row.rrLabel:SetTextColor(0.5, 0.5, 0.5)
+        else
+            row.rrCheck:Enable()
+            row.rrLabel:SetTextColor(1, 1, 1)
+        end
 
         row.manageBtn:SetText(BananaLoot:L("UI_BTN_MANAGE"))
         row.manageBtn:SetScript("OnClick", function()
