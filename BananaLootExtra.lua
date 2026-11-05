@@ -3051,6 +3051,7 @@ function BananaLoot_UI:ApplyLocaleAll()
     if self.ApplyLocaleRaid then self:ApplyLocaleRaid() end
     if self.ApplyLocaleSetup then self:ApplyLocaleSetup() end
     if self.ApplyLocaleRaidCode then self:ApplyLocaleRaidCode() end
+    if self.ApplyLocaleLFMBuilder then self:ApplyLocaleLFMBuilder() end
     if self.ApplyLocaleRaidlead then self:ApplyLocaleRaidlead() end
     if self.ApplyLocaleStats then self:ApplyLocaleStats() end
     if self.ApplyLocaleTest then self:ApplyLocaleTest() end

@@ -23,4 +23,5 @@ BananaLootZoneLoot.lua
 BananaLootRaidLoot.lua
 BananaLootPrefetch.lua
 BananaLootRaidSetup.lua
+BananaLootLFMBuilder.lua
 BananaLootRaidCode.lua

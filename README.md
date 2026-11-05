@@ -432,6 +432,16 @@ BananaLoot never talks to the internet on its own.
   interval – e.g. for PUG raid ads or to replace a player who left
 - Up to 255 characters with a live counter, interval in minutes
   (minimum 1, to stay clear of the server's chat spam protection)
+- **LFM assistant** ("Build text..." in the LFM window): pick one of your
+  prepared raids and what you are looking for, and the text is built for you.
+  Tank / Healer / DPS buttons pick a whole role, a class button picks all of its
+  specs, and every spec can be toggled on its own (e.g. "Tanks, Healers, Mage
+  (Frost), Warlock (Destruction)"). The raid's **Hard Reserve items are added
+  to the text automatically** ("HR: ..."), a hint to whisper for an invite is
+  appended, and a live preview with the character count shows the result. "Use
+  text" fills the LFM window (still editable), "Use text and start LFM" also
+  posts it right away and then at your interval. The text is shortened to the 255
+  characters of a chat line (fewer HR items first, shown as "+N")
 - One Start/Stop button; text and interval are saved, but posting
   **never** restarts on its own after a relog or `/reload`
 - The world channel's number is looked up by name before every post
@@ -588,6 +598,7 @@ BananaLootZoneLoot.lua    Instance -> item IDs for item preloading (generated, d
 BananaLootPrefetch.lua    Item preloading when entering an instance
 BananaLootRaidLoot.lua    Raid -> boss -> item IDs for the Raid Setup window (generated, don't edit by hand)
 BananaLootRaidCode.lua    Raid code: SR from BananaLoot Raider, stand-in sync, hand over raid lead
+BananaLootLFMBuilder.lua   LFM assistant: LFM text from a prepared raid and the wanted roles/classes/specs
 BananaLootRaidSetup.lua   Raid preparation: raid chooser, Hard Reserve / Raid Roll picker with quality filter, prepared raids, templates, Drops tab
 BananaLootTest.lua        Test mode (simulated loot drop)
 Icons/                    TGA textures loaded in-game

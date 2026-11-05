@@ -233,6 +233,24 @@ Text in regelmäßigen Abständen automatisch im Weltkanal (üblicherweise
 /4) posten lässt -- gedacht z.B. für PUG-Raid-Werbung oder um schnell
 Nachschub für einen abgesprungenen Spieler zu finden.
 
+ - LFM-ASSISTENT: Der Button "Text erstellen..." oben im LFM-Fenster erzeugt
+   den Text automatisch aus einem vorbereiteten Raid:
+     * Raid wählen (< >): vorbelegt mit dem im Hauptfenster ausgewählten Raid.
+     * Gesucht: "Tanks", "Heiler" und "DDs" wählen jeweils die ganze Rolle;
+       ein Klick auf eine Klasse wählt alle ihre Spezialisierungen; jede
+       Spezialisierung lässt sich einzeln an- und abwählen (z.B. Krieger
+       (Schutz), Priester (Heilig), Druide (Bär (Tank)) oder Magier (Frost)).
+       "Alle" / "Keine" setzen alles. Sind alle Specs einer Rolle gewählt,
+       steht im Text nur die Rolle ("Tanks"), sonst Klasse und Spezialisierung.
+     * Die Hard-Reserve-Items des Raids kommen automatisch in den Text
+       ("HR: ..."), abschaltbar mit dem Haken "Hard-Reserve-Items nennen".
+     * Beispiel: "LFM BWL Donnerstag - gesucht: Tanks, Heiler, Magier
+       (Frost) - HR: Bloodfang Spaulders, Netherwind Belt - /w für Einladung"
+     * Die Vorschau zeigt den fertigen Text samt Zeichenzähler. Der Text wird
+       auf 255 Zeichen gekürzt (zuerst weniger HR-Items, angezeigt als "+N").
+     * "Text übernehmen" füllt das LFM-Fenster (dort noch änderbar), "Über-
+       nehmen und LFM starten" postet zusätzlich sofort und danach im
+       eingestellten Abstand.
  - Text: mehrzeiliges Eingabefeld mit automatischem Zeilenumbruch und
    kleinerer Schrift, damit der komplette Text immer lesbar bleibt;
    hart auf 255 Zeichen begrenzt (die maximale Länge einer einzelnen
