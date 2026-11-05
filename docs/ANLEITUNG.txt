@@ -1435,3 +1435,10 @@ Das Addon kann einen Link nicht selbst laden (WoW hat keinen Webzugriff). So geh
    (CSV: ID,Item,Boss,Attendee,...; auch der alte Base64-Export und der Button "raidres.top").
 3. Namen, die nicht im Raid sind, koennen im Zuordnungs-Fenster (Alias) korrigiert werden.
 Die CSV enthaelt kein SR+, ein lokales SR+ bleibt unveraendert.
+
+
+Versions-Uebersicht (ab v3.53)
+------------------------------
+Button "Versionen" unten im Hauptfenster: zeigt alle Raid-/Gruppenmitglieder mit BananaLoot- und
+BananaLoot-Raider-Version. Gruen = aktuell, orange = veraltet, grau = keine Antwort (Addon fehlt
+oder zu alt: BananaLoot vor 3.43, Raider vor 1.2). "Neu abfragen" fragt erneut ab.

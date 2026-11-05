@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.53 (vs. v3.52)
+
+- **New:** "Versions" window (button at the bottom of the main window): lists every raid/party member with their BananaLoot and BananaLoot Raider version - green = current, orange = outdated, grey = no answer (addon missing or too old to answer) - plus a summary and a "Ask again" button. Updates live as answers arrive. `BananaLoot.RAIDER_LATEST` holds the newest known Raider version (maintained with each Raider release). The `/bl version` chat list still works.
+
 ## v3.52 (vs. v3.51)
 
 - **New:** raidres.top **CSV export** can be imported (header `ID,Item,Boss,Attendee,Class,Specialization,Comment,Date (GMT)`, one reservation per line, quoted fields supported). Paste the CSV into the import window and click "Import" - non-BananaLoot text is detected automatically and goes the raidres.top way (the old Base64/JSON export still works, the "raidres.top" button too). Item names come from the file. The CSV carries no SR+ values, so SR+ stays as it is locally.

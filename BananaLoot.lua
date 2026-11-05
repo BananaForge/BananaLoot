@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.52"
+BananaLoot.VERSION = "3.53"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -296,6 +296,13 @@ local LOCALE = {
         LFMB_APPLIED = "|cff33ff99BananaLoot|r: LFM-Text übernommen (%d Zeichen). Du kannst ihn im LFM-Fenster noch anpassen.",
         VERSION_OWN = "|cff33ff99BananaLoot|r Version %s",
         VERSION_ASKING = "|cff33ff99BananaLoot|r: Frage die Versionen in der Gruppe ab ...",
+        VER_BTN = "Versionen",
+        VER_WIN_TITLE = "Versionen im Raid",
+        VER_HINT = "Grün = aktuell, orange = veraltet, grau = keine Antwort (Addon fehlt, oder BananaLoot vor 3.43 / Raider vor 1.2).",
+        VER_COL_NAME = "Spieler",
+        VER_REFRESH = "Neu abfragen",
+        VER_NO_GROUP = "|cff888888Nicht in einer Gruppe/einem Raid.|r",
+        VER_SUMMARY = "BananaLoot: %d aktuell, %d veraltet, %d ohne Antwort\nRaider: %d aktuell, %d veraltet, %d ohne Antwort",
         VERSION_LINE = "  %s: BananaLoot v%s",
         VERSION_LINE_RAIDER = "  %s: BananaLoot Raider v%s",
         VERSION_NONE = "  (keine anderen Antworten -- Gruppe/Raid nötig, die anderen brauchen die Version ab 3.43 bzw. Raider ab 1.2)",
@@ -1049,6 +1056,13 @@ local LOCALE = {
         LFMB_APPLIED = "|cff33ff99BananaLoot|r: LFM text applied (%d characters). You can still adjust it in the LFM window.",
         VERSION_OWN = "|cff33ff99BananaLoot|r version %s",
         VERSION_ASKING = "|cff33ff99BananaLoot|r: Asking the group for their versions ...",
+        VER_BTN = "Versions",
+        VER_WIN_TITLE = "Versions in the raid",
+        VER_HINT = "Green = current, orange = outdated, grey = no answer (addon missing, or BananaLoot before 3.43 / Raider before 1.2).",
+        VER_COL_NAME = "Player",
+        VER_REFRESH = "Ask again",
+        VER_NO_GROUP = "|cff888888Not in a group/raid.|r",
+        VER_SUMMARY = "BananaLoot: %d current, %d outdated, %d no answer\nRaider: %d current, %d outdated, %d no answer",
         VERSION_LINE = "  %s: BananaLoot v%s",
         VERSION_LINE_RAIDER = "  %s: BananaLoot Raider v%s",
         VERSION_NONE = "  (no other answers -- needs a group/raid, the others need version 3.43 or Raider 1.2 or newer)",

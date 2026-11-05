@@ -192,6 +192,8 @@ BananaLoot never talks to the internet on its own.
 - **raidres.top import**: open your raidres.top page in the browser, copy the export (CSV or the
   Base64 export) and paste it into the import window ("Import" detects the format). The addon
   cannot load the link itself (no web access in WoW). CSV has no SR+ values.
+- **Versions window** (button in the main window): who in the raid has which BananaLoot and
+  BananaLoot Raider version (green current, orange outdated, grey no answer).
 - **"Assign" button** (not for Hard Reserve): pick a raid member, then two confirmations
   before the item is awarded manually.
 - Every item also has a **"BR" check box**: puts the item on the bank character list, it

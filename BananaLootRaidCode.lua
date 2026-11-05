@@ -497,11 +497,13 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
     end
     if t == "RV" then
         C.raiderVersion[sender] = fields[2] or "?"
+        if BananaLoot_UI and BananaLoot_UI.RefreshVersionWindow then BananaLoot_UI:RefreshVersionWindow() end
         return true
     end
     if t == "HA" then
         C.hasAddon[sender] = fields[2] or "?"
         if BananaLoot_UI and BananaLoot_UI.RefreshMemberPicker then BananaLoot_UI:RefreshMemberPicker() end
+        if BananaLoot_UI and BananaLoot_UI.RefreshVersionWindow then BananaLoot_UI:RefreshVersionWindow() end
         return true
     end
     if t == "HO" then
@@ -658,6 +660,181 @@ function BananaLoot:ShowGroupVersions()
         end
         if lines == 0 then DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("VERSION_NONE")) end
     end)
+end
+
+
+-- ============================================================
+-- 4c) VERSIONS-UEBERSICHT: Fenster mit allen Raid-/Gruppenmitgliedern, BananaLoot- und Raider-Version
+-- (gruen = aktuell, orange = veraltet, grau = keine Antwort). Quelle: HA/RV-Antworten auf HQ.
+-- BananaLoot.RAIDER_LATEST = neueste bekannte Raider-Version (bei jeder Raider-Aenderung mitpflegen).
+-- ============================================================
+BananaLoot.RAIDER_LATEST = "1.6"
+local VW = { rows = {}, offset = 0 }
+local VROWS = 14
+BananaLoot_UI.versionWin = VW
+
+local function HighestVersion(base, tbl)
+    local best = base
+    for _, v in pairs(tbl) do
+        if v and v ~= "?" and VersionNewer(v, best) then best = v end
+    end
+    return best
+end
+
+function BananaLoot:RequestVersions()
+    local channel = self:RaidCodeChannel()
+    if not channel or channel == "GUILD" then return false end
+    C.hasAddon = {}
+    C.raiderVersion = {}
+    C.hasAddon[UnitName("player")] = self.VERSION
+    QueueSend("HQ", channel)
+    return true
+end
+
+function BananaLoot_UI:RefreshVersionWindow()
+    if not VW.frame or not VW.frame:IsShown() then return end
+    local names = BananaLoot:GetGroupMembers(true)
+    local latestBL = HighestVersion(BananaLoot.VERSION, C.hasAddon)
+    local latestR = HighestVersion(BananaLoot.RAIDER_LATEST, C.raiderVersion)
+    local blOk, blOld, blNone, rOk, rOld, rNone = 0, 0, 0, 0, 0, 0
+    local list = {}
+    for i = 1, table.getn(names) do
+        local n = names[i]
+        local bv = C.hasAddon[n]
+        if n == UnitName("player") then bv = BananaLoot.VERSION end
+        local rv = C.raiderVersion[n]
+        local bs, rs = "none", "none"
+        if bv then bs = VersionNewer(latestBL, bv) and "old" or "ok" end
+        if rv then rs = VersionNewer(latestR, rv) and "old" or "ok" end
+        if bs == "ok" then blOk = blOk + 1 elseif bs == "old" then blOld = blOld + 1 else blNone = blNone + 1 end
+        if rs == "ok" then rOk = rOk + 1 elseif rs == "old" then rOld = rOld + 1 else rNone = rNone + 1 end
+        table.insert(list, { name = n, bv = bv, bs = bs, rv = rv, rs = rs })
+    end
+    local n = table.getn(list)
+    local maxOff = math.max(0, n - VROWS)
+    if VW.offset > maxOff then VW.offset = maxOff end
+    if VW.offset < 0 then VW.offset = 0 end
+    local color = { ok = "|cff33ff99", old = "|cffff8040", none = "|cff808080" }
+    for i = 1, VROWS do
+        local e = list[VW.offset + i]
+        local r = VW.rows[i]
+        if e then
+            r.name:SetText(BananaLoot:ColoredName(e.name))
+            r.bl:SetText(color[e.bs] .. (e.bv and ("v" .. e.bv) or "-") .. "|r")
+            r.rd:SetText(color[e.rs] .. (e.rv and ("v" .. e.rv) or "-") .. "|r")
+            r.name:Show(); r.bl:Show(); r.rd:Show()
+        else
+            r.name:Hide(); r.bl:Hide(); r.rd:Hide()
+        end
+    end
+    if n == 0 then VW.empty:SetText(BananaLoot:L("VER_NO_GROUP")) else VW.empty:SetText("") end
+    VW.summary:SetText(string.format(BananaLoot:L("VER_SUMMARY"), blOk, blOld, blNone, rOk, rOld, rNone))
+end
+
+VW.frame = CreateFrame("Frame", "BananaLootVersionFrame", UIParent)
+VW.frame:SetWidth(400)
+VW.frame:SetHeight(VROWS * 20 + 150)
+VW.frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+VW.frame:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 32,
+    insets = { left = 11, right = 11, top = 11, bottom = 11 },
+})
+BananaLoot_Theme.Darken(VW.frame)
+VW.frame:SetMovable(true)
+VW.frame:EnableMouse(true)
+VW.frame:RegisterForDrag("LeftButton")
+VW.frame:SetScript("OnDragStart", function() this:StartMoving() end)
+VW.frame:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+VW.frame:SetFrameStrata("DIALOG")
+VW.frame:Hide()
+VW.title = VW.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+VW.title:SetPoint("TOP", VW.frame, "TOP", 0, -16)
+VW.close = CreateFrame("Button", "BananaLootVersionFrameClose", VW.frame, "UIPanelCloseButton")
+VW.close:SetPoint("TOPRIGHT", VW.frame, "TOPRIGHT", -4, -4)
+VW.close:SetScript("OnClick", function() BananaLoot:PlayClickSound(); this:GetParent():Hide() end)
+VW.hint = VW.frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+VW.hint:SetPoint("TOP", VW.frame, "TOP", 0, -40)
+VW.hint:SetWidth(350)
+VW.colName = VW.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+VW.colName:SetPoint("TOPLEFT", VW.frame, "TOPLEFT", 26, -72)
+VW.colBL = VW.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+VW.colBL:SetPoint("TOPLEFT", VW.frame, "TOPLEFT", 190, -72)
+VW.colRD = VW.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+VW.colRD:SetPoint("TOPLEFT", VW.frame, "TOPLEFT", 290, -72)
+VW.list = CreateFrame("Frame", "BananaLootVersionList", VW.frame)
+VW.list:SetWidth(360)
+VW.list:SetHeight(VROWS * 20)
+VW.list:SetPoint("TOPLEFT", VW.frame, "TOPLEFT", 20, -92)
+VW.list:EnableMouseWheel(true)
+VW.list:SetScript("OnMouseWheel", function()
+    VW.offset = VW.offset - arg1
+    BananaLoot_UI:RefreshVersionWindow()
+end)
+for i = 1, VROWS do
+    local r = {}
+    r.name = VW.list:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    r.name:SetPoint("TOPLEFT", VW.list, "TOPLEFT", 6, -(i - 1) * 20)
+    r.name:SetWidth(160)
+    r.name:SetJustifyH("LEFT")
+    r.bl = VW.list:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    r.bl:SetPoint("TOPLEFT", VW.list, "TOPLEFT", 170, -(i - 1) * 20)
+    r.bl:SetWidth(80)
+    r.bl:SetJustifyH("LEFT")
+    r.rd = VW.list:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    r.rd:SetPoint("TOPLEFT", VW.list, "TOPLEFT", 270, -(i - 1) * 20)
+    r.rd:SetWidth(80)
+    r.rd:SetJustifyH("LEFT")
+    VW.rows[i] = r
+end
+VW.empty = VW.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+VW.empty:SetPoint("TOP", VW.frame, "TOP", 0, -120)
+VW.summary = VW.frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+VW.summary:SetPoint("BOTTOM", VW.frame, "BOTTOM", 0, 52)
+VW.summary:SetWidth(360)
+VW.refreshBtn = CreateFrame("Button", "BananaLootVersionRefreshBtn", VW.frame, "UIPanelButtonTemplate")
+VW.refreshBtn:SetWidth(150)
+VW.refreshBtn:SetHeight(22)
+VW.refreshBtn:SetPoint("BOTTOM", VW.frame, "BOTTOM", 0, 20)
+VW.refreshBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot:RequestVersions()
+    BananaLoot_UI:RefreshVersionWindow()
+end)
+
+function BananaLoot_UI:ApplyLocaleVersions()
+    VW.title:SetText(BananaLoot:L("VER_WIN_TITLE"))
+    VW.hint:SetText(BananaLoot:L("VER_HINT"))
+    VW.colName:SetText(BananaLoot:L("VER_COL_NAME"))
+    VW.colBL:SetText("BananaLoot")
+    VW.colRD:SetText("Raider")
+    VW.refreshBtn:SetText(BananaLoot:L("VER_REFRESH"))
+    if VW.openBtn then VW.openBtn:SetText(BananaLoot:L("VER_BTN")) end
+    BananaLoot_UI:RefreshVersionWindow()
+end
+
+function BananaLoot_UI:ShowVersions()
+    BananaLoot:RequestVersions()
+    VW.offset = 0
+    VW.frame:Show()
+    BananaLoot_UI:ApplyLocaleVersions()
+    -- Antworten treffen nach und nach ein
+    After(1.5, function() BananaLoot_UI:RefreshVersionWindow() end)
+    After(3.5, function() BananaLoot_UI:RefreshVersionWindow() end)
+end
+
+local srMainV = getglobal("BananaLootSRFrame")
+if srMainV then
+    VW.openBtn = CreateFrame("Button", "BananaLootVersionBtn", srMainV, "UIPanelButtonTemplate")
+    VW.openBtn:SetWidth(100)
+    VW.openBtn:SetHeight(22)
+    VW.openBtn:SetPoint("BOTTOMRIGHT", srMainV, "BOTTOMRIGHT", -176, 14)
+    VW.openBtn:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        BananaLoot_UI:ShowVersions()
+    end)
+    VW.openBtn:SetText(BananaLoot:L("VER_BTN"))
 end
 
 -- ============================================================
