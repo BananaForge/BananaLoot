@@ -189,6 +189,10 @@ BananaLoot never talks to the internet on its own.
   If the winner cannot receive the item, auto mode pauses. Under Options >
   Automation, "Auto mode awards automatically" can be switched off so that it
   waits for "Award" after every winner, as before
+- Every item also has a **"BR" check box**: puts the item on the bank character list, it
+  then goes to the BR looter automatically (next auto run / next drop).
+- **DE / EN buttons** at the top right of the windows switch the language immediately.
+- The **LFM assistant text is editable** (255 character counter, links counted).
 - Every item of the loot window also has an **"Auto" check box** (checked by default):
   unchecked items are skipped by auto mode and awarded by you manually. Hard Reserve
   items are always manual.

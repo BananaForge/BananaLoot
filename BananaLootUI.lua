@@ -211,8 +211,50 @@ local srRaidNameText = srFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlig
 srRaidNameText:SetPoint("TOP", srFrame, "TOP", 0, -62)
 srRaidNameText:SetText("")
 
+-- Kleine Sprach-Buttons "DE" / "EN" rechts oben neben dem Schliessen-Kreuz: ein Klick schaltet die
+-- Sprache sofort um (aktive Sprache golden, die andere grau).
+BananaLoot_UI.langBtns = {}
+function BananaLoot_UI:AddLangButtons(frame, name)
+    local en = CreateFrame("Button", name .. "LangEn", frame, "UIPanelButtonTemplate")
+    en:SetWidth(30)
+    en:SetHeight(18)
+    en:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -40, -9)
+    en:SetText("EN")
+    local de = CreateFrame("Button", name .. "LangDe", frame, "UIPanelButtonTemplate")
+    de:SetWidth(30)
+    de:SetHeight(18)
+    de:SetPoint("RIGHT", en, "LEFT", -2, 0)
+    de:SetText("DE")
+    local function pick(code)
+        BananaLoot:PlayClickSound()
+        BananaLoot:SetLanguage(code)
+        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("OPT_LANGUAGE_SET"))
+        if BananaLoot_UI.ApplyLocaleAll then BananaLoot_UI:ApplyLocaleAll() end
+    end
+    de:SetScript("OnClick", function() pick("de") end)
+    en:SetScript("OnClick", function() pick("en") end)
+    table.insert(BananaLoot_UI.langBtns, { de = de, en = en })
+    BananaLoot_UI:UpdateLangButtons()
+end
+
+function BananaLoot_UI:UpdateLangButtons()
+    local lang = BananaLoot:GetLanguage()
+    for i = 1, table.getn(self.langBtns) do
+        local b = self.langBtns[i]
+        local fd, fe = b.de.GetFontString and b.de:GetFontString(), b.en.GetFontString and b.en:GetFontString()
+        if fd and fe then
+            if lang == "en" then
+                fd:SetTextColor(0.5, 0.5, 0.5); fe:SetTextColor(1, 0.82, 0)
+            else
+                fd:SetTextColor(1, 0.82, 0); fe:SetTextColor(0.5, 0.5, 0.5)
+            end
+        end
+    end
+end
+
 local srCloseBtn = CreateFrame("Button", "BananaLootSRFrameCloseButton", srFrame, "UIPanelCloseButton")
 srCloseBtn:SetPoint("TOPRIGHT", srFrame, "TOPRIGHT", -6, -6)
+BananaLoot_UI:AddLangButtons(srFrame, "BananaLootSRFrame")
 srCloseBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     this:GetParent():Hide()
@@ -703,6 +745,7 @@ lootTitle:SetPoint("TOP", lootFrame, "TOP", 0, -18)
 
 lootTitleIcon:SetPoint("RIGHT", lootTitle, "LEFT", -6, 0)
 
+BananaLoot_UI:AddLangButtons(lootFrame, "BananaLootFrame")
 local lootCloseBtn = CreateFrame("Button", "BananaLootFrameCloseButton", lootFrame, "UIPanelCloseButton")
 lootCloseBtn:SetPoint("TOPRIGHT", lootFrame, "TOPRIGHT", -6, -6)
 lootCloseBtn:SetScript("OnClick", function()
@@ -862,14 +905,14 @@ local function CreateLootRow(index)
     row.playersText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.playersText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -31)
     row.playersText:SetJustifyH("LEFT")
-    row.playersText:SetWidth(320)
+    row.playersText:SetWidth(270)
     row.playersText:SetHeight(12)
 
     -- Haken "Raid-Roll" (rechts neben den Textzeilen 2/3): Item auf die Raid-Roll-Liste setzen
     row.rrCheck = CreateFrame("CheckButton", "BananaLootRow" .. index .. "RRCheck", row, "UICheckButtonTemplate")
     row.rrCheck:SetWidth(24)
     row.rrCheck:SetHeight(24)
-    row.rrCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -170, -32)
+    row.rrCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -192, -32)
     row.rrLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.rrLabel:SetPoint("LEFT", row.rrCheck, "RIGHT", 0, 1)
     row.rrCheck:SetScript("OnClick", function()
@@ -901,7 +944,7 @@ local function CreateLootRow(index)
     row.autoCheck = CreateFrame("CheckButton", "BananaLootRow" .. index .. "AutoCheck", row, "UICheckButtonTemplate")
     row.autoCheck:SetWidth(24)
     row.autoCheck:SetHeight(24)
-    row.autoCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -84, -32)
+    row.autoCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -112, -32)
     row.autoLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.autoLabel:SetPoint("LEFT", row.autoCheck, "RIGHT", 0, 1)
     row.autoCheck:SetScript("OnClick", function()
@@ -928,11 +971,44 @@ local function CreateLootRow(index)
     end)
     row.autoCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Haken "BR": Item auf die Bankchar-Liste setzen (geht dann automatisch an den BR-Looter)
+    row.brCheck = CreateFrame("CheckButton", "BananaLootRow" .. index .. "BRCheck", row, "UICheckButtonTemplate")
+    row.brCheck:SetWidth(24)
+    row.brCheck:SetHeight(24)
+    row.brCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -44, -32)
+    row.brLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.brLabel:SetPoint("LEFT", row.brCheck, "RIGHT", 0, 1)
+    row.brCheck:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        local r = this:GetParent()
+        local want = this:GetChecked() and true or false
+        if not r.itemID then return end
+        local ok = BananaLoot:SetBankReserveFromLoot(r.itemID, r.currentLink, want)
+        local nm = r.currentLink or ("Item " .. r.itemID)
+        if want and ok then
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("UI_BR_SET"), nm))
+        elseif not want then
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("UI_BR_UNSET"), nm))
+        end
+        BananaLoot_UI:Refresh()
+    end)
+    row.brCheck:SetScript("OnEnter", function()
+        local r = this:GetParent()
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        if r.itemID and BananaLoot:IsHardReserve(r.itemID) then
+            GameTooltip:SetText(BananaLoot:L("UI_CHECK_BR_HR"), 1, 0.5, 0.5, 1, 1)
+        else
+            GameTooltip:SetText(BananaLoot:L("UI_CHECK_BR_TIP"), 1, 1, 1, 1, 1)
+        end
+        GameTooltip:Show()
+    end)
+    row.brCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Zeile 3: Status
     row.statusText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.statusText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -46)
     row.statusText:SetJustifyH("LEFT")
-    row.statusText:SetWidth(320)
+    row.statusText:SetWidth(270)
     row.statusText:SetHeight(12)
 
     -- Zeile 4: Gewinner/Disenchanter links, "Vergeben" rechts
@@ -1041,6 +1117,16 @@ function BananaLoot_UI:RefreshLoot()
         else
             row.rrCheck:Enable()
             row.rrLabel:SetTextColor(1, 1, 1)
+        end
+
+        row.brLabel:SetText(BananaLoot:L("UI_CHECK_BR"))
+        row.brCheck:SetChecked(BananaLoot:IsBankReserve(id))
+        if isHR then
+            row.brCheck:Disable()
+            row.brLabel:SetTextColor(0.5, 0.5, 0.5)
+        else
+            row.brCheck:Enable()
+            row.brLabel:SetTextColor(1, 1, 1)
         end
 
         row.autoLabel:SetText(BananaLoot:L("UI_CHECK_AUTO"))

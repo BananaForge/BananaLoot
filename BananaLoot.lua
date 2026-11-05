@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.47"
+BananaLoot.VERSION = "3.48"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -120,6 +120,13 @@ local LOCALE = {
         UI_CHECK_AUTO = "Auto",
         UI_CHECK_AUTO_TIP = "Haken = Item wird vom Auto-Modus abgearbeitet. Ohne Haken vergibst du es selbst (manuell).",
         UI_CHECK_AUTO_HR = "Hard-Reserve-Items werden nie automatisch vergeben.",
+        UI_CHECK_BR = "BR",
+        UI_CHECK_BR_TIP = "Haken = Item steht auf der Bankchar-Liste (Bankreserve): Es geht beim nächsten Auto-Durchlauf oder Drop automatisch an den BR-Looter.",
+        UI_CHECK_BR_HR = "Hard-Reserve-Items können nicht auf die Bankchar-Liste. Ändern über \"Verwalten\".",
+        UI_BR_SET = "|cff33ff99[BananaLoot]|r %s steht jetzt auf der Bankchar-Liste und geht automatisch an den BR-Looter.",
+        UI_BR_UNSET = "|cff33ff99[BananaLoot]|r %s ist nicht mehr auf der Bankchar-Liste.",
+        LFMB_EDIT_HINT = "Der Text ist bearbeitbar - ergänze, was sich nicht auswählen lässt. Eine neue Auswahl erzeugt den Text neu.",
+        LFMB_TOO_LONG = "|cffff5555[BananaLoot]|r Der LFM-Text ist zu lang (%d / %d Zeichen). Bitte kürzen.",
         AUTO_PAUSED = "|cffff5555[BananaLoot]|r Auto-Modus pausiert: bitte manuell im Loot-Fenster vergeben, dann /bl auto erneut tippen um fortzufahren.",
 
         -- Countdown
@@ -863,6 +870,13 @@ local LOCALE = {
         UI_CHECK_AUTO = "Auto",
         UI_CHECK_AUTO_TIP = "Check = item is handled by auto mode. Unchecked items you award yourself (manually).",
         UI_CHECK_AUTO_HR = "Hard Reserve items are never awarded automatically.",
+        UI_CHECK_BR = "BR",
+        UI_CHECK_BR_TIP = "Check = item is on the bank character list (bank reserve): on the next auto run or drop it goes to the BR looter automatically.",
+        UI_CHECK_BR_HR = "Hard Reserve items cannot go on the bank character list. Change it via \"Manage\".",
+        UI_BR_SET = "|cff33ff99[BananaLoot]|r %s is now on the bank character list and goes to the BR looter automatically.",
+        UI_BR_UNSET = "|cff33ff99[BananaLoot]|r %s is no longer on the bank character list.",
+        LFMB_EDIT_HINT = "The text is editable - add anything that cannot be selected. A new selection regenerates the text.",
+        LFMB_TOO_LONG = "|cffff5555[BananaLoot]|r The LFM text is too long (%d / %d characters). Please shorten it.",
         AUTO_PAUSED = "|cffff5555[BananaLoot]|r Auto mode paused: please award manually in the loot window, then type /bl auto again to continue.",
 
         COUNTDOWN_10 = "[BananaLoot] Roll ends in 10 seconds -- please wrap it up!",
@@ -2253,6 +2267,19 @@ function BananaLoot:SetRaidRollFromLoot(itemID, link, on)
     return true
 end
 
+-- Haken "BR" in der Loot-Ansicht: Item auf die Bankchar-Liste (Bankreserve) setzen bzw. entfernen.
+-- Hard-Reserve-Items bleiben unberuehrt. Bankreserve verdraengt die Raid-Roll-Liste.
+function BananaLoot:SetBankReserveFromLoot(itemID, link, on)
+    EnsureDB()
+    if on then
+        if self:IsHardReserve(itemID) then return false end
+        local ok = self:AddBankReserve(link or ("item:" .. itemID))
+        return ok and true or false
+    end
+    self:RemoveBankReserve(itemID)
+    return true
+end
+
 function BananaLoot:GetRaidRollList()
     EnsureDB()
     return BananaLoot_DB.raidRolls
@@ -2978,7 +3005,10 @@ local function BroadcastAward(itemID, winnerName, poolCode)
     -- 5. Feld: Herkunft des Loots (Boss/Mob), fuer die Gruppierung der Raider-Loot-Historie
     local src = BananaLoot.itemSource and BananaLoot.itemSource[itemID] or ""
     src = string.gsub(src, "~", " ")
-    SendAwardOrTradeMessage("AW~" .. itemID .. "~" .. winnerName .. "~" .. poolCode .. "~" .. src)
+    -- 6. Feld: Kill-Nummer dieses Mobs -- gleichnamige Mobs, die nacheinander getoetet und gelootet
+    -- werden, bleiben so getrennte Gruppen in der Raider-Historie
+    local seq = BananaLoot.itemSeq and BananaLoot.itemSeq[itemID] or 0
+    SendAwardOrTradeMessage("AW~" .. itemID .. "~" .. winnerName .. "~" .. poolCode .. "~" .. src .. "~" .. seq)
 end
 
 -- ============================================================
@@ -4086,8 +4116,13 @@ function BananaLoot:OnLootOpened()
         end
         src = src or self.lastKill or ""
         self.itemSource = self.itemSource or {}
+        self.itemSeq = self.itemSeq or {}
+        local seq = (self.killCount and self.killCount[src]) or 0
         for i = 1, table.getn(items) do
-            if items[i].itemID then self.itemSource[items[i].itemID] = src end
+            if items[i].itemID then
+                self.itemSource[items[i].itemID] = src
+                self.itemSeq[items[i].itemID] = seq
+            end
         end
     end
 
@@ -4222,6 +4257,16 @@ function BananaLoot:AutoAdvance()
 
     self.autoRunning = true
     local nextItem = table.remove(self.lootQueue, 1)
+
+    -- Steht das Item (inzwischen) auf der Bankchar-Liste (Haken "BR"), geht es sofort an den BR-Looter.
+    if self:IsBankReserve(nextItem.itemID) and not self:IsHardReserve(nextItem.itemID)
+        and (self.lootCounts[nextItem.itemID] or 0) > 0 then
+        self:AwardBankReserveItem(nextItem.itemID, nextItem.link)
+        self:RefreshKnownLootItems()
+        if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+        self:AutoAdvance()
+        return
+    end
 
     -- Steht das Item (inzwischen) auf der Raid-Roll-Liste, wird es sofort unter dem Raid verlost
     -- statt gerollt, z.B. wenn der Haken "Raid-Roll" erst nach dem Start des Auto-Modus gesetzt wurde.
@@ -6318,7 +6363,11 @@ eventFrame:SetScript("OnEvent", function()
 
     elseif event == "CHAT_MSG_COMBAT_HOSTILE_DEATH" then
         local _, _, mob = string.find(arg1 or "", "^(.+) dies%.$")
-        if mob then BananaLoot.lastKill = mob end
+        if mob then
+            BananaLoot.lastKill = mob
+            BananaLoot.killCount = BananaLoot.killCount or {}
+            BananaLoot.killCount[mob] = (BananaLoot.killCount[mob] or 0) + 1
+        end
 
     elseif event == "PLAYER_TARGET_CHANGED" then
         TryAutoMasterLoot()

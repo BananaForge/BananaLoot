@@ -1,5 +1,12 @@
 # BananaLoot Changelog
 
+## v3.48 (vs. v3.47)
+
+- **New:** Check box "BR" next to "Raid Roll" and "Auto" on every loot item: puts the item on the bank character list (bank reserve). On the next auto run or drop it goes to the BR looter automatically (also when auto mode is already running). Hard Reserve items cannot be checked; BR replaces the Raid Roll entry.
+- **New:** Small "DE" / "EN" buttons at the top right next to the close cross of the main window and the loot window (the Raider history too): one click switches the language immediately.
+- **New:** The LFM assistant text is now editable right in the assistant (add what cannot be selected, choose the line yourself) with a live 255 character counter (links counted as in chat; turns red when too long, applying is refused). A new selection regenerates the text.
+- **New:** Award messages also carry a kill number so BananaLoot Raider keeps same-named mobs killed one after another as separate groups.
+
 ## v3.47 (vs. v3.46)
 
 - **New:** Award messages now carry the source of the loot (boss/mob: dead target, otherwise the last mob that died). BananaLoot Raider uses it to group its loot history per boss/mob.

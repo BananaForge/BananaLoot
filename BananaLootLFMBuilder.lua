@@ -390,8 +390,51 @@ F.preview:SetPoint("TOPLEFT", F, "TOPLEFT", 24, -414)
 F.preview:SetWidth(590)
 F.preview:SetJustifyH("LEFT")
 F.preview:SetJustifyV("TOP")
+-- Bearbeitbarer Text: was der Assistent erzeugt, kann von Hand ergaenzt/umgestellt werden (z.B. etwas,
+-- das sich nicht auswaehlen laesst). Eine neue Auswahl erzeugt den Text neu.
+F.edit = CreateFrame("EditBox", "BananaLootLFMBuilderEdit", F)
+F.edit:SetWidth(590)
+F.edit:SetHeight(64)
+F.edit:SetPoint("TOPLEFT", F, "TOPLEFT", 24, -414)
+F.edit:SetAutoFocus(false)
+F.edit:SetMultiLine(true)
+F.edit:SetFontObject(ChatFontSmall)
+F.edit:SetTextInsets(8, 8, 6, 6)
+F.edit:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 16, edgeSize = 14,
+    insets = { left = 4, right = 4, top = 4, bottom = 4 },
+})
+F.edit:SetBackdropColor(0, 0, 0, 0.9)
+F.edit:SetScript("OnEscapePressed", function() F.edit:ClearFocus() end)
+F.edit:SetScript("OnTextChanged", function()
+    if B.settingText then return end
+    B.UpdateCounter()
+end)
 F.counter = F:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-F.counter:SetPoint("TOPLEFT", F, "TOPLEFT", 24, -486)
+F.counter:SetPoint("TOPLEFT", F, "TOPLEFT", 24, -484)
+F.editHint = F:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+F.editHint:SetPoint("TOPLEFT", F, "TOPLEFT", 24, -498)
+F.editHint:SetWidth(590)
+F.editHint:SetJustifyH("LEFT")
+
+-- Zeichenzahl NACH dem Ersetzen der [Items] durch Links (so zaehlt der Chat)
+function B.CountText(text)
+    text = text or ""
+    local n = string.len(text)
+    local links = B.curLinks or {}
+    for name in pairs(links) do
+        if string.find(text, "[" .. name .. "]", 1, true) then n = n + LINK_OVERHEAD end
+    end
+    return n
+end
+
+function B.UpdateCounter()
+    local n = B.CountText(F.edit:GetText())
+    local color = (n > MAX_CHARS) and "|cffff5555" or "|cffffffff"
+    F.counter:SetText(color .. n .. " / " .. MAX_CHARS .. "|r   " .. BananaLoot:L("LFMB_LINK_NOTE"))
+end
 
 F.applyBtn = MakeButton("BananaLootLFMBuilderApply", 170, 26)
 F.applyBtn:SetPoint("BOTTOMLEFT", F, "BOTTOMLEFT", 24, 18)
@@ -452,25 +495,39 @@ function B.Refresh()
         end
     end
     local text, need, links = B.CurrentText()
-    local nlinks = 0
-    for _ in pairs(links or {}) do nlinks = nlinks + 1 end
+    B.curLinks = links or {}
+    B.settingText = true
     if need then
-        F.preview:SetText(text)
+        F.preview:SetText("")
+        F.edit:SetText(text)
     else
+        F.edit:SetText("")
         F.preview:SetText("|cff888888" .. BananaLoot:L("LFMB_NEED_SELECTION") .. "|r")
     end
-    -- Zeichenzahl NACH dem Ersetzen der [Items] durch Links (so zaehlt der Chat)
-    F.counter:SetText((string.len(text) + nlinks * LINK_OVERHEAD) .. " / " .. MAX_CHARS .. "   " .. BananaLoot:L("LFMB_LINK_NOTE"))
+    B.settingText = false
+    F.editHint:SetText(BananaLoot:L("LFMB_EDIT_HINT"))
+    B.UpdateCounter()
 end
 
 -- Text ins LFM-Fenster uebernehmen (dort weiter editierbar); start = sofort posten und im
 -- eingestellten Intervall wiederholen.
 function B.Apply(start)
-    local text, need, links = B.CurrentText()
-    if not need then
+    local _, _, links = B.CurrentText()
+    local text = F.edit:GetText() or ""
+    if string.gsub(text, "%s", "") == "" then
         DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("LFMB_NEED_SELECTION"))
         return
     end
+    if B.CountText(text) > MAX_CHARS then
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("LFMB_TOO_LONG"), B.CountText(text), MAX_CHARS))
+        return
+    end
+    -- nur Items behalten, die noch im (ggf. bearbeiteten) Text stehen
+    local kept = {}
+    for name, id in pairs(links or {}) do
+        if string.find(text, "[" .. name .. "]", 1, true) then kept[name] = id end
+    end
+    links = kept
     BananaLoot:SetLFMText(text)
     BananaLoot.EnsureDB()
     BananaLoot_DB.settings.lfmLinks = links   -- [Name] -> Item-ID, wird beim Posten zu Links

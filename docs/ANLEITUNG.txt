@@ -1401,3 +1401,12 @@ Jedes Item hat neben "Raid-Roll" einen zweiten Haken "Auto" (standardmaessig ges
 Mit Haken: Der Auto-Modus arbeitet das Item ab. Ohne Haken: Du vergibst es selbst
 manuell, der Auto-Modus ueberspringt es. Hard-Reserve-Items sind immer manuell.
 Am Ende meldet der Auto-Modus, wie viele Items noch manuell offen sind.
+
+
+Haken "BR", Sprach-Buttons, LFM-Text (ab v3.48)
+-----------------------------------------------
+- Haken "BR" neben "Raid-Roll"/"Auto": setzt das Item auf die Bankchar-Liste. Beim naechsten
+  Auto-Durchlauf bzw. Drop geht es automatisch an den BR-Looter. Hard Reserve ist gesperrt.
+- "DE" / "EN" rechts oben neben dem Kreuz schalten die Sprache sofort um.
+- Der vom LFM-Assistenten erzeugte Text ist direkt bearbeitbar (Zaehler X / 255, rot wenn zu
+  lang). Eine neue Auswahl erzeugt den Text neu.
