@@ -192,7 +192,13 @@ function BananaLoot:DeletePreparedRaid(id)
     if not e then return false end
     if self.CodeOnDelete then self:CodeOnDelete(e) end
     table.remove(self:GetPreparedRaids(), idx)
-    if BananaLoot_DB.selectedPreparedRaid == id then BananaLoot_DB.selectedPreparedRaid = nil end
+    if BananaLoot_DB.selectedPreparedRaid == id then
+        BananaLoot_DB.selectedPreparedRaid = nil
+        -- Der ausgewaehlte Raid ist weg: seine SR (auch importierte/geflusterte) verschwinden aus dem
+        -- Hauptfenster. Ein gerade laufender Raid behaelt seine SR.
+        local session = self:GetRaidSession()
+        if not (session and session.running) then self:ClearAllReservations() end
+    end
     return true
 end
 

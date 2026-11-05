@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.56 (vs. v3.55)
+
+- **Fix:** Deleting the selected prepared raid now also clears its soft reserves from the main window (imported and whispered ones as well, not only those received via raid code). A raid that is currently running keeps its reservations.
+
 ## v3.55 (vs. v3.54)
 
 - **New:** The raid setup step "2. Soft Reserve" now shows a scrollable overview of all current lists: Hard Reserve items, Soft Reserve items with the players (and their SR+ in brackets), Raid Roll and bank reserve - so you can check an import right there. It updates after an import.
