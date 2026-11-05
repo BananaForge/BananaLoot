@@ -1662,6 +1662,7 @@ end
 function BananaLoot_UI:Refresh()
     self:RefreshLoot()
     self:RefreshSR()
+    if self.RefreshSetupOverview then self:RefreshSetupOverview() end
 end
 
 -- ------------------------------------------------------------

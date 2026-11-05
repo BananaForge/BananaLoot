@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.55 (vs. v3.54)
+
+- **New:** The raid setup step "2. Soft Reserve" now shows a scrollable overview of all current lists: Hard Reserve items, Soft Reserve items with the players (and their SR+ in brackets), Raid Roll and bank reserve - so you can check an import right there. It updates after an import.
+- **Changed:** Shorter SR step text and the subtitle now says raidres.top instead of "raid request link".
+
 ## v3.54 (vs. v3.53)
 
 - **Fix:** The editable text field in the LFM assistant showed up as a thin bar and the text was invisible. It now uses the same input box as the LFM window (framed, several lines visible).

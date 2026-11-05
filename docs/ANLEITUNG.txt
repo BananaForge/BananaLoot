@@ -1442,3 +1442,10 @@ Versions-Uebersicht (ab v3.53)
 Button "Versionen" unten im Hauptfenster: zeigt alle Raid-/Gruppenmitglieder mit BananaLoot- und
 BananaLoot-Raider-Version. Gruen = aktuell, orange = veraltet, grau = keine Antwort (Addon fehlt
 oder zu alt: BananaLoot vor 3.43, Raider vor 1.2). "Neu abfragen" fragt erneut ab.
+
+
+Uebersicht im Schritt "Soft Reserve" (ab v3.55)
+-----------------------------------------------
+Im Raid-Vorbereitungsfenster zeigt der Schritt "2. Soft Reserve" eine scrollbare Uebersicht aller
+aktuellen Listen: Hard Reserve, Soft Reserve (Item mit Spielern und SR+ in Klammern), Raid-Roll
+und Bankreserve. Nach einem Import dort pruefen.

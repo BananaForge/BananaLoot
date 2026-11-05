@@ -744,25 +744,136 @@ F.srPane:SetPoint("TOPLEFT", F, "TOPLEFT", 20, -100)
 F.srPane:SetBackdrop(PANEL_BACKDROP)
 F.srPane:SetBackdropColor(0, 0, 0, BananaLoot_Theme.PANEL_ALPHA)
 F.srText = F.srPane:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-F.srText:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 20, -20)
+F.srText:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 20, -12)
 F.srText:SetWidth(700)
 F.srText:SetJustifyH("LEFT")
 F.srText:SetJustifyV("TOP")
 F.srCount = F.srPane:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-F.srCount:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 20, -190)
+F.srCount:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 20, -112)
 F.srImportBtn = MakeButton("BananaLootRaidSetupSRImport", F.srPane, 240, 28)
-F.srImportBtn:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 20, -224)
+F.srImportBtn:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 20, -76)
 F.srImportBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     if BananaLoot_UI and BananaLoot_UI.ShowImport then BananaLoot_UI:ShowImport() end
 end)
 F.srOpenBtn = MakeButton("BananaLootRaidSetupSROpen", F.srPane, 240, 28)
-F.srOpenBtn:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 270, -224)
+F.srOpenBtn:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 270, -76)
 F.srOpenBtn:SetScript("OnClick", function()
     BananaLoot:PlayClickSound()
     local sr = getglobal("BananaLootSRFrame")
     if sr and not sr:IsShown() then sr:Show() end
 end)
+
+-- Uebersicht aller Listen (HR / SR mit Spielern / Raid-Roll / Bankreserve), scrollbar
+F.ovScroll = CreateFrame("ScrollFrame", "BananaLootRaidSetupOverviewScroll", F.srPane, "UIPanelScrollFrameTemplate")
+F.ovScroll:SetPoint("TOPLEFT", F.srPane, "TOPLEFT", 16, -136)
+F.ovScroll:SetPoint("BOTTOMRIGHT", F.srPane, "BOTTOMRIGHT", -34, 12)
+F.ovChild = CreateFrame("Frame", "BananaLootRaidSetupOverviewChild", F.ovScroll)
+F.ovChild:SetWidth(676)
+F.ovChild:SetHeight(1)
+F.ovScroll:SetScrollChild(F.ovChild)
+F.ovLines = {}
+BananaLoot_UI.setupF = F
+BananaLoot_UI.setupS = S
+local OV_LINE_H = 15
+
+local function OvLine(i)
+    if not F.ovLines[i] then
+        local fs = F.ovChild:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        fs:SetPoint("TOPLEFT", F.ovChild, "TOPLEFT", 4, -(i - 1) * OV_LINE_H)
+        fs:SetWidth(668)
+        fs:SetHeight(OV_LINE_H - 1)
+        fs:SetJustifyH("LEFT")
+        F.ovLines[i] = fs
+    end
+    return F.ovLines[i]
+end
+
+local function OvName(link, id)
+    local _, _, nm = string.find(link or "", "%[(.-)%]")
+    return string.lower(nm or ("zz" .. tostring(id)))
+end
+
+-- Sortierte Liste { id, link } einer Item-Tabelle (id -> { link = ... })
+local function OvSorted(tbl)
+    local out = {}
+    for id, e in pairs(tbl or {}) do
+        local link = (type(e) == "table" and e.link) or BananaLoot:SetupItemLink(id)
+        table.insert(out, { id = id, link = link, key = OvName(link, id) })
+    end
+    table.sort(out, function(a, b) return a.key < b.key end)
+    return out
+end
+
+function S.BuildOverview()
+    BananaLoot.EnsureDB()
+    local db = BananaLoot_DB
+    local lines = {}
+    local function add(t) table.insert(lines, t) end
+    local function section(key, n, extraA)
+        add("|cffffd100" .. string.format(BananaLoot:L(key), n, extraA) .. "|r")
+    end
+    local function none() add("   |cff888888" .. BananaLoot:L("SETUP_OV_NONE") .. "|r") end
+
+    -- Hard Reserve
+    local hr = OvSorted(db.hardReserves)
+    section("SETUP_OV_HR", table.getn(hr))
+    if table.getn(hr) == 0 then none() end
+    for i = 1, table.getn(hr) do add("   " .. hr[i].link) end
+
+    -- Soft Reserve: je Item die Spieler (SR+ in Klammern)
+    local items = {}
+    for id, res in pairs(BananaLoot.reservations or {}) do
+        if res and res.order and table.getn(res.order) > 0 then
+            table.insert(items, { id = id, link = res.link or BananaLoot:SetupItemLink(id), order = res.order, key = OvName(res.link, id) })
+        end
+    end
+    table.sort(items, function(a, b) return a.key < b.key end)
+    local players = 0
+    for _ in pairs(BananaLoot.playerReservedItems or {}) do players = players + 1 end
+    add(" ")
+    section("SETUP_OV_SR", table.getn(items), players)
+    if table.getn(items) == 0 then none() end
+    for i = 1, table.getn(items) do
+        local it = items[i]
+        local names = ""
+        for p = 1, table.getn(it.order) do
+            local n = it.order[p]
+            local stack = BananaLoot:GetStack(n, it.id)
+            names = names .. (p > 1 and ", " or "") .. n
+            if stack > 0 then names = names .. "|cffffcc00(+" .. (stack * BananaLoot:GetBonusPerStack()) .. ")|r" end
+        end
+        add("   " .. it.link .. "  |cff888888-|r  " .. names)
+    end
+
+    -- Raid-Roll
+    local rr = OvSorted(db.raidRolls)
+    add(" ")
+    section("SETUP_OV_RR", table.getn(rr))
+    if table.getn(rr) == 0 then none() end
+    for i = 1, table.getn(rr) do add("   " .. rr[i].link) end
+
+    -- Bankreserve
+    local br = OvSorted(db.bankReserves)
+    add(" ")
+    section("SETUP_OV_BR", table.getn(br))
+    if table.getn(br) == 0 then none() end
+    for i = 1, table.getn(br) do add("   " .. br[i].link) end
+
+    local n = table.getn(lines)
+    for i = 1, n do
+        local fs = OvLine(i)
+        fs:SetText(lines[i])
+        fs:Show()
+    end
+    for i = n + 1, table.getn(F.ovLines) do F.ovLines[i]:Hide() end
+    F.ovChild:SetHeight(math.max(1, n * OV_LINE_H))
+    F.ovScroll:UpdateScrollChildRect()
+end
+
+function BananaLoot_UI:RefreshSetupOverview()
+    if F.srPane:IsShown() then S.BuildOverview() end
+end
 
 -- Untere Buttonleiste
 F.allBtn = MakeButton("BananaLootRaidSetupAll", F, 90, 24)
@@ -1021,9 +1132,8 @@ function S.Refresh()
         F.qualLabel:Hide()
         for q = 1, 5 do S.qualBtns[q]:Hide() end
         F.srText:SetText(BananaLoot:L("SETUP_SR_TEXT"))
-        local n = 0
-        for _ in pairs(BananaLoot.reservations or {}) do n = n + 1 end
-        F.srCount:SetText(string.format(BananaLoot:L("SETUP_SR_COUNT"), n))
+        F.srCount:SetText(BananaLoot:L("SETUP_OV_NOTE"))
+        S.BuildOverview()
     else
         F.list:Show(); F.slider:Show(); F.searchBox:Show(); F.searchLabel:Show(); F.countText:Show(); F.left:Show()
         F.qualLabel:Show()

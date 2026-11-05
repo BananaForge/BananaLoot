@@ -192,6 +192,8 @@ BananaLoot never talks to the internet on its own.
 - **raidres.top import**: open your raidres.top page in the browser, copy the export (CSV or the
   Base64 export) and paste it into the import window ("Import" detects the format). The addon
   cannot load the link itself (no web access in WoW). CSV has no SR+ values.
+- The raid setup step "Soft Reserve" lists everything currently set: Hard Reserve, SR items with
+  players (SR+), Raid Roll and bank reserve - handy to check a raidres.top import.
 - **Versions window** (button in the main window): who in the raid has which BananaLoot and
   BananaLoot Raider version (green current, orange outdated, grey no answer).
 - **"Assign" button** (not for Hard Reserve): pick a raid member, then two confirmations
