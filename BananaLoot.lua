@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.46"
+BananaLoot.VERSION = "3.47"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -2975,7 +2975,10 @@ local function SendAwardOrTradeMessage(text)
 end
 
 local function BroadcastAward(itemID, winnerName, poolCode)
-    SendAwardOrTradeMessage("AW~" .. itemID .. "~" .. winnerName .. "~" .. poolCode)
+    -- 5. Feld: Herkunft des Loots (Boss/Mob), fuer die Gruppierung der Raider-Loot-Historie
+    local src = BananaLoot.itemSource and BananaLoot.itemSource[itemID] or ""
+    src = string.gsub(src, "~", " ")
+    SendAwardOrTradeMessage("AW~" .. itemID .. "~" .. winnerName .. "~" .. poolCode .. "~" .. src)
 end
 
 -- ============================================================
@@ -4074,6 +4077,19 @@ function BananaLoot:OnLootOpened()
 
     local items = self:ScanLootWindow()
     if table.getn(items) == 0 then return end
+
+    -- Herkunft (Boss/Mob) merken: toter Target, sonst zuletzt gestorbener Mob
+    do
+        local src = self.testSource
+        if not src and UnitExists("target") and UnitIsDead("target") and not UnitIsPlayer("target") then
+            src = UnitName("target")
+        end
+        src = src or self.lastKill or ""
+        self.itemSource = self.itemSource or {}
+        for i = 1, table.getn(items) do
+            if items[i].itemID then self.itemSource[items[i].itemID] = src end
+        end
+    end
 
     -- Fuer den Drops-Tab im Raid-Setup (siehe BananaLootRaidSetup.lua)
     if self.SetupRecordDrops then self:SetupRecordDrops(items) end
@@ -6251,6 +6267,7 @@ eventFrame:RegisterEvent("CHAT_MSG_SYSTEM")
 eventFrame:RegisterEvent("LOOT_OPENED")
 eventFrame:RegisterEvent("LOOT_CLOSED")
 eventFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+eventFrame:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
 eventFrame:RegisterEvent("CHAT_MSG_ADDON")
 eventFrame:RegisterEvent("TRADE_ACCEPT_UPDATE")
 
@@ -6298,6 +6315,10 @@ eventFrame:SetScript("OnEvent", function()
                 end
             end
         end
+
+    elseif event == "CHAT_MSG_COMBAT_HOSTILE_DEATH" then
+        local _, _, mob = string.find(arg1 or "", "^(.+) dies%.$")
+        if mob then BananaLoot.lastKill = mob end
 
     elseif event == "PLAYER_TARGET_CHANGED" then
         TryAutoMasterLoot()

@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.47 (vs. v3.46)
+
+- **New:** Award messages now carry the source of the loot (boss/mob: dead target, otherwise the last mob that died). BananaLoot Raider uses it to group its loot history per boss/mob.
+
 ## v3.46 (vs. v3.45)
 
 - **New:** Second check box "Auto" on every item of the loot window. Checked (default) = auto mode handles the item. Unchecked = you award it manually; auto mode skips it. Hard Reserve items are always manual. When auto mode finishes it now reports how many items are still open for manual awarding.

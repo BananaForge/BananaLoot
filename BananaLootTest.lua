@@ -390,6 +390,7 @@ local function EndTest(silent)
     if wasRunning then
         BananaLoot.testMode = false
         BananaLoot.testRoster = nil
+        BananaLoot.testSource = nil
         BananaLoot.testLootItems = {}
         BananaLoot.testHooks = nil
         BananaLoot.activeRoll = nil
@@ -637,6 +638,7 @@ local function BeginRun()
     end
     TPrint(BananaLoot:L("TEST_DROPPED"))
     TPrint(BananaLoot:L("TEST_HINT_HR"))
+    BananaLoot.testSource = sc.name
     BananaLoot:OnLootOpened()
     if BananaLoot_UI and BananaLoot_UI.RefreshTest then BananaLoot_UI:RefreshTest() end
 end
