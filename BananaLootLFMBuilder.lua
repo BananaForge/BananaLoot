@@ -392,13 +392,24 @@ F.preview:SetJustifyH("LEFT")
 F.preview:SetJustifyV("TOP")
 -- Bearbeitbarer Text: was der Assistent erzeugt, kann von Hand ergaenzt/umgestellt werden (z.B. etwas,
 -- das sich nicht auswaehlen laesst). Eine neue Auswahl erzeugt den Text neu.
-F.edit = CreateFrame("EditBox", "BananaLootLFMBuilderEdit", F)
+-- Wie das LFM-Textfeld im LFM-Fenster: InputBoxTemplate (mehrzeilig); dessen Rahmenstuecke werden
+-- ausgeblendet und durch einen eigenen Rahmen ersetzt (sonst bleibt eine freie Box ohne Template
+-- auf Zeilenhoehe zusammengedrueckt).
+F.edit = CreateFrame("EditBox", "BananaLootLFMBuilderEdit", F, "InputBoxTemplate")
 F.edit:SetWidth(590)
 F.edit:SetHeight(64)
 F.edit:SetPoint("TOPLEFT", F, "TOPLEFT", 24, -414)
 F.edit:SetAutoFocus(false)
+F.edit:SetMaxLetters(400)
 F.edit:SetMultiLine(true)
 F.edit:SetFontObject(ChatFontSmall)
+do
+    local parts = { "Left", "Middle", "Right" }
+    for i = 1, table.getn(parts) do
+        local tex = getglobal("BananaLootLFMBuilderEdit" .. parts[i])
+        if tex then tex:Hide() end
+    end
+end
 F.edit:SetTextInsets(8, 8, 6, 6)
 F.edit:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",

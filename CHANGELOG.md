@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.54 (vs. v3.53)
+
+- **Fix:** The editable text field in the LFM assistant showed up as a thin bar and the text was invisible. It now uses the same input box as the LFM window (framed, several lines visible).
+
 ## v3.53 (vs. v3.52)
 
 - **New:** "Versions" window (button at the bottom of the main window): lists every raid/party member with their BananaLoot and BananaLoot Raider version - green = current, orange = outdated, grey = no answer (addon missing or too old to answer) - plus a summary and a "Ask again" button. Updates live as answers arrive. `BananaLoot.RAIDER_LATEST` holds the newest known Raider version (maintained with each Raider release). The `/bl version` chat list still works.
