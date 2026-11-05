@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.49 (vs. v3.48)
+
+- **New:** Button "Assign" on every loot item (except Hard Reserve): choose any raid member from a list, then confirm twice ("Award X to Y?" and "SECOND CONFIRMATION") before the item is awarded manually.
+- **New:** `docs/CHAT_TEXTE.md` lists every text BananaLoot posts to raid/party chat, whispers and the world channel, with the event that triggers it.
+
 ## v3.48 (vs. v3.47)
 
 - **New:** Check box "BR" next to "Raid Roll" and "Auto" on every loot item: puts the item on the bank character list (bank reserve). On the next auto run or drop it goes to the BR looter automatically (also when auto mode is already running). Hard Reserve items cannot be checked; BR replaces the Raid Roll entry.

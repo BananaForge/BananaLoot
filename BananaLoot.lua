@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.48"
+BananaLoot.VERSION = "3.49"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -120,6 +120,12 @@ local LOCALE = {
         UI_CHECK_AUTO = "Auto",
         UI_CHECK_AUTO_TIP = "Haken = Item wird vom Auto-Modus abgearbeitet. Ohne Haken vergibst du es selbst (manuell).",
         UI_CHECK_AUTO_HR = "Hard-Reserve-Items werden nie automatisch vergeben.",
+        ASSIGN_BTN = "Zuweisen",
+        ASSIGN_TIP = "Item manuell an ein Raid-Mitglied vergeben (Auswahl aus dem Raid, dann zwei Bestätigungen). Nicht bei Hard Reserve.",
+        ASSIGN_HR = "|cffff5555[BananaLoot]|r Hard-Reserve-Items können nicht manuell zugewiesen werden.",
+        ASSIGN_PICK_TITLE = "Item zuweisen an ...",
+        ASSIGN_CONFIRM1 = "%s an %s vergeben?",
+        ASSIGN_CONFIRM2 = "ZWEITE BESTÄTIGUNG:\n%s wirklich endgültig an %s vergeben?",
         UI_CHECK_BR = "BR",
         UI_CHECK_BR_TIP = "Haken = Item steht auf der Bankchar-Liste (Bankreserve): Es geht beim nächsten Auto-Durchlauf oder Drop automatisch an den BR-Looter.",
         UI_CHECK_BR_HR = "Hard-Reserve-Items können nicht auf die Bankchar-Liste. Ändern über \"Verwalten\".",
@@ -870,6 +876,12 @@ local LOCALE = {
         UI_CHECK_AUTO = "Auto",
         UI_CHECK_AUTO_TIP = "Check = item is handled by auto mode. Unchecked items you award yourself (manually).",
         UI_CHECK_AUTO_HR = "Hard Reserve items are never awarded automatically.",
+        ASSIGN_BTN = "Assign",
+        ASSIGN_TIP = "Manually award the item to a raid member (pick from the raid, then two confirmations). Not for Hard Reserve.",
+        ASSIGN_HR = "|cffff5555[BananaLoot]|r Hard Reserve items cannot be assigned manually.",
+        ASSIGN_PICK_TITLE = "Assign item to ...",
+        ASSIGN_CONFIRM1 = "Award %s to %s?",
+        ASSIGN_CONFIRM2 = "SECOND CONFIRMATION:\nReally award %s to %s for good?",
         UI_CHECK_BR = "BR",
         UI_CHECK_BR_TIP = "Check = item is on the bank character list (bank reserve): on the next auto run or drop it goes to the BR looter automatically.",
         UI_CHECK_BR_HR = "Hard Reserve items cannot go on the bank character list. Change it via \"Manage\".",

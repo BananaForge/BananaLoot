@@ -1410,3 +1410,10 @@ Haken "BR", Sprach-Buttons, LFM-Text (ab v3.48)
 - "DE" / "EN" rechts oben neben dem Kreuz schalten die Sprache sofort um.
 - Der vom LFM-Assistenten erzeugte Text ist direkt bearbeitbar (Zaehler X / 255, rot wenn zu
   lang). Eine neue Auswahl erzeugt den Text neu.
+
+
+Button "Zuweisen" (ab v3.49)
+----------------------------
+Jede Loot-Zeile (ausser Hard Reserve) hat einen Button "Zuweisen": Raid-Mitglied aus der Liste
+waehlen, dann zwei Bestaetigungen ("Item an X vergeben?" und "ZWEITE BESTAETIGUNG"), erst danach
+wird vergeben. Alle Chat-Texte im Ueberblick: docs/CHAT_TEXTE.md.

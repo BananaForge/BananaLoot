@@ -667,7 +667,7 @@ local H = { rows = {}, offset = 0, showAll = false, opts = nil }
 local HROWS = 12
 
 local function InGroup()
-    return GetNumRaidMembers() > 0 or GetNumPartyMembers() > 0
+    return GetNumRaidMembers() > 0 or GetNumPartyMembers() > 0 or (BananaLoot.testMode and true or false)
 end
 
 local function IsLeader()
@@ -678,6 +678,7 @@ end
 
 -- Namen der Raid-/Gruppenmitglieder (includeSelf: auch man selbst), alphabetisch.
 function BananaLoot:GetGroupMembers(includeSelf)
+    if self.testMode and self.GetRosterNames then return self:GetRosterNames() end   -- Testlauf: Test-Raid
     local names = {}
     local me = UnitName("player")
     local n = GetNumRaidMembers()
@@ -888,6 +889,57 @@ end
 
 function BananaLoot_UI:RefreshMemberPicker()
     H.Refresh()
+end
+
+-- Manuell zuweisen: Raid-Mitglied waehlen, dann ZWEI Bestaetigungen, erst danach wird vergeben.
+if StaticPopupDialogs then
+    StaticPopupDialogs["BANANALOOT_ASSIGN_1"] = {
+        text = "", button1 = "", button2 = "",
+        OnAccept = function()
+            local a = BananaLoot_UI.assignPending
+            if not a then return end
+            local d2 = StaticPopupDialogs["BANANALOOT_ASSIGN_2"]
+            d2.text = string.format(BananaLoot:L("ASSIGN_CONFIRM2"), a.link or ("Item " .. a.itemID), a.name)
+            d2.button1 = BananaLoot:L("UI_POPUP_YES")
+            d2.button2 = BananaLoot:L("UI_POPUP_CANCEL")
+            StaticPopup_Show("BANANALOOT_ASSIGN_2")
+        end,
+        OnCancel = function() BananaLoot_UI.assignPending = nil end,
+        timeout = 0, whileDead = true, hideOnEscape = true,
+    }
+    StaticPopupDialogs["BANANALOOT_ASSIGN_2"] = {
+        text = "", button1 = "", button2 = "",
+        OnAccept = function()
+            local a = BananaLoot_UI.assignPending
+            BananaLoot_UI.assignPending = nil
+            if not a or BananaLoot:IsHardReserve(a.itemID) then return end
+            BananaLoot:AwardItem(a.itemID, a.name)
+            if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+        end,
+        OnCancel = function() BananaLoot_UI.assignPending = nil end,
+        timeout = 0, whileDead = true, hideOnEscape = true,
+    }
+end
+
+function BananaLoot_UI:ShowAssignPicker(itemID, link)
+    if not itemID then return end
+    if BananaLoot:IsHardReserve(itemID) then
+        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("ASSIGN_HR"))
+        return
+    end
+    BananaLoot_UI:ShowMemberPicker({
+        title = BananaLoot:L("ASSIGN_PICK_TITLE"),
+        hint = (link or ("Item " .. itemID)),
+        includeSelf = true,
+        onPick = function(name)
+            BananaLoot_UI.assignPending = { itemID = itemID, link = link, name = name }
+            local d1 = StaticPopupDialogs["BANANALOOT_ASSIGN_1"]
+            d1.text = string.format(BananaLoot:L("ASSIGN_CONFIRM1"), link or ("Item " .. itemID), name)
+            d1.button1 = BananaLoot:L("UI_POPUP_YES")
+            d1.button2 = BananaLoot:L("UI_POPUP_CANCEL")
+            StaticPopup_Show("BANANALOOT_ASSIGN_1")
+        end,
+    })
 end
 
 -- Raid-Lead abgeben: Mitglieder mit BananaLoot waehlen, sofort uebergeben.

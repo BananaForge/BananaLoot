@@ -971,6 +971,23 @@ local function CreateLootRow(index)
     end)
     row.autoCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Button "Zuweisen": Item manuell an ein Raid-Mitglied (Auswahl + doppelte Bestaetigung)
+    row.assignBtn = CreateFrame("Button", "BananaLootRow" .. index .. "AssignBtn", row, "UIPanelButtonTemplate")
+    row.assignBtn:SetWidth(90)
+    row.assignBtn:SetHeight(20)
+    row.assignBtn:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -116, 7)
+    row.assignBtn:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        local r = this:GetParent()
+        if BananaLoot_UI.ShowAssignPicker then BananaLoot_UI:ShowAssignPicker(r.itemID, r.currentLink) end
+    end)
+    row.assignBtn:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        GameTooltip:SetText(BananaLoot:L("ASSIGN_TIP"), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    row.assignBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Haken "BR": Item auf die Bankchar-Liste setzen (geht dann automatisch an den BR-Looter)
     row.brCheck = CreateFrame("CheckButton", "BananaLootRow" .. index .. "BRCheck", row, "UICheckButtonTemplate")
     row.brCheck:SetWidth(24)
@@ -1015,7 +1032,7 @@ local function CreateLootRow(index)
     row.winnerText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     row.winnerText:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 48, 9)
     row.winnerText:SetJustifyH("LEFT")
-    row.winnerText:SetWidth(360)
+    row.winnerText:SetWidth(280)
     row.winnerText:SetHeight(14)
 
     row.awardBtn = CreateFrame("Button", "BananaLootRow" .. index .. "AwardBtn", row, "UIPanelButtonTemplate")
@@ -1119,6 +1136,8 @@ function BananaLoot_UI:RefreshLoot()
             row.rrLabel:SetTextColor(1, 1, 1)
         end
 
+        row.assignBtn:SetText(BananaLoot:L("ASSIGN_BTN"))
+        if isHR then row.assignBtn:Disable() else row.assignBtn:Enable() end
         row.brLabel:SetText(BananaLoot:L("UI_CHECK_BR"))
         row.brCheck:SetChecked(BananaLoot:IsBankReserve(id))
         if isHR then
