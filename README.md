@@ -189,6 +189,9 @@ BananaLoot never talks to the internet on its own.
   If the winner cannot receive the item, auto mode pauses. Under Options >
   Automation, "Auto mode awards automatically" can be switched off so that it
   waits for "Award" after every winner, as before
+- Every item of the loot window also has an **"Auto" check box** (checked by default):
+  unchecked items are skipped by auto mode and awarded by you manually. Hard Reserve
+  items are always manual.
 - Every item of the loot window has a **"Raid Roll" check box**: checked means the
   item is on the Raid Roll list (already checked if it was set up from the
   start). Check it when something drops that you do not want to roll, and auto

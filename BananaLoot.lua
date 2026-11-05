@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.45"
+BananaLoot.VERSION = "3.46"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -116,6 +116,10 @@ local LOCALE = {
         LOOT_HINT = "|cff33ff99[BananaLoot]|r Tippe |cffffff00/bl auto|r für automatischen Durchlauf, oder |cffffff00/bl loot|r für die Loot-Fensteransicht.",
         AUTO_SKIPPED_HR = "|cffffcc00[BananaLoot]|r Hard-Reserve-Items übersprungen (bitte manuell vergeben): %s",
         AUTO_ALL_DONE = "|cff33ff99[BananaLoot]|r Alle Items abgearbeitet.",
+        AUTO_DONE_REST = "|cff33ff99[BananaLoot]|r Auto-Modus fertig. Noch %d Item(s) im Loot-Fenster offen (Hard Reserve oder ohne Haken \"Auto\") - bitte manuell vergeben.",
+        UI_CHECK_AUTO = "Auto",
+        UI_CHECK_AUTO_TIP = "Haken = Item wird vom Auto-Modus abgearbeitet. Ohne Haken vergibst du es selbst (manuell).",
+        UI_CHECK_AUTO_HR = "Hard-Reserve-Items werden nie automatisch vergeben.",
         AUTO_PAUSED = "|cffff5555[BananaLoot]|r Auto-Modus pausiert: bitte manuell im Loot-Fenster vergeben, dann /bl auto erneut tippen um fortzufahren.",
 
         -- Countdown
@@ -732,7 +736,7 @@ local LOCALE = {
         TEST_RAIDER_HINT = "|cff33ccff[TEST]|r BananaLoot Raider ist installiert: Für jeden Roll erscheint das Roll-Pop-up des Raiders, du kannst darin mit MS/OS/TM mitwürfeln (nur im Testlauf). Vergaben landen in der Loot-Historie des Raiders.",
         TEST_DROPPED = "|cff33ccff[TEST]|r Testlauf gestartet -- die Items liegen im Loot-Fenster. Verrolle und vergib wie im Raid, du kannst mit /roll selbst mitwürfeln. Beenden über das Testfenster.",
         TEST_HINT_HR = "|cff33ccff[TEST]|r Tipp zum Hard-Reserve-Item: im Verwalten-Fenster einen Spieler eintragen (z.B. Testopher) und per \"Gewinner\" vergeben.",
-        TEST_STATUS = "Items im Loot-Fenster: %d / %d",
+        TEST_STATUS = "Vergeben: %d von %d  |  noch im Loot-Fenster: %d",
         TEST_ALL_DONE = "|cff33ccff[TEST]|r Alle Items vergeben -- der Testlauf endet in %d Sekunden.",
         TEST_ENDED = "|cff33ccff[TEST]|r Testlauf beendet -- %d Items vergeben, deine echten Daten wurden wiederhergestellt.",
         TEST_RECOVERED = "|cffffcc00[BananaLoot]|r Unterbrochener Testlauf erkannt -- deine echten Daten wurden wiederhergestellt.",
@@ -855,6 +859,10 @@ local LOCALE = {
         LOOT_HINT = "|cff33ff99[BananaLoot]|r Type |cffffff00/bl auto|r for an automatic run, or |cffffff00/bl loot|r for the loot window view.",
         AUTO_SKIPPED_HR = "|cffffcc00[BananaLoot]|r Hard Reserve items skipped (please award manually): %s",
         AUTO_ALL_DONE = "|cff33ff99[BananaLoot]|r All items processed.",
+        AUTO_DONE_REST = "|cff33ff99[BananaLoot]|r Auto mode finished. %d item(s) still open in the loot window (Hard Reserve or \"Auto\" unchecked) - please award manually.",
+        UI_CHECK_AUTO = "Auto",
+        UI_CHECK_AUTO_TIP = "Check = item is handled by auto mode. Unchecked items you award yourself (manually).",
+        UI_CHECK_AUTO_HR = "Hard Reserve items are never awarded automatically.",
         AUTO_PAUSED = "|cffff5555[BananaLoot]|r Auto mode paused: please award manually in the loot window, then type /bl auto again to continue.",
 
         COUNTDOWN_10 = "[BananaLoot] Roll ends in 10 seconds -- please wrap it up!",
@@ -1462,7 +1470,7 @@ local LOCALE = {
         TEST_RAIDER_HINT = "|cff33ccff[TEST]|r BananaLoot Raider is installed: every roll shows the Raider's roll popup, you can roll along with MS/OS/TM (test run only). Awards show up in the Raider's loot history.",
         TEST_DROPPED = "|cff33ccff[TEST]|r Test run started -- the items are in the loot window. Roll and award like in a raid, and roll yourself with /roll. End it via the test window.",
         TEST_HINT_HR = "|cff33ccff[TEST]|r Hint for the Hard Reserve item: add a player in the Manage window (e.g. Testopher) and award via \"Winner\".",
-        TEST_STATUS = "Items in loot window: %d / %d",
+        TEST_STATUS = "Awarded: %d of %d  |  still in loot window: %d",
         TEST_ALL_DONE = "|cff33ccff[TEST]|r All items awarded -- the test run ends in %d seconds.",
         TEST_ENDED = "|cff33ccff[TEST]|r Test run finished -- %d items awarded, your real data has been restored.",
         TEST_RECOVERED = "|cffffcc00[BananaLoot]|r Interrupted test run detected -- your real data has been restored.",
@@ -4091,6 +4099,7 @@ function BananaLoot:OnLootOpened()
     if not isRepeatOpen then
         self.lastLootSignature = signature
         self.noRollItems = {}
+        self.manualItems = {}
 
         self:PlayEventSound("AuctionWindowOpen", self:GetSoundLootDetectedEnabled())
 
@@ -4166,10 +4175,15 @@ function BananaLoot:AutoAdvance()
     -- Hard-Reserve-Items werden nie automatisch verrollt, nur manuell vergeben.
     local filtered = {}
     local skippedHR = {}
+    local manualLeft = 0
+    self.manualItems = self.manualItems or {}
     for i = 1, table.getn(self.lootQueue) do
         local it = self.lootQueue[i]
         if self:IsHardReserve(it.itemID) then
             table.insert(skippedHR, it.link)
+        elseif self.manualItems[it.itemID] then
+            -- Haken "Auto" entfernt: dieses Item vergibt der Beutemeister selbst
+            manualLeft = manualLeft + 1
         else
             table.insert(filtered, it)
         end
@@ -4181,7 +4195,12 @@ function BananaLoot:AutoAdvance()
 
     if table.getn(self.lootQueue) == 0 then
         self.autoRunning = false
-        DEFAULT_CHAT_FRAME:AddMessage(self:L("AUTO_ALL_DONE"))
+        local rest = table.getn(skippedHR) + manualLeft
+        if rest > 0 then
+            DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L("AUTO_DONE_REST"), rest))
+        else
+            DEFAULT_CHAT_FRAME:AddMessage(self:L("AUTO_ALL_DONE"))
+        end
         return
     end
 

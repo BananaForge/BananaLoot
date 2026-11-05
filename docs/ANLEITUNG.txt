@@ -1393,3 +1393,11 @@ v3.12 (vs. v3.11.1)
    or via an actual loot window scan; the existing placeholder-then-
    upgrade-on-loot fallback is fully preserved for anything not (yet)
    covered by the static database.
+
+
+Haken "Auto" im Loot-Fenster (ab v3.46)
+---------------------------------------
+Jedes Item hat neben "Raid-Roll" einen zweiten Haken "Auto" (standardmaessig gesetzt).
+Mit Haken: Der Auto-Modus arbeitet das Item ab. Ohne Haken: Du vergibst es selbst
+manuell, der Auto-Modus ueberspringt es. Hard-Reserve-Items sind immer manuell.
+Am Ende meldet der Auto-Modus, wie viele Items noch manuell offen sind.

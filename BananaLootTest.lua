@@ -707,7 +707,11 @@ function BananaLoot_UI:RefreshTest()
     TEST.lootBtn:Show()
     TEST.lootBtn:SetText(BananaLoot:L("UI_BTN_TEST_OPEN_LOOT"))
     TEST.endBtn:SetText(BananaLoot:L("UI_BTN_TEST_END"))
-    TEST.statusText:SetText(string.format(BananaLoot:L("TEST_STATUS"), table.getn(BananaLoot.testLootItems), TEST.totalSlots))
+    local left = table.getn(BananaLoot.testLootItems)
+    local total = TEST.totalSlots or left
+    local done = total - left
+    if done < 0 then done = 0 end
+    TEST.statusText:SetText(string.format(BananaLoot:L("TEST_STATUS"), done, total, left))
 end
 
 local ticker = CreateFrame("Frame")

@@ -862,14 +862,14 @@ local function CreateLootRow(index)
     row.playersText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.playersText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -31)
     row.playersText:SetJustifyH("LEFT")
-    row.playersText:SetWidth(380)
+    row.playersText:SetWidth(320)
     row.playersText:SetHeight(12)
 
     -- Haken "Raid-Roll" (rechts neben den Textzeilen 2/3): Item auf die Raid-Roll-Liste setzen
     row.rrCheck = CreateFrame("CheckButton", "BananaLootRow" .. index .. "RRCheck", row, "UICheckButtonTemplate")
     row.rrCheck:SetWidth(24)
     row.rrCheck:SetHeight(24)
-    row.rrCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -84, -32)
+    row.rrCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -170, -32)
     row.rrLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.rrLabel:SetPoint("LEFT", row.rrCheck, "RIGHT", 0, 1)
     row.rrCheck:SetScript("OnClick", function()
@@ -897,11 +897,42 @@ local function CreateLootRow(index)
     end)
     row.rrCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+    -- Haken "Auto": Item vom Auto-Modus abarbeiten lassen (ohne Haken = manuell)
+    row.autoCheck = CreateFrame("CheckButton", "BananaLootRow" .. index .. "AutoCheck", row, "UICheckButtonTemplate")
+    row.autoCheck:SetWidth(24)
+    row.autoCheck:SetHeight(24)
+    row.autoCheck:SetPoint("TOPRIGHT", row, "TOPRIGHT", -84, -32)
+    row.autoLabel = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.autoLabel:SetPoint("LEFT", row.autoCheck, "RIGHT", 0, 1)
+    row.autoCheck:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        local r = this:GetParent()
+        if not r.itemID then return end
+        BananaLoot.manualItems = BananaLoot.manualItems or {}
+        if this:GetChecked() then
+            BananaLoot.manualItems[r.itemID] = nil
+        else
+            BananaLoot.manualItems[r.itemID] = true
+        end
+        BananaLoot_UI:Refresh()
+    end)
+    row.autoCheck:SetScript("OnEnter", function()
+        local r = this:GetParent()
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        if r.itemID and BananaLoot:IsHardReserve(r.itemID) then
+            GameTooltip:SetText(BananaLoot:L("UI_CHECK_AUTO_HR"), 1, 0.5, 0.5, 1, 1)
+        else
+            GameTooltip:SetText(BananaLoot:L("UI_CHECK_AUTO_TIP"), 1, 1, 1, 1, 1)
+        end
+        GameTooltip:Show()
+    end)
+    row.autoCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
     -- Zeile 3: Status
     row.statusText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.statusText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -46)
     row.statusText:SetJustifyH("LEFT")
-    row.statusText:SetWidth(380)
+    row.statusText:SetWidth(320)
     row.statusText:SetHeight(12)
 
     -- Zeile 4: Gewinner/Disenchanter links, "Vergeben" rechts
@@ -1010,6 +1041,17 @@ function BananaLoot_UI:RefreshLoot()
         else
             row.rrCheck:Enable()
             row.rrLabel:SetTextColor(1, 1, 1)
+        end
+
+        row.autoLabel:SetText(BananaLoot:L("UI_CHECK_AUTO"))
+        if isHR then
+            row.autoCheck:SetChecked(false)
+            row.autoCheck:Disable()
+            row.autoLabel:SetTextColor(0.5, 0.5, 0.5)
+        else
+            row.autoCheck:SetChecked(not (BananaLoot.manualItems and BananaLoot.manualItems[id]))
+            row.autoCheck:Enable()
+            row.autoLabel:SetTextColor(1, 1, 1)
         end
 
         row.manageBtn:SetText(BananaLoot:L("UI_BTN_MANAGE"))

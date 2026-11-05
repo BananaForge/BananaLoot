@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.46 (vs. v3.45)
+
+- **New:** Second check box "Auto" on every item of the loot window. Checked (default) = auto mode handles the item. Unchecked = you award it manually; auto mode skips it. Hard Reserve items are always manual. When auto mode finishes it now reports how many items are still open for manual awarding.
+- **Fix:** The test window status was confusing ("Items in loot window 3 / 16" although everything was processed). It now reads "Awarded: X of Y | still in loot window: Z" (the remaining ones are Hard Reserve / no-roll items you award by hand).
+
 ## v3.45 (vs. v3.44)
 
 - **New:** Check box "Raid Roll" on every item of the loot window. Checked = the item is on the Raid Roll list (set from the start, the box is already checked). If something drops that you do not want to roll, check the box: the item is raffled among the raid without a roll when you start auto mode, or immediately when auto mode reaches it if it is already running. Unchecking takes it off the list again. Hard Reserve items cannot be checked. The tick only changes the running list; at the next raid start the raid setup tidies the list for that raid's items again.
