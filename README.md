@@ -413,6 +413,9 @@ BananaLoot never talks to the internet on its own.
 
 ### Test mode
 
+- With BananaLoot Raider installed, every test roll also shows the Raider's roll
+  popup (roll along with MS/OS/TM) and the awards fill the Raider's loot history;
+  test run only, nothing is sent over the network
 - "Start test run" (Options → Management) first asks for one of **five test
   raids** (Molten Core, Blackwing Lair, AQ40 with 2 SR per player, Naxxramas,
   UBRS). Each is a prepared raid with 2 Hard Reserve, 1 Bank Reserve, 2 Raid
@@ -436,9 +439,11 @@ BananaLoot never talks to the internet on its own.
   prepared raids and what you are looking for, and the text is built for you.
   Tank / Healer / DPS buttons pick a whole role, a class button picks all of its
   specs, and every spec can be toggled on its own (e.g. "Tanks, Healers, Mage
-  (Frost), Warlock (Destruction)"). The raid's **Hard Reserve items are added
-  to the text automatically** ("HR: ..."), a hint to whisper for an invite is
-  appended, and a live preview with the character count shows the result. "Use
+  (Frost), Warlock (Destruction)"). The text is always generated in **English**
+  (the world channel is English). The raid's **Hard Reserve items are added to
+  the text automatically** and are posted as **clickable item links**, a hint to
+  whisper for an invite is appended, and a live preview with the character
+  count (links included) shows the result. "Use
   text" fills the LFM window (still editable), "Use text and start LFM" also
   posts it right away and then at your interval. The text is shortened to the 255
   characters of a chat line (fewer HR items first, shown as "+N")

@@ -13,7 +13,7 @@
 
 BananaLoot_UI = {}
 
-local LOOT_ROW_HEIGHT = 72
+local LOOT_ROW_HEIGHT = 86   -- Zeilenhoehe inkl. 4 Pixel Abstand zwischen den Rahmen
 local SR_ROW_HEIGHT = 40
 local MAX_ROWS = 20
 local MAX_PLAYERS_SHOWN = 3 -- vollständige Liste bleibt im "Verwalten"-Fenster einsehbar
@@ -673,8 +673,8 @@ end
 -- Items, mit Roll/ARF/Vergabe. Oeffnet sich automatisch bei LOOT_OPENED.
 -- ============================================================
 local lootFrame = CreateFrame("Frame", "BananaLootFrame", UIParent)
-lootFrame:SetWidth(460)
-lootFrame:SetHeight(526)
+lootFrame:SetWidth(600)
+lootFrame:SetHeight(560)
 lootFrame:SetPoint("CENTER", UIParent, "CENTER", 30, -30)
 lootFrame:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -781,90 +781,110 @@ lootScrollFrame:SetPoint("TOPLEFT", lootFrame, "TOPLEFT", 20, -76)
 lootScrollFrame:SetPoint("BOTTOMRIGHT", lootFrame, "BOTTOMRIGHT", -34, 20)
 
 local lootScrollChild = CreateFrame("Frame", "BananaLootScrollChild", lootScrollFrame)
-lootScrollChild:SetWidth(400)
+lootScrollChild:SetWidth(540)
 lootScrollChild:SetHeight(1) -- wird dynamisch angepasst
 lootScrollFrame:SetScrollChild(lootScrollChild)
 
 -- ------------------------------------------------------------
 -- Zeilen-Erzeugung (Pool, wiederverwendet)
 -- ------------------------------------------------------------
+local function SmallTip(btn, key)
+    btn:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(btn, "ANCHOR_TOP")
+        GameTooltip:SetText(BananaLoot:L(key), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+-- Eine Zeile = ein Item im eigenen Rahmen (so sieht man klar, welche Buttons zu welchem Item
+-- gehoeren). Vier Textzeilen, jede mit eigener Position (kein Ueberlagern):
+--   1  Icon | Item-Name + Tag             | [Roll starten] [Frei-Roll] [Verwalten]
+--   2        Reservierer / "offen fuer alle"
+--   3        Status (wartet auf ..., Gewinner ...)
+--   4        Gewinner / Disenchanter          [Vergeben]
 local function CreateLootRow(index)
     local row = CreateFrame("Frame", "BananaLootRow" .. index, lootScrollChild)
-    row:SetWidth(400)
-    row:SetHeight(LOOT_ROW_HEIGHT)
+    row:SetWidth(540)
+    row:SetHeight(LOOT_ROW_HEIGHT - 4)
     row:SetPoint("TOPLEFT", lootScrollChild, "TOPLEFT", 0, -(index - 1) * LOOT_ROW_HEIGHT)
-
-    row.bg = row:CreateTexture(nil, "BACKGROUND")
-    row.bg:SetAllPoints(row)
-    row.bg:SetTexture(0, 0, 0, 0.15)
+    row:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 14,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    row:SetBackdropColor(0.05, 0.05, 0.07, 0.9)
+    row:SetBackdropBorderColor(0.75, 0.62, 0.2, 0.9)
 
     row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetWidth(22)
-    row.icon:SetHeight(22)
-    row.icon:SetPoint("TOPLEFT", row, "TOPLEFT", 4, -4)
+    row.icon:SetWidth(32)
+    row.icon:SetHeight(32)
+    row.icon:SetPoint("TOPLEFT", row, "TOPLEFT", 9, -9)
 
     row.iconFrame = CreateFrame("Frame", nil, row)
-    row.iconFrame:SetWidth(22)
-    row.iconFrame:SetHeight(22)
-    row.iconFrame:SetPoint("TOPLEFT", row, "TOPLEFT", 4, -4)
+    row.iconFrame:SetWidth(32)
+    row.iconFrame:SetHeight(32)
+    row.iconFrame:SetPoint("TOPLEFT", row, "TOPLEFT", 9, -9)
     row.iconFrame:EnableMouse(true)
     AttachIconTooltip(row)
 
+    -- Zeile 1: Name (links) und die drei Buttons (rechts)
     row.itemText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    row.itemText:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 6, -2)
+    row.itemText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -10)
     row.itemText:SetJustifyH("LEFT")
-    row.itemText:SetWidth(250)
+    row.itemText:SetWidth(236)
+    row.itemText:SetHeight(16)
 
     row.manageBtn = CreateFrame("Button", "BananaLootRow" .. index .. "ManageBtn", row, "UIPanelButtonTemplate")
-    row.manageBtn:SetWidth(74)
-    row.manageBtn:SetHeight(16)
-    row.manageBtn:SetPoint("TOPRIGHT", row, "TOPRIGHT", -2, -3)
+    row.manageBtn:SetWidth(78)
+    row.manageBtn:SetHeight(20)
+    row.manageBtn:SetPoint("TOPRIGHT", row, "TOPRIGHT", -8, -8)
     row.manageBtn:SetText(BananaLoot:L("UI_BTN_MANAGE"))
-
-    -- Reservierer-Liste: nur eine Zeile, bei vielen Namen trunkiert
-    -- ("+N weitere" - die vollständige Liste bleibt über "Verwalten"
-    -- weiterhin einsehbar, es geht also keine Information verloren).
-    row.playersText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.playersText:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 6, -18)
-    row.playersText:SetJustifyH("LEFT")
-    row.playersText:SetWidth(266)
-    row.playersText:SetHeight(12)
-
-    -- Status-Text und Aktions-Buttons teilen sich dieselbe Zeile
-    -- (statt jeweils eigener Zeile), das spart die meiste Höhe ein.
-    row.statusText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.statusText:SetPoint("TOPLEFT", row, "TOPLEFT", 4, -32)
-    row.statusText:SetJustifyH("LEFT")
-    row.statusText:SetWidth(190)
-    row.statusText:SetHeight(14)
-
-    row.rollBtn = CreateFrame("Button", "BananaLootRow" .. index .. "RollBtn", row, "UIPanelButtonTemplate")
-    row.rollBtn:SetWidth(66)
-    row.rollBtn:SetHeight(18)
-    row.rollBtn:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -2, 2)
-    row.rollBtn:SetText(BananaLoot:L("UI_BTN_ROLL"))
+    SmallTip(row.manageBtn, "UI_BTN_MANAGE_TIP")
 
     row.arfBtn = CreateFrame("Button", "BananaLootRow" .. index .. "ArfBtn", row, "UIPanelButtonTemplate")
-    row.arfBtn:SetWidth(40)
-    row.arfBtn:SetHeight(18)
-    row.arfBtn:SetPoint("RIGHT", row.rollBtn, "LEFT", -4, 0)
+    row.arfBtn:SetWidth(84)
+    row.arfBtn:SetHeight(20)
+    row.arfBtn:SetPoint("RIGHT", row.manageBtn, "LEFT", -4, 0)
     row.arfBtn:SetText(BananaLoot:L("UI_BTN_ARF"))
+    SmallTip(row.arfBtn, "UI_BTN_ARF_TIP")
+
+    row.rollBtn = CreateFrame("Button", "BananaLootRow" .. index .. "RollBtn", row, "UIPanelButtonTemplate")
+    row.rollBtn:SetWidth(100)
+    row.rollBtn:SetHeight(20)
+    row.rollBtn:SetPoint("RIGHT", row.arfBtn, "LEFT", -4, 0)
+    row.rollBtn:SetText(BananaLoot:L("UI_BTN_ROLL"))
+    SmallTip(row.rollBtn, "UI_BTN_ROLL_TIP")
+
+    -- Zeile 2: Reservierer-Liste (eine Zeile, bei vielen Namen trunkiert; die vollstaendige Liste
+    -- bleibt ueber "Verwalten" einsehbar)
+    row.playersText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.playersText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -31)
+    row.playersText:SetJustifyH("LEFT")
+    row.playersText:SetWidth(480)
+    row.playersText:SetHeight(12)
+
+    -- Zeile 3: Status
+    row.statusText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.statusText:SetPoint("TOPLEFT", row, "TOPLEFT", 48, -46)
+    row.statusText:SetJustifyH("LEFT")
+    row.statusText:SetWidth(480)
+    row.statusText:SetHeight(12)
+
+    -- Zeile 4: Gewinner/Disenchanter links, "Vergeben" rechts
+    row.winnerText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.winnerText:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 48, 9)
+    row.winnerText:SetJustifyH("LEFT")
+    row.winnerText:SetWidth(360)
+    row.winnerText:SetHeight(14)
 
     row.awardBtn = CreateFrame("Button", "BananaLootRow" .. index .. "AwardBtn", row, "UIPanelButtonTemplate")
-    row.awardBtn:SetWidth(70)
-    row.awardBtn:SetHeight(18)
-    row.awardBtn:SetPoint("RIGHT", row.arfBtn, "LEFT", -4, 0)
+    row.awardBtn:SetWidth(100)
+    row.awardBtn:SetHeight(20)
+    row.awardBtn:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -8, 7)
     row.awardBtn:SetText(BananaLoot:L("UI_BTN_AWARD"))
     row.awardBtn:Hide()
-
-    -- Gewinner-/Disenchanter-Name: eigene, gut lesbare Zeile links neben
-    -- den Buttons (unterste Zeile der Row), damit vor dem Klick auf
-    -- "Vergeben"/"Disenchant" klar sichtbar ist, wer das Item bekommt.
-    row.winnerText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    row.winnerText:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 4, 4)
-    row.winnerText:SetJustifyH("LEFT")
-    row.winnerText:SetWidth(190)
-    row.winnerText:SetHeight(16)
 
     return row
 end
@@ -879,7 +899,7 @@ local function ShowDisenchantButton(row, id)
         row.winnerText:SetText(BananaLoot:L("UI_DE_NOT_SET_LABEL"))
     end
     row.awardBtn:SetText(BananaLoot:L("UI_BTN_DISENCHANT"))
-    row.awardBtn:SetWidth(84)
+    row.awardBtn:SetWidth(100)
     row.awardBtn:Show()
     row.awardBtn:SetScript("OnClick", function()
         BananaLoot:PlayClickSound()
@@ -980,7 +1000,7 @@ function BananaLoot_UI:RefreshLoot()
         row.statusText:SetText("")
         row.winnerText:SetText("")
         row.awardBtn:SetText(BananaLoot:L("UI_BTN_AWARD"))
-        row.awardBtn:SetWidth(70)
+        row.awardBtn:SetWidth(100)
         row.awardBtn:Hide()
 
         if isHR then

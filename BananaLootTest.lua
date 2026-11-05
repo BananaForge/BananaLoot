@@ -303,6 +303,16 @@ local function RemoveOverrides()
     if SendAddonMessage == TestSendAddonMessage then SendAddonMessage = origSendAddonMessage end
 end
 
+-- Roll-Sync im Test: statt ins Netz geht jede Nachricht lokal an BananaLoot Raider (falls
+-- installiert), als haette sie ein anderer Loot-Master geschickt. So erscheint dort das
+-- Roll-Pop-up (zum Mitwuerfeln) und die Loot-Historie fuellt sich -- nur im Testlauf.
+local TEST_MASTER_NAME = "Lootmaster (Test)"
+function BananaLoot:TestRouteSync(text)
+    if BananaLootRaider and BananaLootRaider.HandleRollSyncMessage then
+        pcall(function() BananaLootRaider:HandleRollSyncMessage(text, TEST_MASTER_NAME) end)
+    end
+end
+
 -- ============================================================
 -- 4) ECHTE DATEN SICHERN / WIEDERHERSTELLEN
 -- ============================================================
@@ -622,6 +632,9 @@ local function BeginRun()
     if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
 
     TPrint(string.format(BananaLoot:L("TEST_RAID_READY"), sc.name))
+    if BananaLootRaider and BananaLootRaider.HandleRollSyncMessage then
+        TPrint(BananaLoot:L("TEST_RAIDER_HINT"))
+    end
     TPrint(BananaLoot:L("TEST_DROPPED"))
     TPrint(BananaLoot:L("TEST_HINT_HR"))
     BananaLoot:OnLootOpened()

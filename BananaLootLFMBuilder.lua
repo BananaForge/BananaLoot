@@ -3,10 +3,16 @@
 -- vorbereiteten Raid und der Auswahl, was gesucht wird (Rolle, Klasse, Spezialisierung).
 --
 --   - Raid: einer der vorbereiteten Raids (Standard: der im Hauptfenster ausgewaehlte)
---   - Hard-Reserve-Items des Raids werden automatisch in den Text uebernommen (abschaltbar)
+--   - Hard-Reserve-Items des Raids werden automatisch in den Text uebernommen (abschaltbar).
+--     Im Text stehen sie als [Name]; beim Posten im Weltkanal wird jedes [Name] zu einem
+--     ANKLICKBAREN Item-Link (siehe BananaLoot:LFMSubstituteLinks). Die Laenge wird mit den
+--     Links gerechnet (ein Link kostet ca. 44 Zeichen mehr) -- es passen deshalb weniger Items.
 --   - Gesucht: Tanks / Heiler / DDs per Knopfdruck, ganze Klassen oder einzelne Specs
 --   - Live-Vorschau; "Text uebernehmen" fuellt das LFM-Fenster (dort weiter editierbar),
 --     "Uebernehmen & LFM starten" postet ausserdem sofort und dann im eingestellten Intervall
+--
+-- Der erzeugte Text ist IMMER ENGLISCH (der Weltkanal ist englisch), unabhaengig von der
+-- Addon-Sprache; nur die Beschriftung der Buttons im Assistenten folgt der Addon-Sprache.
 --
 -- Der Text wird nach den gewaehlten Kriterien automatisch zusammengesetzt und auf die
 -- 255 Zeichen einer Chatzeile gekuerzt (zuerst weniger HR-Items, dann Zusatztexte).
@@ -64,9 +70,19 @@ local B = {
 }
 BananaLoot_LFMBuilder = B
 
+-- Sprache der Button-Beschriftungen (Addon-Sprache)
 local function Lang()
     return (BananaLoot:GetLanguage() == "en") and "en" or "de"
 end
+
+-- Sprache und Bausteine des erzeugten Textes: immer Englisch
+local TEXT_LANG = "en"
+local T_LFM = "LFM %s"
+local T_NEED = " - looking for: %s"
+local T_HR = " - HR: %s"
+local T_SUFFIX = " - /w for invite"
+local T_ALL = "all classes and roles"
+local T_DEFAULT_RAID = "Raid"
 
 local function IsSel(c, s)
     return B.sel[c] and B.sel[c][s] and true or false
@@ -114,7 +130,7 @@ end
 
 -- Beschreibung der Suche, z.B. "Tanks, Heiler, Magier (Feuer/Frost), Schurke".
 function B.NeedText()
-    local l = Lang()
+    local l = TEXT_LANG
     local total, selected = 0, 0
     for c = 1, table.getn(CLASSES) do
         for s = 1, table.getn(CLASSES[c].specs) do
@@ -123,7 +139,7 @@ function B.NeedText()
         end
     end
     if selected == 0 then return nil end
-    if selected == total then return BananaLoot:L("LFMB_ALL_WELCOME") end
+    if selected == total then return T_ALL end
 
     local parts = {}
     local covered = {}   -- covered[c..":"..s] = true, durch eine voll gewaehlte Rolle abgedeckt
@@ -159,14 +175,14 @@ function B.NeedText()
     return table.concat(parts, ", ")
 end
 
--- Namen der Hard-Reserve-Items eines vorbereiteten Raids (beste Qualitaet zuerst).
-local function HRNames(entry)
+-- Hard-Reserve-Items eines vorbereiteten Raids (beste Qualitaet zuerst): { {name, id}, ... }
+local function HRItems(entry)
     local list = {}
     if entry and entry.hr then
         for id, v in pairs(entry.hr) do
             if v then
                 local name, quality = BananaLoot:SetupItemInfo(id)
-                table.insert(list, { name = name, q = quality or 1 })
+                table.insert(list, { name = name, id = id, q = quality or 1 })
             end
         end
     end
@@ -174,40 +190,49 @@ local function HRNames(entry)
         if a.q ~= b.q then return a.q > b.q end
         return a.name < b.name
     end)
-    local names = {}
-    for i = 1, table.getn(list) do table.insert(names, list[i].name) end
-    return names
+    return list
 end
 
--- Setzt den LFM-Text zusammen. entry = vorbereiteter Raid (oder nil), opts.withHR.
-function BananaLoot:BuildLFMText(entry, needText, withHR)
-    local raidName = entry and entry.name or self:L("LFMB_DEFAULT_RAID")
-    local head = string.format(self:L("LFMB_T_LFM"), raidName)
-    local need = needText and string.format(self:L("LFMB_T_NEED"), needText) or ""
-    local suffix = self:L("LFMB_T_SUFFIX")
-    local hrNames = (withHR and entry) and HRNames(entry) or {}
+-- Zeichen, die ein Item-Link mehr braucht als der Klammertext "[Name]":
+-- "|cffRRGGBB|Hitem:12345:0:0:0:0:0:0:0|h" + "|h|r" (mit Reserve fuer 6-stellige IDs)
+local LINK_OVERHEAD = 44
 
+-- Setzt den LFM-Text zusammen. entry = vorbereiteter Raid (oder nil), withHR = HR-Items nennen.
+-- Rueckgabe: Text (mit [Name] fuer Items), links = { [Name] = itemID } der im Text genannten Items.
+function BananaLoot:BuildLFMText(entry, needText, withHR)
+    local raidName = entry and entry.name or T_DEFAULT_RAID
+    local head = string.format(T_LFM, raidName)
+    local need = needText and string.format(T_NEED, needText) or ""
+    local suffix = T_SUFFIX
+    local items = (withHR and entry) and HRItems(entry) or {}
+
+    -- Text + Laenge NACH dem Ersetzen durch Links
     local function compose(nHR, useSuffix, needStr)
         local hr = ""
+        local links = {}
         if nHR > 0 then
             local shown = {}
-            for i = 1, nHR do table.insert(shown, hrNames[i]) end
-            local more = table.getn(hrNames) - nHR
+            for i = 1, nHR do
+                table.insert(shown, "[" .. items[i].name .. "]")
+                links[items[i].name] = items[i].id
+            end
+            local more = table.getn(items) - nHR
             local s = table.concat(shown, ", ")
             if more > 0 then s = s .. " +" .. more end
-            hr = string.format(self:L("LFMB_T_HR"), s)
+            hr = string.format(T_HR, s)
         end
-        return head .. needStr .. hr .. (useSuffix and suffix or "")
+        local text = head .. needStr .. hr .. (useSuffix and suffix or "")
+        return text, string.len(text) + nHR * LINK_OVERHEAD, links
     end
 
-    -- zuerst alles, dann weniger HR-Items, dann ohne Zusatztext, zuletzt gekuerzt
-    for n = table.getn(hrNames), 0, -1 do
-        local t = compose(n, true, need)
-        if string.len(t) <= MAX_CHARS then return t end
+    -- zuerst alle HR-Items, dann weniger, dann ohne Zusatztext, zuletzt gekuerzt
+    for n = table.getn(items), 0, -1 do
+        local t, len, links = compose(n, true, need)
+        if len <= MAX_CHARS then return t, links end
     end
-    local t = compose(0, false, need)
-    if string.len(t) <= MAX_CHARS then return t end
-    return string.sub(t, 1, MAX_CHARS - 3) .. "..."
+    local t, len, links = compose(0, false, need)
+    if len <= MAX_CHARS then return t, links end
+    return string.sub(t, 1, MAX_CHARS - 3) .. "...", {}
 end
 
 function B.CurrentEntry()
@@ -217,7 +242,25 @@ end
 
 function B.CurrentText()
     local need = B.NeedText()
-    return BananaLoot:BuildLFMText(B.CurrentEntry(), need, B.withHR), need
+    local text, links = BananaLoot:BuildLFMText(B.CurrentEntry(), need, B.withHR)
+    return text, need, links
+end
+
+-- Beim Posten: [Name] -> anklickbarer Item-Link (nur fuer die Items, die der Assistent genannt hat).
+function BananaLoot:LFMSubstituteLinks(text)
+    BananaLoot.EnsureDB()
+    local links = BananaLoot_DB.settings.lfmLinks
+    if not links or not text then return text end
+    local result = text
+    for name, id in pairs(links) do
+        local plain = "[" .. name .. "]"
+        local a, b = string.find(result, plain, 1, true)
+        if a then
+            result = string.sub(result, 1, a - 1) .. self:SetupItemLink(id) .. string.sub(result, b + 1)
+        end
+    end
+    if string.len(result) > MAX_CHARS then return text end   -- zu lang: lieber ohne Links als abgeschnitten
+    return result
 end
 
 -- ============================================================
@@ -408,24 +451,29 @@ function B.Refresh()
             if IsSel(c, s) then sb.sel:Show() else sb.sel:Hide() end
         end
     end
-    local text, need = B.CurrentText()
+    local text, need, links = B.CurrentText()
+    local nlinks = 0
+    for _ in pairs(links or {}) do nlinks = nlinks + 1 end
     if need then
         F.preview:SetText(text)
     else
         F.preview:SetText("|cff888888" .. BananaLoot:L("LFMB_NEED_SELECTION") .. "|r")
     end
-    F.counter:SetText(string.len(text) .. " / " .. MAX_CHARS)
+    -- Zeichenzahl NACH dem Ersetzen der [Items] durch Links (so zaehlt der Chat)
+    F.counter:SetText((string.len(text) + nlinks * LINK_OVERHEAD) .. " / " .. MAX_CHARS .. "   " .. BananaLoot:L("LFMB_LINK_NOTE"))
 end
 
 -- Text ins LFM-Fenster uebernehmen (dort weiter editierbar); start = sofort posten und im
 -- eingestellten Intervall wiederholen.
 function B.Apply(start)
-    local text, need = B.CurrentText()
+    local text, need, links = B.CurrentText()
     if not need then
         DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("LFMB_NEED_SELECTION"))
         return
     end
     BananaLoot:SetLFMText(text)
+    BananaLoot.EnsureDB()
+    BananaLoot_DB.settings.lfmLinks = links   -- [Name] -> Item-ID, wird beim Posten zu Links
     if BananaLoot_UI and BananaLoot_UI.ShowLFM then BananaLoot_UI:ShowLFM() end
     DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("LFMB_APPLIED"), string.len(text)))
     if start then
@@ -460,6 +508,26 @@ end
 function BananaLoot_UI:ApplyLocaleLFMBuilder()
     if B.openBtn then B.openBtn:SetText(BananaLoot:L("LFMB_OPEN_BTN")) end
     if F:IsShown() then B.Refresh() end
+end
+
+-- Das mehrzeilige LFM-Textfeld nutzt die einzeilige InputBoxTemplate: deren Rahmenstuecke (links/
+-- mitte/rechts) sitzen mittig im hohen Feld und zeigen eine stoerende Linie quer durch den Text.
+-- Entfernen und durch einen eigenen Rahmen ersetzen.
+local lfmEdit = getglobal("BananaLootLFMEditBox")
+if lfmEdit then
+    local parts = { "Left", "Middle", "Right" }
+    for i = 1, table.getn(parts) do
+        local tex = getglobal("BananaLootLFMEditBox" .. parts[i])
+        if tex then tex:Hide() end
+    end
+    lfmEdit:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 14,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    lfmEdit:SetBackdropColor(0, 0, 0, 0.9)
+    if lfmEdit.SetTextInsets then lfmEdit:SetTextInsets(8, 8, 6, 6) end
 end
 
 -- Button im LFM-Fenster (oben rechts neben "LFM-Text:")

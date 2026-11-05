@@ -42,7 +42,8 @@ BEDIENUNG (Masterlooter)
 /bl arf [Item] -> startet einen offenen Roll für ALLE, auch wenn das
                    Item SR't ist (SR wird für diesen einen Roll
                    ausgesetzt). Item per Shift-Klick anhängen.
-                   Alternative: "ARF"-Button in jeder Item-Zeile im Fenster.
+                   Alternative: Button "Frei-Roll" in jeder Item-Zeile im
+                   Loot-Fenster (ARF = Alle Rollen Frei).
 /bl sr [Item]  -> reserviert ein Item für dich selbst (als Loot-Master).
                    Gedacht als Ersatz für den normalen Whisper-Weg
                    ("sr [Item]" an den Loot-Master schicken), da man
@@ -244,9 +245,15 @@ Nachschub für einen abgesprungenen Spieler zu finden.
        steht im Text nur die Rolle ("Tanks"), sonst Klasse und Spezialisierung.
      * Die Hard-Reserve-Items des Raids kommen automatisch in den Text
        ("HR: ..."), abschaltbar mit dem Haken "Hard-Reserve-Items nennen".
-     * Beispiel: "LFM BWL Donnerstag - gesucht: Tanks, Heiler, Magier
-       (Frost) - HR: Bloodfang Spaulders, Netherwind Belt - /w für Einladung"
-     * Die Vorschau zeigt den fertigen Text samt Zeichenzähler. Der Text wird
+     * Der Text wird IMMER auf ENGLISCH erzeugt (der Weltkanal ist englisch),
+       unabhängig von der Addon-Sprache; nur die Buttons folgen deiner Sprache.
+     * Beispiel: "LFM BWL Donnerstag - looking for: Tanks, Healers, Mage
+       (Frost) - HR: [Bloodfang Spaulders], [Netherwind Belt] - /w for invite"
+     * Die HR-Items stehen im Text als [Name] und werden beim Posten im
+       Weltkanal zu ANKLICKBAREN Item-Links. Ein Link braucht rund 44 Zeichen
+       mehr, deshalb passen weniger Items hinein; der Rest steht als "+N".
+     * Die Vorschau zeigt den fertigen Text samt Zeichenzähler (Links
+       eingerechnet). Der Text wird
        auf 255 Zeichen gekürzt (zuerst weniger HR-Items, angezeigt als "+N").
      * "Text übernehmen" füllt das LFM-Fenster (dort noch änderbar), "Über-
        nehmen und LFM starten" postet zusätzlich sofort und danach im
@@ -296,7 +303,11 @@ Roll-Ablauf ausprobieren lassen -- ohne Raid und ohne echte Items.
    ins normale Loot-Fenster -- samt Loot-Erkannt-Sound, Chat-Zusammen-
    fassung und Loot-Vorschau, wie bei einer echten Kiste. Bankreserve- und
    Raid-Roll-Items werden dabei sofort automatisch vergeben.
- - Du verrollst und vergibst wie im Raid: Roll starten, ARF, Verwalten
+ - Ist BananaLoot Raider installiert, erscheint im Testlauf fuer jeden Roll
+   dessen Roll-Pop-up: darin kannst du mit MS/OS/TM mitwuerfeln, die Wuerfe der
+   erfundenen Spieler und der Gewinner erscheinen dort, und Vergaben fuellen
+   die Loot-Historie des Raiders. Nur im Testlauf, nichts geht ins Netz.
+ - Du verrollst und vergibst wie im Raid: Roll starten, Frei-Roll, Verwalten
    (inkl. Gewinner/Raid Roll), /bl auto, /bl award. Mit /roll kannst du
    selbst mitwürfeln.
  - 10 erfundene Raider würfeln mit Verzögerung mit. Ihre Würfe erscheinen

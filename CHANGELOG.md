@@ -1,5 +1,13 @@
 # BananaLoot Changelog
 
+## v3.44 (vs. v3.43)
+
+- **New:** LFM assistant: the generated text is now always **English** (the world channel is English), regardless of the addon language; only the buttons follow your language. The raid's Hard Reserve items are posted as **clickable item links** in the world channel (the text shows `[Item]`, the links are inserted when posting). The length is counted with the links (a link costs about 44 more characters), so fewer items fit; the rest is shown as "+N".
+- **Fixed:** A stray line was visible in the LFM text field (left over from the single-line input template); the field now has its own frame.
+- **Changed:** The confirmation dialogs of BananaLoot (end raid, raise SR+, delete a raid ...) have a dark background instead of the see-through Blizzard one.
+- **Changed:** Loot window redesigned: every item sits in its own frame, the three buttons (Start Roll, Open Roll, Manage) are on the line of the item name, and each text line (reservers, status, winner) has its own position, so nothing overlaps any more. "ARF" is now called "Open Roll" (German: "Frei-Roll", ARF = All Rolls Free: an open roll for everyone, SR suspended) and all buttons have tooltips. The window is wider (600).
+- **New:** Test run with BananaLoot Raider: if BananaLoot Raider is installed, every roll of the test shows the Raider's roll popup (roll along with MS/OS/TM), the made-up players' rolls and the winner appear in it, and awards fill the Raider's loot history. Test run only; nothing is sent over the network. Auto mode rolls and awards all test items as before.
+
 ## v3.43 (vs. v3.42)
 
 - **New:** The version number is shown in the title of the main window ("BananaLoot - SoftReserve / SR+ v3.43") and in the load message. `/bl version` shows your version and asks the group who has which version of BananaLoot and BananaLoot Raider (older versions are flagged); the Hand over lead list shows the version of each player. Rule: every change raises the version (TOC + `BananaLoot.VERSION` + CHANGELOG heading); `tools/run_tests.sh` fails if the CHANGELOG has no heading for the current version.

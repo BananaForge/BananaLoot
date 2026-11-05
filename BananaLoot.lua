@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.43"
+BananaLoot.VERSION = "3.44"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -267,21 +267,16 @@ local LOCALE = {
         LFMB_TITLE = "LFM-Assistent",
         LFMB_RAID_LABEL = "Raid:",
         LFMB_NO_RAID = "(kein Raid)",
-        LFMB_DEFAULT_RAID = "Raid",
         LFMB_HR_CHECK = "Hard-Reserve-Items nennen",
         LFMB_ROLE_LABEL = "Gesucht:",
-        LFMB_PREVIEW = "Vorschau (wird im Weltkanal gepostet):",
+        LFMB_PREVIEW = "Vorschau (im Weltkanal werden die [Items] zu anklickbaren Links):",
+        LFMB_LINK_NOTE = "(mit Links)",
         LFMB_ALL = "Alle",
         LFMB_NONE = "Keine",
         LFMB_APPLY = "Text übernehmen",
         LFMB_APPLY_START = "Übernehmen und LFM starten",
         LFMB_NEED_SELECTION = "Bitte mindestens eine Rolle, Klasse oder Spezialisierung wählen.",
         LFMB_APPLIED = "|cff33ff99BananaLoot|r: LFM-Text übernommen (%d Zeichen). Du kannst ihn im LFM-Fenster noch anpassen.",
-        LFMB_ALL_WELCOME = "alle Klassen und Rollen",
-        LFMB_T_LFM = "LFM %s",
-        LFMB_T_NEED = " - gesucht: %s",
-        LFMB_T_HR = " - HR: %s",
-        LFMB_T_SUFFIX = " - /w für Einladung",
         VERSION_OWN = "|cff33ff99BananaLoot|r Version %s",
         VERSION_ASKING = "|cff33ff99BananaLoot|r: Frage die Versionen in der Gruppe ab ...",
         VERSION_LINE = "  %s: BananaLoot v%s",
@@ -541,8 +536,11 @@ local LOCALE = {
         UI_POPUP_WIPE_YES = "Ja, komplett leeren",
         UI_OVERFLOW = "|cffff5555%d weitere Item(s) werden nicht angezeigt (Limit %d)|r",
         UI_BTN_MANAGE = "Verwalten",
+        UI_BTN_MANAGE_TIP = "Reservierungen dieses Items ansehen und ändern, Gewinner von Hand eintragen",
+        UI_BTN_ROLL_TIP = "Roll für dieses Item starten (mit SR: nur die Reservierer dürfen würfeln)",
+        UI_BTN_ARF_TIP = "Frei-Roll (ARF = Alle Rollen Frei): offener Roll für ALLE, die SR werden für diesen Roll ausgesetzt",
         UI_BTN_ROLL = "Roll starten",
-        UI_BTN_ARF = "ARF",
+        UI_BTN_ARF = "Frei-Roll",
         UI_BTN_AWARD = "Vergeben",
         UI_TAG_HR = " |cffff5555[HR]|r",
         UI_TAG_SR = " |cffffcc00[SR]|r",
@@ -726,6 +724,7 @@ local LOCALE = {
         TEST_PICK_NODATA = "keine Beutedaten",
         TEST_NO_SCENARIO = "|cffff5555BananaLoot|r: Für diesen Test-Raid fehlen die Beutedaten.",
         TEST_RAID_READY = "|cff33ff99BananaLoot|r: Test-Raid \"%s\" gestartet: Listen gesetzt, SR im Hauptfenster, SR-Liste gesperrt (Sperr-Button öffnet sie).",
+        TEST_RAIDER_HINT = "|cff33ccff[TEST]|r BananaLoot Raider ist installiert: Für jeden Roll erscheint das Roll-Pop-up des Raiders, du kannst darin mit MS/OS/TM mitwürfeln (nur im Testlauf). Vergaben landen in der Loot-Historie des Raiders.",
         TEST_DROPPED = "|cff33ccff[TEST]|r Testlauf gestartet -- die Items liegen im Loot-Fenster. Verrolle und vergib wie im Raid, du kannst mit /roll selbst mitwürfeln. Beenden über das Testfenster.",
         TEST_HINT_HR = "|cff33ccff[TEST]|r Tipp zum Hard-Reserve-Item: im Verwalten-Fenster einen Spieler eintragen (z.B. Testopher) und per \"Gewinner\" vergeben.",
         TEST_STATUS = "Items im Loot-Fenster: %d / %d",
@@ -999,21 +998,16 @@ local LOCALE = {
         LFMB_TITLE = "LFM assistant",
         LFMB_RAID_LABEL = "Raid:",
         LFMB_NO_RAID = "(no raid)",
-        LFMB_DEFAULT_RAID = "Raid",
         LFMB_HR_CHECK = "Mention Hard Reserve items",
         LFMB_ROLE_LABEL = "Looking for:",
-        LFMB_PREVIEW = "Preview (posted in the world channel):",
+        LFMB_PREVIEW = "Preview (in the world channel the [items] become clickable links):",
+        LFMB_LINK_NOTE = "(with links)",
         LFMB_ALL = "All",
         LFMB_NONE = "None",
         LFMB_APPLY = "Use text",
         LFMB_APPLY_START = "Use text and start LFM",
         LFMB_NEED_SELECTION = "Please pick at least one role, class or spec.",
         LFMB_APPLIED = "|cff33ff99BananaLoot|r: LFM text applied (%d characters). You can still adjust it in the LFM window.",
-        LFMB_ALL_WELCOME = "all classes and roles",
-        LFMB_T_LFM = "LFM %s",
-        LFMB_T_NEED = " - looking for: %s",
-        LFMB_T_HR = " - HR: %s",
-        LFMB_T_SUFFIX = " - /w for invite",
         VERSION_OWN = "|cff33ff99BananaLoot|r version %s",
         VERSION_ASKING = "|cff33ff99BananaLoot|r: Asking the group for their versions ...",
         VERSION_LINE = "  %s: BananaLoot v%s",
@@ -1272,8 +1266,11 @@ local LOCALE = {
         UI_POPUP_WIPE_YES = "Yes, clear everything",
         UI_OVERFLOW = "|cffff5555%d more item(s) not shown (limit %d)|r",
         UI_BTN_MANAGE = "Manage",
+        UI_BTN_MANAGE_TIP = "View and change the reservations of this item, enter a winner by hand",
+        UI_BTN_ROLL_TIP = "Start a roll for this item (with SR: only the reservers may roll)",
+        UI_BTN_ARF_TIP = "Open Roll (ARF = All Rolls Free): open roll for EVERYONE, SR is suspended for this roll",
         UI_BTN_ROLL = "Start Roll",
-        UI_BTN_ARF = "ARF",
+        UI_BTN_ARF = "Open Roll",
         UI_BTN_AWARD = "Award",
         UI_TAG_HR = " |cffff5555[HR]|r",
         UI_TAG_SR = " |cffffcc00[SR]|r",
@@ -1452,6 +1449,7 @@ local LOCALE = {
         TEST_PICK_NODATA = "no loot data",
         TEST_NO_SCENARIO = "|cffff5555BananaLoot|r: The loot data for this test raid is missing.",
         TEST_RAID_READY = "|cff33ff99BananaLoot|r: Test raid \"%s\" started: lists set, SR in the main window, SR list locked (the lock button reopens it).",
+        TEST_RAIDER_HINT = "|cff33ccff[TEST]|r BananaLoot Raider is installed: every roll shows the Raider's roll popup, you can roll along with MS/OS/TM (test run only). Awards show up in the Raider's loot history.",
         TEST_DROPPED = "|cff33ccff[TEST]|r Test run started -- the items are in the loot window. Roll and award like in a raid, and roll yourself with /roll. End it via the test window.",
         TEST_HINT_HR = "|cff33ccff[TEST]|r Hint for the Hard Reserve item: add a player in the Manage window (e.g. Testopher) and award via \"Winner\".",
         TEST_STATUS = "Items in loot window: %d / %d",
@@ -2883,6 +2881,12 @@ end
 local ROLL_SYNC_PREFIX = "BananaLoot"
 
 local function SendRollSyncMessage(text)
+    -- Testlauf: die Roll-Sync-Nachrichten gehen NICHT ins Netz, sondern lokal an ein installiertes
+    -- BananaLoot Raider (Roll-Pop-up zum Mitwuerfeln, siehe BananaLootTest.lua)
+    if BananaLoot.testMode then
+        if BananaLoot.TestRouteSync then BananaLoot:TestRouteSync(text) end
+        return
+    end
     if not BananaLoot:GetRollSyncEnabled() then return end
     -- Nur sinnvoll in Gruppe/Raid -- SendAddonMessage kennt "SAY" nicht
     -- als gültigen Kanal, und alleine gibt es ohnehin niemanden, der
@@ -2928,6 +2932,10 @@ end
 -- denselben Addon-Message-Kanal teilen. Gesendet wird daher, sobald EINE
 -- der beiden Optionen aktiv ist.
 local function SendAwardOrTradeMessage(text)
+    if BananaLoot.testMode then
+        if BananaLoot.TestRouteSync then BananaLoot:TestRouteSync(text) end
+        return
+    end
     if not (BananaLoot:GetRollSyncEnabled() or BananaLoot:GetTradeTrackingEnabled()) then return end
     if GetNumRaidMembers() == 0 and GetNumPartyMembers() == 0 then return end
     local channel = GetNumRaidMembers() > 0 and "RAID" or "PARTY"
@@ -6124,6 +6132,8 @@ local function PostLFMMessage()
         return
     end
 
+    -- [Item-Name] des LFM-Assistenten -> anklickbarer Item-Link
+    if BananaLoot.LFMSubstituteLinks then text = BananaLoot:LFMSubstituteLinks(text) end
     SendChatMessage(text, "CHANNEL", nil, channelIndex)
     BananaLoot.lfmLastPostTime = GetTime()
 end
