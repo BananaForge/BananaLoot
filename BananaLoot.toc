@@ -7,8 +7,10 @@
 
 BananaLootTheme.lua
 BananaLootItemDB.lua
+BananaLootItemInfoExtra.lua
 BananaLootBossData.lua
 BananaLoot.lua
+BananaLootItemTip.lua
 BananaLootUI.lua
 BananaLootExtra.lua
 BananaLootAlias.lua

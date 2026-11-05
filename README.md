@@ -322,6 +322,11 @@ BananaLoot never talks to the internet on its own.
 - Lets raidres.top imports and Hard/Bank Reserve entries show the real,
   correctly colored item name and icon immediately, instead of just
   "Item #12345" until the item actually drops
+- A second file (`BananaLootItemInfoExtra.lua`, ~1,500 items from AtlasLoot)
+  adds name, color and icon for instance, set, PvP, world boss and world event
+  loot that is missing there, so **every item carries information** even if the
+  client has never seen it. Tooltips of such items are built locally (item level,
+  slot, armor/weapon damage, stats) when the client has no tooltip
 
 ### Prepare raids ahead of time
 
@@ -386,8 +391,17 @@ BananaLoot never talks to the internet on its own.
   that your client doesn't know yet. This way the Blizzard roll window shows
   icon and tooltip instead of a question mark
 - Purely local, no addon messages; the Roll-Sync protocol is not affected
-- Progress is shown in chat; `/bl prefetch` runs it manually for the current
-  zone, `/bl prefetch on|off` toggles it (default: on)
+- Requests are remembered for 3 days, so nothing is asked again on every login or
+  zone change. At the end the chat reports how many items the client has now and
+  how many the server did not answer (harmless: the display uses the bundled
+  item database)
+- **All items, not only the entered instance:** after login BananaLoot preloads
+  the items of all instances in the background once (about 4 per second,
+  progress at 25/50/75 %). `/bl prefetch all` forces a pass, `/bl prefetch auto
+  on|off` switches the automatic run (default: on)
+- `/bl prefetch` runs the current zone manually, `/bl prefetch on|off` toggles
+  the preload when entering an instance (default: on). With BananaLoot Raider
+  installed only BananaLoot preloads (same client cache)
 - Data source: AtlasLoot Turtle WoW Edition, used with the developer's
   permission (see `THIRD_PARTY_NOTICES.md`)
 
@@ -544,6 +558,8 @@ No loot tool is perfect – here are the deliberate trade-offs:
 ```
 BananaLoot.toc            Addon manifest (version lives here and in BananaLoot.lua)
 BananaLootItemDB.lua      Static item database (generated, don't edit by hand)
+BananaLootItemInfoExtra.lua Name/quality/icon for ~1,500 items missing from the item DB (generated)
+BananaLootItemTip.lua     Item tooltips for every item (local fallback from the item DB)
 BananaLootBossData.lua    Raid and boss data shared by raid lead announcements and
                           Auto Master Loot (incl. the optional UBRS test raid)
 BananaLoot.lua            Core: SavedVariables, locales, whispers, rolls, awarding,
@@ -569,6 +585,7 @@ docs/ENTWICKLUNG.md       Developer notes (German)
 tools/                    Checks run by CI: syntax, Lua 5.0 compatibility, TOC, version
 tools/gen_zone_loot.py    Regenerates BananaLootZoneLoot.lua from an AtlasLoot copy
 tools/gen_raid_loot.py    Regenerates BananaLootRaidLoot.lua from an AtlasLoot copy
+tools/gen_item_info.py    Regenerates BananaLootItemInfoExtra.lua from an AtlasLoot copy
 assets/                   Images for this README only (not shipped)
 ```
 

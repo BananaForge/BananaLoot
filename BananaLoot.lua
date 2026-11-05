@@ -173,6 +173,8 @@ local LOCALE = {
             "/bl setup             Laufender Raid: Hard Reserve / Bankreserve / Raid-Roll bearbeiten, Drops\n" ..
             "/bl join [Code]       Raid per Raid-Code von einem anderen Loot-Master laden (Stellvertreter)\n" ..
             "/bl prefetch          Items der aktuellen Instanz jetzt vorladen\n" ..
+            "/bl prefetch all      Items ALLER Instanzen im Hintergrund vorladen\n" ..
+            "/bl prefetch auto on|off  Alles automatisch nach dem Login vorladen (Standard: an)\n" ..
             "/bl prefetch on|off   Automatisches Vorladen beim Betreten von Instanzen\n" ..
             "\n" ..
             "=== WHISPER-BEFEHLE (Spieler) ===\n" ..
@@ -186,7 +188,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [on|off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [all|on|off|auto on|auto off]",
 
         -- Optionen (Chat-Feedback)
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ Bonus pro Stufe auf +%d gesetzt.",
@@ -312,6 +314,21 @@ local LOCALE = {
         SETUP_TIP_UNCACHED = "Details noch nicht im Client-Cache. Sie werden beim Betreten der Instanz geladen.",
         SETUP_BTN_OPEN = "Raid-Setup",
         SETUP_PICK_ROW = "%s  |  %d HR, %d BR, %d Raid-Roll  |  SR: %d (%s)",
+        PREFETCH_START_ALL = "|cff33ff99BananaLoot|r: Lade %d Items aller Instanzen im Hintergrund vor (ca. %d Min.) ...",
+        PREFETCH_PROGRESS = "|cff33ff99BananaLoot|r: Item-Cache: %d%% (%d/%d)",
+        PREFETCH_SUMMARY = "|cff33ff99BananaLoot|r: Item-Cache für %s fertig: %d von %d Items sind jetzt im Client.",
+        PREFETCH_UNANSWERED = "|cff33ff99BananaLoot|r: %d Items hat der Server nicht beantwortet. Das ist unkritisch: Name, Farbe und Icon kommen aus der mitgelieferten Item-Datenbank. Neuer Versuch in 3 Tagen oder mit /bl prefetch.",
+        PREFETCH_SUMMARY_ALL = "|cff33ff99BananaLoot|r: Item-Cache fertig: %d von %d Items sind jetzt im Client, %d hat der Server nicht beantwortet (Anzeige nutzt die mitgelieferte Datenbank).",
+        PREFETCH_ALL_RUNNING = "|cff33ff99BananaLoot|r: Das Vorladen aller Items läuft bereits.",
+        PREFETCH_ALL_KNOWN_ALL = "|cff33ff99BananaLoot|r: Alle Items sind dem Client bereits bekannt oder wurden kürzlich angefragt. Mit /bl prefetch all erzwingst du einen neuen Durchlauf.",
+        PREFETCH_AUTO_ON = "|cff33ff99BananaLoot|r: Alle Items nach dem Login automatisch vorladen: an.",
+        PREFETCH_AUTO_OFF = "|cff33ff99BananaLoot|r: Alle Items nach dem Login automatisch vorladen: aus.",
+        TIP_ILVL = "Gegenstandsstufe %d",
+        TIP_REQLEVEL = "Benötigt Stufe %d",
+        TIP_WEAPON_DMG = "%s - %s Schaden",
+        TIP_WEAPON_SPEED = "Tempo %s",
+        TIP_WEAPON_DPS = "(%s Schaden pro Sekunde)",
+        TIP_OFFLINE = "(Daten aus der BananaLoot-Datenbank, der Client kennt das Item noch nicht)",
         PREFETCH_START = "|cff33ff99BananaLoot|r: Lade %d unbekannte Items für %s vor...",
         PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item-Cache für %s fertig (%d Items geladen).",
         PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: Keine Loot-Daten für '%s' (keine bekannte Instanz).",
@@ -852,6 +869,8 @@ local LOCALE = {
             "/bl setup             Running raid: edit Hard Reserve / Bank Reserve / Raid Roll, drops\n" ..
             "/bl join [Code]       Load a raid from another loot master by raid code (stand-in)\n" ..
             "/bl prefetch          Preload the items of the current instance now\n" ..
+            "/bl prefetch all      Preload the items of ALL instances in the background\n" ..
+            "/bl prefetch auto on|off  Preload everything after login automatically (default: on)\n" ..
             "/bl prefetch on|off   Automatic preloading when entering instances\n" ..
             "\n" ..
             "=== WHISPER COMMANDS (Players) ===\n" ..
@@ -865,7 +884,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [on|off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [all|on|off|auto on|auto off]",
 
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ bonus per stack set to +%d.",
         OPT_BONUS_INVALID = "|cffff5555BananaLoot|r: Please enter a valid number.",
@@ -990,6 +1009,21 @@ local LOCALE = {
         SETUP_TIP_UNCACHED = "Details not in the client cache yet. They are loaded when you enter the instance.",
         SETUP_BTN_OPEN = "Raid Setup",
         SETUP_PICK_ROW = "%s  |  %d HR, %d BR, %d Raid Roll  |  SR: %d (%s)",
+        PREFETCH_START_ALL = "|cff33ff99BananaLoot|r: Preloading %d items of all instances in the background (about %d min) ...",
+        PREFETCH_PROGRESS = "|cff33ff99BananaLoot|r: Item cache: %d%% (%d/%d)",
+        PREFETCH_SUMMARY = "|cff33ff99BananaLoot|r: Item cache for %s ready: %d of %d items are now in the client.",
+        PREFETCH_UNANSWERED = "|cff33ff99BananaLoot|r: The server did not answer for %d items. That is harmless: name, color and icon come from the bundled item database. Retry in 3 days or with /bl prefetch.",
+        PREFETCH_SUMMARY_ALL = "|cff33ff99BananaLoot|r: Item cache ready: %d of %d items are now in the client, the server did not answer for %d (the display uses the bundled database).",
+        PREFETCH_ALL_RUNNING = "|cff33ff99BananaLoot|r: Preloading all items is already running.",
+        PREFETCH_ALL_KNOWN_ALL = "|cff33ff99BananaLoot|r: All items are already known to the client or were requested recently. /bl prefetch all forces a new pass.",
+        PREFETCH_AUTO_ON = "|cff33ff99BananaLoot|r: Preload all items automatically after login: on.",
+        PREFETCH_AUTO_OFF = "|cff33ff99BananaLoot|r: Preload all items automatically after login: off.",
+        TIP_ILVL = "Item Level %d",
+        TIP_REQLEVEL = "Requires Level %d",
+        TIP_WEAPON_DMG = "%s - %s Damage",
+        TIP_WEAPON_SPEED = "Speed %s",
+        TIP_WEAPON_DPS = "(%s damage per second)",
+        TIP_OFFLINE = "(Data from the BananaLoot database, the client does not know this item yet)",
         PREFETCH_START = "|cff33ff99BananaLoot|r: Preloading %d unknown items for %s...",
         PREFETCH_DONE = "|cff33ff99BananaLoot|r: Item cache for %s ready (%d items loaded).",
         PREFETCH_NO_DATA = "|cff33ff99BananaLoot|r: No loot data for '%s' (not a known instance).",
@@ -1933,8 +1967,19 @@ end
 -- Server liefert GetItemInfo() fuer dem Client unbekannte Items nie Daten,
 -- die statische DB kennt viele Items trotzdem schon vor dem ersten Loot.
 function BananaLoot:GetStaticItemInfo(itemID)
-    if not BananaLoot_ItemDB then return nil end
-    return BananaLoot_ItemDB[itemID]
+    local e = BananaLoot_ItemDB and BananaLoot_ItemDB[itemID]
+    if e then return e end
+    -- zweite Quelle: BananaLootItemInfoExtra.lua (AtlasLoot, fehlende Items)
+    if not self.extraInfoCache then self.extraInfoCache = {} end
+    local x = self.extraInfoCache[itemID]
+    if x then return x end
+    local raw = BananaLoot_ItemInfoExtra and BananaLoot_ItemInfoExtra[itemID]
+    if raw then
+        x = { name = raw[1], quality = raw[2], icon = raw[3] }
+        self.extraInfoCache[itemID] = x
+        return x
+    end
+    return nil
 end
 
 -- Baut aus einer Item-ID und einem bekannten Namen einen vollstaendigen,
@@ -6395,7 +6440,15 @@ SlashCmdList["BANANALOOT"] = function(msg)
         if BananaLoot_UI and BananaLoot_UI.ShowRaidSetup then BananaLoot_UI:ShowRaidSetup() end
 
     elseif cmd == "prefetch" then
-        if BananaLoot.PrefetchZoneItems then BananaLoot:PrefetchZoneItems(nil, true) end
+        if BananaLoot.PrefetchZoneItems then BananaLoot:PrefetchZoneItems(nil, true, true) end
+
+    elseif cmd == "prefetch all" then
+        if BananaLoot.PrefetchAllItems then BananaLoot:PrefetchAllItems(true, true) end
+
+    elseif cmd == "prefetch auto on" or cmd == "prefetch auto off" then
+        local on = (cmd == "prefetch auto on")
+        BananaLoot:SetPrefetchAutoAll(on)
+        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L(on and "PREFETCH_AUTO_ON" or "PREFETCH_AUTO_OFF"))
 
     elseif cmd == "prefetch on" or cmd == "prefetch off" then
         local on = (cmd == "prefetch on")

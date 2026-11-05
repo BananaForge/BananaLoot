@@ -25,6 +25,11 @@ AtlasLoot data and used with the same permission. It is only used to show the
 item selection of the Raid Setup window. `tools/gen_raid_loot.py` regenerates
 the file from an AtlasLoot copy.
 
+`BananaLootItemInfoExtra.lua` (name, quality and icon for items missing from the
+bundled item database) is generated from the same AtlasLoot data and used with the
+same permission. It is only used to display items. `tools/gen_item_info.py`
+regenerates the file from an AtlasLoot copy.
+
 ## Separation of Licenses
 
 The MIT License included in this repository applies to the original BananaLoot

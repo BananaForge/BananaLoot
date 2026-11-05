@@ -127,17 +127,27 @@ local function AttachIconTooltip(row)
         -- Nur echte Item-Links an SetHyperlink übergeben (Fallback-Anzeigen
         -- ohne bekannten Link, z.B. "Item 12345", sind kein gültiger Link).
         if row.currentLink and string.find(row.currentLink, "|Hitem:") then
-            GameTooltip:SetOwner(row.iconFrame, "ANCHOR_RIGHT")
             -- SetHyperlink erwartet auf diesem Server-Core den reinen
             -- "item:ID:..."-String OHNE Farbcode/Klammern -- der komplette
             -- Chat-Link (|cffxxxxxx|Hitem:...|h[Name]|h|r) führt hier zu
-            -- "Unknown link type". Zusätzlich per pcall abgesichert, falls
-            -- andere Addons trotzdem noch einen Hook auf GameTooltip legen.
-            local rawItemString = GetRawItemString(row.currentLink)
-            if rawItemString then
-                pcall(function() GameTooltip:SetHyperlink(rawItemString) end)
+            -- "Unknown link type". Kennt der Client das Item nicht, baut
+            -- ShowItemTooltip den Tooltip lokal aus der Item-Datenbank
+            -- (BananaLootItemTip.lua).
+            local itemID = GetItemIDFromLink and GetItemIDFromLink(row.currentLink)
+            if not itemID then
+                local _, _, idStr = string.find(row.currentLink, "item:(%d+)")
+                itemID = tonumber(idStr)
             end
-            GameTooltip:Show()
+            if itemID and BananaLoot.ShowItemTooltip then
+                BananaLoot:ShowItemTooltip(row.iconFrame, itemID, "ANCHOR_RIGHT")
+            else
+                GameTooltip:SetOwner(row.iconFrame, "ANCHOR_RIGHT")
+                local rawItemString = GetRawItemString(row.currentLink)
+                if rawItemString then
+                    pcall(function() GameTooltip:SetHyperlink(rawItemString) end)
+                end
+                GameTooltip:Show()
+            end
         end
     end)
     row.iconFrame:SetScript("OnLeave", function() GameTooltip:Hide() end)

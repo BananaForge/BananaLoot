@@ -496,6 +496,13 @@ Fragezeichen-Icon, die sich automatisch aktualisieren, sobald das Item
 real gelootet wird. Es geht also nichts kaputt, wenn die Datenbank mal
 veraltet ist.
 
+Zusaetzlich liefert BananaLootItemInfoExtra.lua (ca. 1500 Items aus
+AtlasLoot, erzeugt mit tools/gen_item_info.py) Name, Qualitaet und Icon fuer
+Instanz-, Set-, PvP-, Weltboss- und Weltevent-Beute, die in der Hauptdatenbank
+fehlt. So hat JEDES Item Name, Farbe und Icon, auch wenn der Client es noch nie
+gesehen hat. Kennt der Client keinen Tooltip, baut BananaLoot ihn lokal aus der
+Datenbank (Item-Level, Platz, Ruestung/Waffenschaden, Werte).
+
 Die Datenbank ist reine, generierte Daten und wird nicht von Hand
 bearbeitet. Zum Aktualisieren (z.B. nach einem Content-Patch) wird
 BananaLootItemDB.lua aus der Quelle neu erzeugt; Tabellenname ist
@@ -630,8 +637,19 @@ unsichtbarem Tooltip). Der Client legt sie dadurch im lokalen Cache ab.
  - Beginn und Ende erscheinen als Chat-Meldung.
  - Rein lokal: keine Addon-Nachrichten, das Roll-Sync-Protokoll ist
    nicht betroffen.
+ - Angefragte Items werden 3 Tage lang gemerkt: nicht bei jedem Login oder
+   Zonenwechsel wird alles erneut abgefragt. Am Ende meldet der Chat, wie
+   viele Items der Client jetzt kennt und wie viele der Server nicht
+   beantwortet hat (unkritisch: Name, Farbe und Icon kommen dann aus der
+   mitgelieferten Item-Datenbank).
+ - ALLE Items: Nach dem Login laedt BananaLoot im Hintergrund einmalig die
+   Items ALLER Instanzen vor (ca. 4 pro Sekunde, Fortschritt bei 25/50/75 %).
+   /bl prefetch all erzwingt einen Durchlauf, /bl prefetch auto on|off
+   schaltet den automatischen Lauf ein/aus (Standard: an).
  - /bl prefetch startet den Vorgang von Hand fuer die aktuelle Zone;
-   /bl prefetch on|off schaltet das automatische Vorladen ein/aus.
+   /bl prefetch on|off schaltet das Vorladen beim Betreten einer Instanz ein/aus.
+ - Ist BananaLoot Raider installiert, laedt nur BananaLoot vor (gleicher
+   Client-Cache), damit nichts doppelt abgefragt wird.
  - Meldet der Befehl "Keine Loot-Daten fuer '<Zone>'", ist die Zone
    unbekannt (die deutschen Zonennamen sind nicht ingame geprueft).
  - Daten: BananaLootZoneLoot.lua (Quelle: AtlasLoot Turtle WoW Edition,

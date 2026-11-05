@@ -8,6 +8,15 @@
 -- anzufragen und lokal zu cachen. Das passiert hier gedrosselt im Hintergrund.
 --
 -- Rein lokal: keine Addon-Nachrichten, das Roll-Sync-Protokoll bleibt unberuehrt.
+--
+-- Gemerkt wird dauerhaft (SavedVariables, BananaLoot_DB.prefetchSeen), welche Items schon
+-- angefragt wurden: so wird nicht bei jedem Zonenwechsel/Login alles erneut abgefragt, auch
+-- wenn der Server einzelne Items nie beantwortet. Am Ende meldet der Chat, wie viele Items
+-- der Client jetzt kennt. Die Anzeige in BananaLoot haengt nicht davon ab: Name, Qualitaet
+-- und Icon kommen aus der mitgelieferten Item-Datenbank (BananaLootItemDB/ItemInfoExtra).
+--
+-- Befehle: /bl prefetch (aktuelle Zone, erzwingt), /bl prefetch all (alle Instanzen),
+--          /bl prefetch on|off (Zonen-Vorladen), /bl prefetch auto on|off (alles im Hintergrund).
 -- Daten: BananaLootZoneLoot.lua (Quelle: AtlasLoot Turtle WoW Edition).
 -- Sprachtexte: LOCALE-Tabellen in BananaLoot.lua (Schluessel PREFETCH_*).
 -- Einstellung: BananaLoot_DB.settings.prefetchEnabled (Standard: an).
@@ -58,28 +67,40 @@ local ZONE_ALIASES = {
     ["The Black Morass"] = "Caverns of Time: Black Morass",
 }
 
+local SEEN_SECONDS = 3 * 86400   -- so lange gilt ein Item als "bereits angefragt"
+local GRACE = 6                    -- Sekunden nach der letzten Anfrage bis zur Auswertung
+local AUTO_DELAY = 30              -- Sekunden nach dem Login bis "alles vorladen" startet
+
 local tip = CreateFrame("GameTooltip", "BananaLootPrefetchTooltip", nil, "GameTooltipTemplate")
 tip:SetOwner(WorldFrame, "ANCHOR_NONE")
 
 local queue, qHead, qTail = {}, 1, 0
-local requested = {}   -- [itemID] = true, in dieser Sitzung bereits abgefragt
+local ran = {}            -- Items dieses Laufs (zur Auswertung)
 local total, done = 0, 0
-local announce = false
+local mode = nil          -- "zone" | "all"
 local zoneName = nil
+local finishAt = nil
+local nextProgress = 25
 
 local function IsKnown(id)
     return GetItemInfo("item:" .. id .. ":0:0:0:0:0:0:0") ~= nil
 end
 
-local function Say(key, a, b)
+local function Say(key, a, b, c)
     local text = BananaLoot:L(key)
-    if a ~= nil then text = string.format(text, a, b) end
+    if a ~= nil then text = string.format(text, a, b, c) end
     DEFAULT_CHAT_FRAME:AddMessage(text)
 end
 
 local function Enabled()
     if not BananaLoot_DB or not BananaLoot_DB.settings then return true end
     return BananaLoot_DB.settings.prefetchEnabled ~= false
+end
+
+local function Seen()
+    BananaLoot.EnsureDB()
+    if not BananaLoot_DB.prefetchSeen then BananaLoot_DB.prefetchSeen = {} end
+    return BananaLoot_DB.prefetchSeen
 end
 
 -- Sammelt alle Item-IDs der Instanz zum aktuellen Zonennamen.
@@ -98,6 +119,25 @@ local function CollectZoneItems(zone)
     return ids
 end
 
+-- Alle Items aller Instanzen (Beutetabellen + Raid-Beute).
+local function CollectAllItems()
+    local ids = {}
+    if BananaLoot_ZoneLoot then
+        for _, list in pairs(BananaLoot_ZoneLoot) do
+            for i = 1, table.getn(list) do ids[list[i]] = true end
+        end
+    end
+    if BananaLoot_RaidLoot then
+        for _, raid in pairs(BananaLoot_RaidLoot) do
+            for b = 1, table.getn(raid) do
+                local l = raid[b][2]
+                for i = 1, table.getn(l) do ids[l[i]] = true end
+            end
+        end
+    end
+    return ids
+end
+
 local worker = CreateFrame("Frame")
 worker:Hide()
 local elapsed = 0
@@ -107,52 +147,117 @@ worker:SetScript("OnUpdate", function()
     elapsed = 0
     local id = (qHead <= qTail) and queue[qHead] or nil
     if not id then
-        worker:Hide()
-        if announce and total > 0 then
-            Say("PREFETCH_DONE", zoneName or "?", total)
+        -- Queue leer: kurz warten, damit die Serverantworten eintreffen, dann auswerten
+        if not finishAt then finishAt = GetTime() + GRACE end
+        if GetTime() >= finishAt then
+            finishAt = nil
+            worker:Hide()
+            if total > 0 then
+                local bad = 0
+                for i = 1, table.getn(ran) do
+                    if not IsKnown(ran[i]) then bad = bad + 1 end
+                end
+                if mode == "all" then
+                    Say("PREFETCH_SUMMARY_ALL", total - bad, total, bad)
+                else
+                    Say("PREFETCH_SUMMARY", zoneName or "?", total - bad, total)
+                    if bad > 0 then Say("PREFETCH_UNANSWERED", bad) end
+                end
+            end
+            ran = {}
+            mode = nil
         end
-        announce = false
         return
     end
     queue[qHead] = nil
     qHead = qHead + 1
-    if not IsKnown(id) then
-        pcall(function()
-            tip:SetOwner(WorldFrame, "ANCHOR_NONE")
-            tip:SetHyperlink("item:" .. id .. ":0:0:0:0:0:0:0")
-        end)
-    end
+    pcall(function()
+        tip:SetOwner(WorldFrame, "ANCHOR_NONE")
+        tip:SetHyperlink("item:" .. id .. ":0:0:0:0:0:0:0")
+    end)
     done = done + 1
+    if mode == "all" and total > 0 then
+        local pct = math.floor(done * 100 / total)
+        if pct >= nextProgress and nextProgress < 100 then
+            Say("PREFETCH_PROGRESS", nextProgress, done, total)
+            nextProgress = nextProgress + 25
+        end
+    end
 end)
 
-function BananaLoot:PrefetchZoneItems(zone, verbose)
+-- ids einreihen: nur Items, die der Client nicht kennt und die nicht kuerzlich angefragt wurden
+-- (force: auch kuerzlich angefragte). Rueckgabe: Anzahl neu eingereihter Items.
+local function Enqueue(ids, force)
+    local seen = Seen()
+    local now = time()
+    local fresh, k = {}, 0
+    for i = qHead, qTail do
+        if queue[i] then k = k + 1; fresh[k] = queue[i] end
+    end
+    local queued = {}
+    for i = 1, k do queued[fresh[i]] = true end
+    local added = 0
+    for id in pairs(ids) do
+        if not queued[id] and not IsKnown(id) then
+            local t = seen[id]
+            if force or not t or (now - t) > SEEN_SECONDS then
+                seen[id] = now
+                k = k + 1; fresh[k] = id
+                ran[table.getn(ran) + 1] = id
+                added = added + 1
+            end
+        end
+    end
+    queue, qHead, qTail = fresh, 1, k
+    return added
+end
+
+function BananaLoot:PrefetchZoneItems(zone, verbose, force)
     zone = zone or GetRealZoneText()
     local ids = CollectZoneItems(zone)
     if not ids then
         if verbose then Say("PREFETCH_NO_DATA", tostring(zone)) end
         return 0
     end
-    -- Rest der alten Queue behalten, neue unbekannte Items anhaengen
-    local fresh, k = {}, 0
-    for i = qHead, qTail do
-        if queue[i] then k = k + 1; fresh[k] = queue[i] end
+    if mode == "all" then
+        -- Der Gesamtlauf deckt diese Zone ohnehin ab; nur nach vorne ziehen, wenn erzwungen.
+        if not force then return 0 end
     end
-    for id in pairs(ids) do
-        if not requested[id] then
-            requested[id] = true
-            if not IsKnown(id) then k = k + 1; fresh[k] = id end
+    local added = Enqueue(ids, force)
+    if added > 0 then
+        if mode ~= "all" then
+            total, done, zoneName, mode = added, 0, zone, "zone"
+            Say("PREFETCH_START", added, zone)
+        else
+            total = total + added
         end
-    end
-    queue, qHead, qTail = fresh, 1, k
-    total, done, zoneName, announce = k, 0, zone, true
-    if total > 0 then
-        Say("PREFETCH_START", total, zone)
         elapsed = 0
+        finishAt = nil
         worker:Show()
     elseif verbose then
         Say("PREFETCH_ALL_KNOWN", zone)
     end
-    return total
+    return added
+end
+
+-- Alle Instanz-Items im Hintergrund vorladen (4 pro Sekunde).
+function BananaLoot:PrefetchAllItems(verbose, force)
+    if mode == "all" then
+        if verbose then Say("PREFETCH_ALL_RUNNING") end
+        return 0
+    end
+    local added = Enqueue(CollectAllItems(), force)
+    if added > 0 then
+        total, done, mode, zoneName = added, 0, "all", nil
+        nextProgress = 25
+        Say("PREFETCH_START_ALL", added, math.ceil(added * INTERVAL / 60))
+        elapsed = 0
+        finishAt = nil
+        worker:Show()
+    elseif verbose then
+        Say("PREFETCH_ALL_KNOWN_ALL")
+    end
+    return added
 end
 
 function BananaLoot:SetPrefetchEnabled(on)
@@ -165,20 +270,45 @@ function BananaLoot:GetPrefetchEnabled()
     return Enabled()
 end
 
--- Zonenwechsel -> nach kurzer Verzoegerung Instanz-Items vorladen
+-- Alles im Hintergrund vorladen (Standard: an; nach dem Login, einmalig je Merkzeitraum)
+function BananaLoot:GetPrefetchAutoAll()
+    BananaLoot.EnsureDB()
+    return BananaLoot_DB.settings.prefetchAutoAll ~= false
+end
+
+function BananaLoot:SetPrefetchAutoAll(on)
+    BananaLoot.EnsureDB()
+    BananaLoot_DB.settings.prefetchAutoAll = on and true or false
+end
+
+-- Zonenwechsel -> nach kurzer Verzoegerung Instanz-Items vorladen; Login -> alles vorladen
 local pending = nil
+local autoAt = nil
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("PLAYER_ENTERING_WORLD")
 ev:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+ev:RegisterEvent("PLAYER_LOGIN")
 ev:SetScript("OnEvent", function()
-    pending = ZONE_DELAY
+    if event == "PLAYER_LOGIN" then
+        autoAt = AUTO_DELAY
+    else
+        pending = ZONE_DELAY
+    end
     ev:Show()
 end)
 ev:SetScript("OnUpdate", function()
-    if not pending then return end
-    pending = pending - arg1
-    if pending <= 0 then
-        pending = nil
-        if Enabled() then BananaLoot:PrefetchZoneItems(GetRealZoneText(), false) end
+    if pending then
+        pending = pending - arg1
+        if pending <= 0 then
+            pending = nil
+            if Enabled() then BananaLoot:PrefetchZoneItems(GetRealZoneText(), false) end
+        end
+    end
+    if autoAt then
+        autoAt = autoAt - arg1
+        if autoAt <= 0 then
+            autoAt = nil
+            if Enabled() and BananaLoot:GetPrefetchAutoAll() then BananaLoot:PrefetchAllItems(false) end
+        end
     end
 end)

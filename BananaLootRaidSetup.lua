@@ -224,8 +224,8 @@ end
 function BananaLoot:GetRaidHeadline()
     local label = self:GetSelectedRaidLabel()
     if label then return label end
-    local saved = self:GetCurrentRaidName()
-    if saved and saved ~= "" then return saved end
+    -- (Der Name eines frueher gespeicherten/geladenen Raid-Snapshots wird hier bewusst nicht
+    -- mehr angezeigt: ohne ausgewaehlten vorbereiteten Raid steht die Aufforderung zur Auswahl.)
     return "|cff888888" .. self:L("SETUP_SELECT_NONE") .. "|r"
 end
 
@@ -684,20 +684,7 @@ end)
 
 -- Item-Tooltip: echter Item-Tooltip aus dem Client-Cache, sonst Ersatztext.
 function S.ShowItemTooltip(owner, id)
-    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-    local ok = pcall(function() GameTooltip:SetHyperlink("item:" .. id .. ":0:0:0:0:0:0:0") end)
-    local lines = 0
-    if ok and GameTooltip:NumLines() then lines = GameTooltip:NumLines() end
-    if lines == 0 then
-        local name, quality, _, st = BananaLoot:SetupItemInfo(id)
-        GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
-        GameTooltip:SetText("|cff" .. (QUALITY_HEX[quality] or "ffffff") .. name .. "|r")
-        if st and st.ilvl then
-            GameTooltip:AddLine(string.format(BananaLoot:L("SETUP_TIP_ILVL"), st.ilvl), 1, 1, 1)
-        end
-        GameTooltip:AddLine(BananaLoot:L("SETUP_TIP_UNCACHED"), 0.7, 0.7, 0.7, 1)
-    end
-    GameTooltip:Show()
+    BananaLoot:ShowItemTooltip(owner, id, "ANCHOR_RIGHT")
 end
 
 -- Reihen der Item-Liste
