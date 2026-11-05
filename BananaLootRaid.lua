@@ -311,19 +311,29 @@ raidSelBtn:SetScript("OnClick", function()
 end)
 raidSelBtn:SetScript("OnEnter", function()
     GameTooltip:SetOwner(raidSelBtn, "ANCHOR_RIGHT")
-    GameTooltip:SetText(BananaLoot:L("SETUP_SELECT_TIP"), 1, 1, 1, 1, 1)
+    if raidSelBtn.fullName then
+        GameTooltip:SetText(raidSelBtn.fullName, 1, 0.82, 0)
+        GameTooltip:AddLine(BananaLoot:L("SETUP_SELECT_TIP"), 1, 1, 1, 1)
+    else
+        GameTooltip:SetText(BananaLoot:L("SETUP_SELECT_TIP"), 1, 1, 1, 1, 1)
+    end
     GameTooltip:Show()
 end)
 raidSelBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 local timerText = srFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-timerText:SetPoint("BOTTOM", srFrame, "BOTTOM", 0, 18)
+-- links unten (nicht mittig): rechts daneben sitzt der Button "Raid-Lead abgeben"
+timerText:SetPoint("BOTTOMLEFT", srFrame, "BOTTOMLEFT", 24, 20)
+timerText:SetWidth(250)
+timerText:SetJustifyH("LEFT")
 timerText:SetText("")
 
 local function RefreshRaidUI()
     RefreshSetButtonTexts()
     local selLabel = BananaLoot.GetSelectedRaidLabel and BananaLoot:GetSelectedRaidLabel()
-    raidSelBtn:SetText(selLabel or BananaLoot:L("SETUP_SELECT_NONE"))
+    -- langer Raid-Name wird mit "..." gekuerzt, damit er in den Button passt
+    raidSelBtn.fullName = selLabel
+    BananaLoot_Theme.FitText(raidSelBtn, selLabel or BananaLoot:L("SETUP_SELECT_NONE"), BTN_W - 24)
     if BananaLoot:IsRaidRunning() then
         raidBtn:SetText("|cffff5555" .. BananaLoot:L("RAID_BTN_STOP") .. "|r")
         timerText:SetText("|cff33ff99" .. string.format(BananaLoot:L("RAID_TIMER_TEXT"),

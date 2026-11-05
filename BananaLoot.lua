@@ -197,6 +197,10 @@ local LOCALE = {
         OPT_TIMEOUT_INVALID = "|cffff5555BananaLoot|r: Bitte eine gültige Zahl (mind. 5) eingeben.",
         OPT_COUNTDOWN_ON = "|cff33ff99BananaLoot|r: Chat-Countdown in den letzten Sekunden aktiviert.",
         OPT_COUNTDOWN_OFF = "|cff33ff99BananaLoot|r: Chat-Countdown deaktiviert.",
+        OPT_AUTOAWARD_LABEL = "Auto-Modus vergibt automatisch",
+        OPT_AUTOAWARD_HINT = "Im Auto-Modus wird nach dem Gewinner kurz gewartet (3 Sekunden) und das Item dann automatisch vergeben, danach folgt der nächste Roll. Aus: der Auto-Modus wartet nach jedem Gewinner auf \"Vergeben\". Hard-Reserve-Items werden nie automatisch vergeben.",
+        OPT_AUTOAWARD_ON = "|cff33ff99BananaLoot|r: Auto-Modus vergibt Gewinner automatisch: an.",
+        OPT_AUTOAWARD_OFF = "|cff33ff99BananaLoot|r: Auto-Modus wartet nach jedem Gewinner auf \"Vergeben\".",
         OPT_LOOTPREVIEW_ON = "|cff33ff99BananaLoot|r: Loot-Vorschau im Raid-/Gruppenchat aktiviert.",
         OPT_LOOTPREVIEW_OFF = "|cff33ff99BananaLoot|r: Loot-Vorschau im Raid-/Gruppenchat deaktiviert.",
         OPT_LANGUAGE_SET = "|cff33ff99BananaLoot|r: Sprache umgestellt.",
@@ -898,6 +902,10 @@ local LOCALE = {
         OPT_TIMEOUT_INVALID = "|cffff5555BananaLoot|r: Please enter a valid number (min. 5).",
         OPT_COUNTDOWN_ON = "|cff33ff99BananaLoot|r: Chat countdown in the final seconds enabled.",
         OPT_COUNTDOWN_OFF = "|cff33ff99BananaLoot|r: Chat countdown disabled.",
+        OPT_AUTOAWARD_LABEL = "Auto mode awards automatically",
+        OPT_AUTOAWARD_HINT = "In auto mode the addon waits briefly after the winner (3 seconds) and then awards the item automatically, then the next roll follows. Off: auto mode waits for \"Award\" after every winner. Hard Reserve items are never awarded automatically.",
+        OPT_AUTOAWARD_ON = "|cff33ff99BananaLoot|r: Auto mode awards winners automatically: on.",
+        OPT_AUTOAWARD_OFF = "|cff33ff99BananaLoot|r: Auto mode waits for \"Award\" after every winner.",
         OPT_LOOTPREVIEW_ON = "|cff33ff99BananaLoot|r: Loot preview in raid/party chat enabled.",
         OPT_LOOTPREVIEW_OFF = "|cff33ff99BananaLoot|r: Loot preview in raid/party chat disabled.",
         OPT_LANGUAGE_SET = "|cff33ff99BananaLoot|r: Language switched.",
@@ -1550,6 +1558,18 @@ end
 -- Bankreserve-Items tauchen hier bewusst NIE auf (siehe AnnounceLoot-
 -- Preview), da sie per Definition lautlos/ohne Ankündigung vergeben
 -- werden sollen. Standard: an.
+-- Auto-Modus vergibt den Gewinner nach kurzer Pause automatisch (Standard: an). Aus: der
+-- Auto-Modus kuendigt weiter jeden Roll an, wartet aber nach dem Gewinner auf "Vergeben".
+function BananaLoot:GetAutoAwardEnabled()
+    EnsureDB()
+    return BananaLoot_DB.settings.autoAward ~= false
+end
+
+function BananaLoot:SetAutoAwardEnabled(value)
+    EnsureDB()
+    BananaLoot_DB.settings.autoAward = value and true or false
+end
+
 function BananaLoot:GetLootPreviewEnabled()
     EnsureDB()
     if BananaLoot_DB.settings.lootPreviewEnabled == nil then return true end
@@ -3412,7 +3432,26 @@ function BananaLoot:ResolveActiveRoll()
     end
     self:TestHook("OnWinner", ar)
 
+    -- Auto-Modus: nach einer kurzen Pause (Ansage lesen/Einspruch) automatisch vergeben und
+    -- zum naechsten Item weiterziehen (siehe TickAutoAward)
+    if self.autoRunning and self:GetAutoAwardEnabled() and table.getn(ar.confirmedWinners) > 0 then
+        self.autoAwardRoll = ar
+        self.autoAwardAt = GetTime() + 3
+    end
+
     if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+end
+
+-- Wird aus dem OnUpdate aufgerufen: vergibt den Gewinner des gerade beendeten Rolls, wenn der
+-- Auto-Modus noch laeuft und niemand dazwischen vergeben/gestoppt hat.
+function BananaLoot:TickAutoAward()
+    if not self.autoAwardAt or GetTime() < self.autoAwardAt then return end
+    local ar = self.autoAwardRoll
+    self.autoAwardAt, self.autoAwardRoll = nil, nil
+    if self.autoRunning and ar and self.activeRoll == ar and not ar.running
+        and ar.confirmedWinners and table.getn(ar.confirmedWinners) > 0 then
+        self:AwardActiveWinner()   -- AwardItem ruft bei laufendem Auto-Modus AutoAdvance auf
+    end
 end
 
 -- ============================================================
@@ -4031,6 +4070,7 @@ end
 -- Stop-Button im Loot-Fenster.
 function BananaLoot:StopAutoMode()
     self.autoRunning = false
+    self.autoAwardAt, self.autoAwardRoll = nil, nil
     self:StopRoll()
 end
 
@@ -6199,6 +6239,7 @@ eventFrame:SetScript("OnUpdate", function()
     BananaLoot:TickWhisperQueue()
     BananaLoot:TickRaid()
     BananaLoot:TickChatQueue()
+    BananaLoot:TickAutoAward()
 
     local ar = BananaLoot.activeRoll
     if ar and ar.running then

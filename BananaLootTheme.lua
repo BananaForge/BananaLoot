@@ -29,3 +29,19 @@ function T.Darken(f)
     f.bananaBG = t
     if f.SetToplevel then f:SetToplevel(true) end
 end
+
+-- Setzt den Text eines Buttons und kuerzt ihn mit "...", falls er breiter als maxWidth waere.
+-- (Langer Text passt so immer in den Button; der volle Text gehoert in den Tooltip.)
+function T.FitText(btn, text, maxWidth)
+    btn:SetText(text)
+    local fs = btn.GetFontString and btn:GetFontString()
+    if not fs or not fs.GetStringWidth then return text end
+    local shown = text
+    local guard = 0
+    while fs:GetStringWidth() > maxWidth and string.len(shown) > 4 and guard < 80 do
+        shown = string.sub(shown, 1, string.len(shown) - 1)
+        btn:SetText(shown .. "...")
+        guard = guard + 1
+    end
+    return shown
+end

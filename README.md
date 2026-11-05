@@ -182,7 +182,13 @@ BananaLoot never talks to the internet on its own.
   and pops it up on its own
 - `/bl auto` works through the entire chest one item at a time: non-SR
   items first (open to everyone), SR items afterward (reservers only) –
-  Bank Reserve items are skipped entirely (see above)
+  Bank Reserve items are skipped entirely (see above). It announces every roll
+  itself, waits 3 seconds after the winner and then **awards the item
+  automatically and moves on to the next one**, so the whole chest runs
+  through without a click (Hard Reserve items are never awarded automatically).
+  If the winner cannot receive the item, auto mode pauses. Under Options >
+  Automation, "Auto mode awards automatically" can be switched off so that it
+  waits for "Award" after every winner, as before
 - Multiple drops of the same item are counted correctly and handled one by one
 - `/bl arf [Item]` suspends SR for a single roll (open to everyone)
 - Attempts to award automatically via the master loot API – if that fails,

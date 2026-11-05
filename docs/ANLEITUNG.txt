@@ -21,8 +21,14 @@ BEDIENUNG (Masterlooter)
 /bl auto       -> arbeitet die aktuell gelootete Kiste automatisch
                    nacheinander ab: startet für jedes Item einen Roll
                    (Items ohne SR zuerst, offen für alle; SR-Items
-                   danach, nur für die Reservierer), wartet auf deine
-                   Vergabe-Bestätigung und macht dann automatisch weiter.
+                   danach, nur für die Reservierer), vergibt den Gewinner
+                   nach 3 Sekunden automatisch und macht dann mit dem
+                   nächsten Item weiter -- die ganze Kiste läuft ohne
+                   Klick durch (Hard-Reserve-Items nie automatisch). Kann der
+                   Gewinner das Item nicht bekommen, pausiert der Auto-
+                   Modus. Unter Optionen > Automatisierung laesst sich
+                   "Auto-Modus vergibt automatisch" ausschalten: dann wartet
+                   er nach jedem Gewinner wie frueher auf "Vergeben".
                    Alternativ per "Auto: An/Aus"-Button oben im
                    Loot-Fenster umschaltbar, ohne den Befehl zu tippen.
 /bl stop       -> bricht Auto-Modus und einen laufenden Roll sofort ab.

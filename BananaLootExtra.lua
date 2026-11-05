@@ -867,7 +867,26 @@ BananaLoot_UI.rrHint:SetWidth(360)
 BananaLoot_UI.rrHint:SetJustifyH("LEFT")
 RegisterLocaleText(BananaLoot_UI.rrHint, "OPT_RR_HINT")
 
+-- Auto-Modus vergibt automatisch (Felder in BananaLoot_UI: Lua 5.0 erlaubt max. 200 lokale Variablen pro Datei)
+BananaLoot_UI.autoAwardCheck = CreateFrame("CheckButton", "BananaLootAutoAwardCheck", optFrame, "UICheckButtonTemplate")
+BananaLoot_UI.autoAwardCheck:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 18, -532)
+BananaLoot_UI.autoAwardCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    local checked = BananaLoot_UI.autoAwardCheck:GetChecked() and true or false
+    BananaLoot:SetAutoAwardEnabled(checked)
+    DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L(checked and "OPT_AUTOAWARD_ON" or "OPT_AUTOAWARD_OFF"))
+end)
+BananaLoot_UI.autoAwardLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+BananaLoot_UI.autoAwardLabel:SetPoint("LEFT", BananaLoot_UI.autoAwardCheck, "RIGHT", 2, 0)
+RegisterLocaleText(BananaLoot_UI.autoAwardLabel, "OPT_AUTOAWARD_LABEL")
+BananaLoot_UI.autoAwardHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+BananaLoot_UI.autoAwardHint:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -556)
+BananaLoot_UI.autoAwardHint:SetWidth(360)
+BananaLoot_UI.autoAwardHint:SetJustifyH("LEFT")
+RegisterLocaleText(BananaLoot_UI.autoAwardHint, "OPT_AUTOAWARD_HINT")
+
 AddToTab(TAB_AUTOMATION, {
+    BananaLoot_UI.autoAwardCheck, BananaLoot_UI.autoAwardLabel, BananaLoot_UI.autoAwardHint,
     autoMLCheck, autoMLLabel, autoMLHint,
     BananaLoot_UI.rrCheck, BananaLoot_UI.rrLabel, BananaLoot_UI.rrHint,
     multiWinnerCheck, multiWinnerLabel, multiWinnerHint,
@@ -918,6 +937,7 @@ function BananaLoot_UI:ToggleOptions()
         soundAwardCheck:SetChecked(BananaLoot:GetSoundAwardEnabled())
         soundClickCheck:SetChecked(BananaLoot:GetSoundButtonClicksEnabled())
         lootPreviewCheck:SetChecked(BananaLoot:GetLootPreviewEnabled())
+        BananaLoot_UI.autoAwardCheck:SetChecked(BananaLoot:GetAutoAwardEnabled())
         maxSREditBox:SetText(tostring(BananaLoot:GetMaxSRCount()))
         autoMLCheck:SetChecked(BananaLoot:GetAutoMasterLootEnabled())
         rollSyncCheck:SetChecked(BananaLoot:GetRollSyncEnabled())
