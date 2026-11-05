@@ -88,7 +88,8 @@ Geprüft wird:
 2. keine leeren oder abgeschnittenen Dateien
 3. Lua-5.0-Kompatibilität (`tools/check_lua50.lua`)
 4. jede Datei aus der TOC existiert, jede `.lua` steht in der TOC
-5. `## Version:` in der TOC = `BananaLoot.VERSION` in `BananaLoot.lua`
+5. `## Version:` in der TOC = `BananaLoot.VERSION` in `BananaLoot.lua`;
+   der CHANGELOG hat eine Ueberschrift `## v<Version>`
 6. jede Textur, die der Code lädt, liegt im Repo
 
 Was sich nur im Spiel prüfen lässt — Masterloot-Vergabe, Whisper,
@@ -96,6 +97,9 @@ Roll-Sync zwischen zwei Clients, Trade-Tracking — gehört als Testhinweis
 in den CHANGELOG-Eintrag.
 
 ## Release
+
+**Bei JEDER Aenderung die Version erhoehen** (sie steht im Titel des Hauptfensters
+und in der Ladezeile; `/bl version` zeigt, wer in der Gruppe welche Version hat).
 
 1. `## Version:` in `BananaLoot.toc` **und** `BananaLoot.VERSION` in
    `BananaLoot.lua` hochzählen (der Test bricht ab, wenn sie

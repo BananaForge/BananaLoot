@@ -524,6 +524,7 @@ The release ZIP also contains `ANLEITUNG.txt`, the full German manual.
 | `/bl history`                                       | Show the shared loot history for this session (Roll-Sync)                   |
 | `/bl clearlog`                                      | Clear the loot log (e.g. at the start of a season)                          |
 | `/bl lfm`                                           | Open the LFM window (timed posts in the world channel)                      |
+| `/bl version`                                       | Show your version and ask the group who has which version (BananaLoot and Raider) |
 | `/bl join <code>`                                   | Load a raid by raid code from another loot master (stand-in)              
 | `/bl setup`                                         | Running raid: edit Hard Reserve / Raid Roll. Otherwise: prepare a new raid
 | `/bl prefetch` / `/bl prefetch on\|off`             | Preload the current instance's items now / toggle automatic preloading    

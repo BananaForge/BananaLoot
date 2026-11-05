@@ -1,6 +1,8 @@
 # BananaLoot Changelog
 
-## Unreleased
+## v3.43 (vs. v3.42)
+
+- **New:** The version number is shown in the title of the main window ("BananaLoot - SoftReserve / SR+ v3.43") and in the load message. `/bl version` shows your version and asks the group who has which version of BananaLoot and BananaLoot Raider (older versions are flagged); the Hand over lead list shows the version of each player. Rule: every change raises the version (TOC + `BananaLoot.VERSION` + CHANGELOG heading); `tools/run_tests.sh` fails if the CHANGELOG has no heading for the current version.
 
 - **Changed:** All windows now have a dark, nearly opaque background (easier to read, no text of other windows showing through) and are brought fully to the front when clicked or opened. Layers unified: SR window, loot window, roll-sync popup and test mode are `HIGH`, every other window is `DIALOG` (`BananaLootTheme.lua`).
 - **New:** LFM assistant. The LFM window has a new "Build text..." button: pick a prepared raid and what you are looking for (Tanks / Healers / DPS as role buttons, whole classes, or single specs such as Warrior (Protection) or Druid (Bear)) and the world channel text is generated, including the raid's Hard Reserve items, with a live preview and the 255 character limit handled. "Use text and start LFM" posts it right away and then at the set interval.

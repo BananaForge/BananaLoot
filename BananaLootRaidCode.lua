@@ -25,7 +25,8 @@
 --   SW                         Raider -> Host: "welcher Raid laeuft in meiner Gruppe?"
 --                              (nur ueber RAID/PARTY, nie ueber GUILD)
 --   SC~code~name~O|C           Host: Code des aktiven Raids (Antwort auf SW)
---   HQ / HA                    Raid-Lead abgeben: "wer hat BananaLoot?" / "ich"
+--   HQ / HA~version / RV~version  "wer hat BananaLoot?" / BananaLoot antwortet mit seiner Version /
+--                              BananaLoot Raider antwortet mit seiner Version (Raid-Lead abgeben, /bl version)
 --   HO~code~spieler            neuer Raid-Leiter: laedt den Raid automatisch (wie SJ)
 --
 -- Lua 5.0: kein #-Operator, kein %-Operator, kein string.gmatch/match, Events ueber
@@ -42,7 +43,8 @@ local C = {
     seen = {},       -- ["S|code"] / ["A|code|spieler"] = Zeit der zuletzt gesehenen Antwort anderer
     lastMsg = {},    -- [sender] = Zeit der letzten SR-Nachricht (Spam-Schutz)
     joining = {},    -- [code] = Startzeit
-    hasAddon = {},   -- [spieler] = Zeit der letzten HA-Antwort (hat BananaLoot)
+    hasAddon = {},   -- [spieler] = BananaLoot-Version (Antwort auf HQ)
+    raiderVersion = {},  -- [spieler] = BananaLoot-Raider-Version (Antwort auf HQ)
 }
 BananaLoot_CodeState = C
 
@@ -415,7 +417,7 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
     if not text or (string.len(text) > 2 and string.sub(text, 3, 3) ~= "~") then return false end
     local t = string.sub(text, 1, 2)
     if t ~= "SR" and t ~= "SQ" and t ~= "SJ" and t ~= "SS" and t ~= "SH" and t ~= "SD" and t ~= "SA"
-        and t ~= "SW" and t ~= "SC" and t ~= "HQ" and t ~= "HA" and t ~= "HO" then
+        and t ~= "SW" and t ~= "SC" and t ~= "HQ" and t ~= "HA" and t ~= "HO" and t ~= "RV" then
         return false
     end
     local fields = Split(text, "~")
@@ -489,12 +491,16 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
     -- HQ/HA: wer hat BananaLoot? (Raid-Lead abgeben)
     if t == "HQ" then
         if not isSelf then
-            After(math.random() * 1.2, function() QueueSend("HA~1", channel) end)
+            After(math.random() * 1.2, function() QueueSend("HA~" .. (BananaLoot.VERSION or "?"), channel) end)
         end
         return true
     end
+    if t == "RV" then
+        C.raiderVersion[sender] = fields[2] or "?"
+        return true
+    end
     if t == "HA" then
-        C.hasAddon[sender] = GetTime()
+        C.hasAddon[sender] = fields[2] or "?"
         if BananaLoot_UI and BananaLoot_UI.RefreshMemberPicker then BananaLoot_UI:RefreshMemberPicker() end
         return true
     end
@@ -594,6 +600,64 @@ function BananaLoot:PostRaidCode(entry)
     else
         DEFAULT_CHAT_FRAME:AddMessage(msg)
     end
+end
+
+-- ============================================================
+-- 4b) VERSIONEN IN DER GRUPPE: /bl version fragt per HQ, wer BananaLoot bzw. BananaLoot Raider hat
+-- und in welcher Version; die Antworten (HA/RV) werden nach 3 Sekunden aufgelistet.
+-- ============================================================
+local function VersionNewer(a, b)
+    -- true, wenn Version a neuer ist als b ("3.43" > "3.42")
+    local function part(v, i)
+        local n = 0
+        local k = 0
+        for num in string.gfind(v or "0", "%d+") do
+            k = k + 1
+            if k == i then n = tonumber(num) or 0 end
+        end
+        return n
+    end
+    for i = 1, 3 do
+        if part(a, i) ~= part(b, i) then return part(a, i) > part(b, i) end
+    end
+    return false
+end
+
+function BananaLoot:ShowGroupVersions()
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L("VERSION_OWN"), self.VERSION))
+    local channel = self:RaidCodeChannel()
+    if not channel or channel == "GUILD" then
+        -- ohne Gruppe/Raid gibt es niemanden zum Abfragen
+        return
+    end
+    DEFAULT_CHAT_FRAME:AddMessage(self:L("VERSION_ASKING"))
+    C.hasAddon = {}
+    C.raiderVersion = {}
+    QueueSend("HQ", channel)
+    After(3, function()
+        local lines = 0
+        local names = {}
+        for name in pairs(C.hasAddon) do table.insert(names, name) end
+        for name in pairs(C.raiderVersion) do
+            if not C.hasAddon[name] then table.insert(names, name) end
+        end
+        table.sort(names)
+        for i = 1, table.getn(names) do
+            local name = names[i]
+            if C.hasAddon[name] and name ~= UnitName("player") then
+                lines = lines + 1
+                DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("VERSION_LINE"), name, C.hasAddon[name]))
+                if VersionNewer(BananaLoot.VERSION, C.hasAddon[name]) then
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("VERSION_OLDER"), name))
+                end
+            end
+            if C.raiderVersion[name] then
+                lines = lines + 1
+                DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("VERSION_LINE_RAIDER"), name, C.raiderVersion[name]))
+            end
+        end
+        if lines == 0 then DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("VERSION_NONE")) end
+    end)
 end
 
 -- ============================================================
@@ -777,7 +841,9 @@ function H.Refresh()
             local label = BananaLoot:ColoredName(e.name)
             if opts.onlyAddon then
                 if e.has then
-                    label = label .. "  |cff33ff99" .. BananaLoot:L("LEAD_TAG_ADDON") .. "|r"
+                    local ver = C.hasAddon[e.name]
+                    if e.name == UnitName("player") then ver = BananaLoot.VERSION end
+                    label = label .. "  |cff33ff99" .. BananaLoot:L("LEAD_TAG_ADDON") .. (ver and ver ~= "" and (" v" .. ver) or "") .. "|r"
                 else
                     label = label .. "  |cff808080" .. BananaLoot:L("LEAD_TAG_NOADDON") .. "|r"
                 end

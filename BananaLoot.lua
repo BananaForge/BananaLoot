@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.42"
+BananaLoot.VERSION = "3.43"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -36,7 +36,7 @@ BananaLoot.EnsureDB = EnsureDB
 local LOCALE = {
     de = {
         -- Whisper / Chat
-        MSG_ADDON_LOADED = "|cff33ff99BananaLoot|r geladen. /bl öffnet das Fenster, /bl auto startet den automatischen Loot-Durchlauf.",
+        MSG_ADDON_LOADED = "|cff33ff99BananaLoot|r v%s geladen. /bl öffnet das Fenster, /bl auto startet den automatischen Loot-Durchlauf.",
         WHISPER_SR_NEED_LINK = "BananaLoot: Bitte das Item per Shift-Klick in den Whisper einfügen (z.B. \"sr [Item]\").",
         WHISPER_SR_RESERVED = "BananaLoot: %s wurde für dich reserviert.",
         WHISPER_SR_BONUS_SUFFIX = " (dein SR+ Bonus: +%d)",
@@ -170,6 +170,7 @@ local LOCALE = {
             "/bl history            Geteilte Loot-Historie anzeigen (nur Session)\n" ..
             "/bl lfm                LFM-Fenster öffnen (Text im Weltkanal posten)\n" ..
             "/bl mini              Kleinen GL/ML-Button ein-/ausblenden (verschiebbar)\n" ..
+            "/bl version           Eigene Version zeigen und abfragen, wer in der Gruppe welche Version hat\n" ..
             "/bl setup             Laufender Raid: Hard Reserve / Bankreserve / Raid-Roll bearbeiten, Drops\n" ..
             "/bl join [Code]       Raid per Raid-Code von einem anderen Loot-Master laden (Stellvertreter)\n" ..
             "/bl prefetch          Items der aktuellen Instanz jetzt vorladen\n" ..
@@ -188,7 +189,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [all|on|off|auto on|auto off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Befehle: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl version, /bl prefetch [all|on|off|auto on|auto off]",
 
         -- Optionen (Chat-Feedback)
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ Bonus pro Stufe auf +%d gesetzt.",
@@ -281,6 +282,12 @@ local LOCALE = {
         LFMB_T_NEED = " - gesucht: %s",
         LFMB_T_HR = " - HR: %s",
         LFMB_T_SUFFIX = " - /w für Einladung",
+        VERSION_OWN = "|cff33ff99BananaLoot|r Version %s",
+        VERSION_ASKING = "|cff33ff99BananaLoot|r: Frage die Versionen in der Gruppe ab ...",
+        VERSION_LINE = "  %s: BananaLoot v%s",
+        VERSION_LINE_RAIDER = "  %s: BananaLoot Raider v%s",
+        VERSION_NONE = "  (keine anderen Antworten -- Gruppe/Raid nötig, die anderen brauchen die Version ab 3.43 bzw. Raider ab 1.2)",
+        VERSION_OLDER = "  |cffff8040%s hat eine ältere Version als du|r",
         LEAD_BTN = "Raid-Lead abgeben",
         LEAD_TOOLTIP = "Raid-Leitung (und Loot-Master) an einen anderen Spieler im Raid uebergeben",
         LEAD_TITLE = "Raid-Lead abgeben",
@@ -767,7 +774,7 @@ local LOCALE = {
     },
 
     en = {
-        MSG_ADDON_LOADED = "|cff33ff99BananaLoot|r loaded. /bl opens the window, /bl auto starts the automatic loot run.",
+        MSG_ADDON_LOADED = "|cff33ff99BananaLoot|r v%s loaded. /bl opens the window, /bl auto starts the automatic loot run.",
         WHISPER_SR_NEED_LINK = "BananaLoot: Please shift-click the item into the whisper (e.g. \"sr [Item]\").",
         WHISPER_SR_RESERVED = "BananaLoot: %s has been reserved for you.",
         WHISPER_SR_BONUS_SUFFIX = " (your SR+ bonus: +%d)",
@@ -896,6 +903,7 @@ local LOCALE = {
             "/bl history            Show shared loot history (session only)\n" ..
             "/bl lfm                Open the LFM window (post a text in the World channel)\n" ..
             "/bl mini              Show/hide the small GL/ML button (draggable)\n" ..
+            "/bl version           Show your version and ask which version the group has\n" ..
             "/bl setup             Running raid: edit Hard Reserve / Bank Reserve / Raid Roll, drops\n" ..
             "/bl join [Code]       Load a raid from another loot master by raid code (stand-in)\n" ..
             "/bl prefetch          Preload the items of the current instance now\n" ..
@@ -914,7 +922,7 @@ local LOCALE = {
             "/roll 99               Off-Spec\n" ..
             "/roll 98               Transmog",
 
-        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl prefetch [all|on|off|auto on|auto off]",
+        CMD_HELP = "|cff33ff99BananaLoot|r Commands: /bl, /bl loot, /bl auto, /bl award, /bl arf [Item], /bl sr [Item], /bl unsr [Item], /bl stop, /bl reset, /bl wipeplus, /bl export, /bl import, /bl csv, /bl csvlog, /bl clearlog, /bl options, /bl hr [Item], /bl hr remove [Item], /bl br [Item], /bl br remove [Item], /bl lfm, /bl setup, /bl join [Code], /bl mini, /bl version, /bl prefetch [all|on|off|auto on|auto off]",
 
         OPT_BONUS_SET = "|cff33ff99BananaLoot|r: SR+ bonus per stack set to +%d.",
         OPT_BONUS_INVALID = "|cffff5555BananaLoot|r: Please enter a valid number.",
@@ -1006,6 +1014,12 @@ local LOCALE = {
         LFMB_T_NEED = " - looking for: %s",
         LFMB_T_HR = " - HR: %s",
         LFMB_T_SUFFIX = " - /w for invite",
+        VERSION_OWN = "|cff33ff99BananaLoot|r version %s",
+        VERSION_ASKING = "|cff33ff99BananaLoot|r: Asking the group for their versions ...",
+        VERSION_LINE = "  %s: BananaLoot v%s",
+        VERSION_LINE_RAIDER = "  %s: BananaLoot Raider v%s",
+        VERSION_NONE = "  (no other answers -- needs a group/raid, the others need version 3.43 or Raider 1.2 or newer)",
+        VERSION_OLDER = "  |cffff8040%s has an older version than you|r",
         LEAD_BTN = "Hand over lead",
         LEAD_TOOLTIP = "Hand over raid leadership (and loot master) to another player in the raid",
         LEAD_TITLE = "Hand over raid lead",
@@ -6178,7 +6192,7 @@ eventFrame:SetScript("OnEvent", function()
         EnsureDB()
         MigrateDB()
         BananaLoot:RestoreSession()
-        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("MSG_ADDON_LOADED"))
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("MSG_ADDON_LOADED"), BananaLoot.VERSION))
         if BananaLoot_UI and BananaLoot_UI.ApplyLocaleAll then BananaLoot_UI:ApplyLocaleAll() end
 
     elseif event == "CHAT_MSG_WHISPER" then
@@ -6525,6 +6539,9 @@ SlashCmdList["BANANALOOT"] = function(msg)
     elseif string.find(cmd, "^join ") then
         local code = Trim(string.sub(msg, 6))
         if BananaLoot.JoinRaidCode then BananaLoot:JoinRaidCode(code) end
+
+    elseif cmd == "version" or cmd == "ver" then
+        if BananaLoot.ShowGroupVersions then BananaLoot:ShowGroupVersions() end
 
     elseif cmd == "mini" then
         if BananaLoot_UI and BananaLoot_UI.ToggleMiniGL then BananaLoot_UI:ToggleMiniGL() end

@@ -200,7 +200,7 @@ srTitleIcon:SetTexture("Interface\\AddOns\\BananaLoot\\Icons\\BananaLoot_Icon_64
 -- des Titeltexts (vorher überdeckte z.B. das "+" am Ende von "SR+"
 -- teilweise den HR-Button).
 local srTitle = srFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-srTitle:SetText(BananaLoot:L("UI_TITLE"))
+srTitle:SetText(BananaLoot:L("UI_TITLE") .. " |cff9d9d9dv" .. BananaLoot.VERSION .. "|r")
 srTitle:SetPoint("LEFT", srTitleIcon, "RIGHT", 8, 0)
 
 -- Name des aktuell gespeicherten/geladenen Raids (siehe /bl-Buttons
@@ -1521,7 +1521,7 @@ end)
 -- Sprachumschaltung: aktualisiert alle statischen Texte beider Fenster
 -- ------------------------------------------------------------
 function BananaLoot_UI:ApplyLocale()
-    srTitle:SetText(BananaLoot:L("UI_TITLE"))
+    srTitle:SetText(BananaLoot:L("UI_TITLE") .. " |cff9d9d9dv" .. BananaLoot.VERSION .. "|r")
     srHint:SetText(BananaLoot:L("UI_HINT"))
     exportBtn:SetText(BananaLoot:L("UI_BTN_EXPORT"))
     importBtn:SetText(BananaLoot:L("UI_BTN_IMPORT"))

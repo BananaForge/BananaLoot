@@ -45,6 +45,13 @@ else
   echo "ok    Version $toc_ver"
 fi
 
+# 5b. Der CHANGELOG hat eine Ueberschrift fuer die aktuelle Version ("## v<Version>")
+if ! grep -q "^## v$toc_ver" CHANGELOG.md; then
+  echo "FEHLER Version: CHANGELOG.md hat keine Ueberschrift '## v$toc_ver' (Version bei jeder Aenderung erhoehen und eintragen)"; fail=1
+else
+  echo "ok    CHANGELOG-Eintrag fuer v$toc_ver"
+fi
+
 # 6. Die Grafiken, die der Code laedt, liegen im Repo
 for tex in $(grep -oh 'Interface\\\\AddOns\\\\BananaLoot\\\\[^"]*' *.lua | sed 's/.*BananaLoot\\\\//; s/\\\\/\//g' | sort -u); do
   if [ ! -f "$tex.tga" ] && [ ! -f "$tex.blp" ]; then echo "GRAFIK FEHLT: $tex"; fail=1; fi
