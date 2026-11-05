@@ -20,7 +20,7 @@ Beim Start eines Rolls, Kanal Ansage. `%s` = Item (bei Mehrfachdrop + " (N Kopie
 | Fall | DE | EN |
 |---|---|---|
 | Roll mit SR (`ROLL_ANNOUNCE_SR`) | `[BananaLoot] SR-Roll für [Item] -- Name1 Name2 -- <Hinweis>` | `[BananaLoot] SR roll for ...` |
-| Frei-Roll (`ROLL_ANNOUNCE_ARF`) | `[BananaLoot] ARF: Roll für [Item] -- SR ausgesetzt, offen für alle -- <Hinweis>` | `[BananaLoot] ARF: Roll for ...` |
+| Frei-Roll (`ROLL_ANNOUNCE_ARF`) | `[BananaLoot] Frei-Roll für [Item] -- SR ausgesetzt, offen für alle -- <Hinweis>` | `[BananaLoot] Open Roll for ...` |
 | Offener Roll (`ROLL_ANNOUNCE_OPEN`) | `[BananaLoot] Roll für [Item] -- offen für alle -- <Hinweis>` | `[BananaLoot] Roll for ...` |
 
 Wurf-Hinweis (`ROLL_HOWTO` + `ROLL_TIME_SUFFIX`): `/roll = Hauptspec, /roll 99 = Off-Spec, /roll 98 = Transmog -- Zeit: 30 Sek.`
@@ -65,5 +65,4 @@ LFM-Assistent/-Fenster: der von dir erzeugte bzw. bearbeitete Text (englisch), i
 Nur Whispers an den Lootmaster: `sr [Item]` / `unsr [Item]` (Fenster "SR einreichen" / "Whisper-SR"). Keine Raid-Chat-Texte.
 
 ## Auffälligkeiten (zum Entscheiden)
-- Der Frei-Roll heißt im Chat noch "ARF:" – in der Oberfläche heißt er inzwischen "Frei-Roll".
-- Bankreserve/Manuell zuweisen/Gewinner-Button sagen nichts im Raid an. Soll eine Ansage dazu (z. B. "[Item] geht an Name")?
+- Bankreserve/Manuell zuweisen/Gewinner-Button sagen bewusst nichts im Raid an (kein Chat-Spam).

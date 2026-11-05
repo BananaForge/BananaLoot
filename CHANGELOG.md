@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.50 (vs. v3.49)
+
+- **Changed:** The "ARF" wording is gone from everything players see: the raid chat announcement now says "Frei-Roll" / "Open Roll", as do the roll popup mode and tooltips. The `/bl arf` command still works.
+
 ## v3.49 (vs. v3.48)
 
 - **New:** Button "Assign" on every loot item (except Hard Reserve): choose any raid member from a list, then confirm twice ("Award X to Y?" and "SECOND CONFIRMATION") before the item is awarded manually.

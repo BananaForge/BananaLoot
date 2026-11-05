@@ -17,7 +17,7 @@ BEDIENUNG (Masterlooter)
                    aktuellen Reservierungen, dauerhaft nutzbar)
 /bl loot       -> öffnet/schließt das separate Loot-Fenster (öffnet
                    sich zusätzlich automatisch, sobald Loot verfügbar
-                   ist). Enthält Roll/ARF/Vergeben je Item.
+                   ist). Enthält Roll/Frei-Roll/Vergeben je Item.
 /bl auto       -> arbeitet die aktuell gelootete Kiste automatisch
                    nacheinander ab: startet für jedes Item einen Roll
                    (Items ohne SR zuerst, offen für alle; SR-Items
@@ -51,7 +51,7 @@ BEDIENUNG (Masterlooter)
                    Item SR't ist (SR wird für diesen einen Roll
                    ausgesetzt). Item per Shift-Klick anhängen.
                    Alternative: Button "Frei-Roll" in jeder Item-Zeile im
-                   Loot-Fenster (ARF = Alle Rollen Frei).
+                   Loot-Fenster (Frei-Roll = offener Roll fuer alle).
 /bl sr [Item]  -> reserviert ein Item für dich selbst (als Loot-Master).
                    Gedacht als Ersatz für den normalen Whisper-Weg
                    ("sr [Item]" an den Loot-Master schicken), da man
@@ -200,7 +200,7 @@ Fortschritt per Addon-Nachricht an alle Raid-/Gruppenmitglieder, die
 ebenfalls BananaLoot nutzen UND die Option ebenfalls aktiviert haben.
 Diese sehen dann ein eigenes, verschiebbares Popup-Fenster mit:
  - Item-Icon und -Name
- - Modus (SR / Offen / ARF)
+ - Modus (SR / Offen / Frei-Roll)
  - Live-Countdown
  - laufender Bestenliste der eingegangenen Würfe (sortiert nach
    Kategorie-Priorität -- Hauptspec schlägt Off-Spec schlägt Transmog,
@@ -717,7 +717,7 @@ Das Optionsfenster ist in fünf Reiter unterteilt, damit keiner davon
 
  - Allgemein: SR+ Bonus pro Stufe (Standard: +10 pro Stack), Roll-
    Timeout in Sekunden (Standard: 60, gilt für alle neu gestarteten
-   Rolls inkl. /bl auto und ARF), maximale Anzahl SR pro Spieler,
+   Rolls inkl. /bl auto und Frei-Roll), maximale Anzahl SR pro Spieler,
    Rückantwort bei unbekanntem Whisper-Befehl an/aus.
  - Automatik: automatisches Master Loot beim Anvisieren eines
    bekannten Raid-Bosses, Mehrfachdrops ("Top N gewinnen"), Loot-
@@ -963,7 +963,7 @@ v3.33 (vs. v3.32)
    Engine: 10 erfundene Naxxramas-Loot-Slots landen auf einmal im
    normalen Loot-Fenster, 10 erfundene Raider würfeln mit sichtbaren
    Wurfzeilen, Raid-Chat-Sprüchen sowie Jubel-/Fluch-Emotes mit. Du
-   verrollst und vergibst wie im Raid (Roll, ARF, Verwalten, Raid Roll,
+   verrollst und vergibst wie im Raid (Roll, Frei-Roll, Verwalten, Raid Roll,
    /bl auto) und kannst mit /roll selbst mitwürfeln. Es gelten dein
    Roll-Timeout, Chat-Countdown, SR+ Bonus, "Top N gewinnen" und die
    Loot-Vorschau. Alle Ansagen erscheinen nur lokal mit [TEST]-Marke und
@@ -1126,7 +1126,7 @@ v3.25 (vs. v3.24)
 v3.24 (vs. v3.23)
  - New: the roll-sync feature (v3.23) now shows a real popup window
    instead of only a chat debug line. Recipients see the item icon/
-   name, mode (SR/Open/ARF), a live countdown, and a standings list of
+   name, mode (SR/Open/Open Roll), a live countdown, and a standings list of
    incoming rolls (sorted by pool priority first -- Main Spec beats
    Off-Spec beats Transmog, exactly like the master's own evaluation --
    then by roll value within the same pool). Three buttons (MS/OS/TM)
@@ -1350,7 +1350,7 @@ v3.13 (vs. v3.12)
      Holds Export/Import/Options/Lock and a button to open the loot
      window.
    - Loot window (/bl loot): only the items currently visible in the
-     real loot window, with Roll/ARF/Award. Opens automatically when
+     real loot window, with Roll/Open Roll/Award. Opens automatically when
      loot is detected (LOOT_OPENED), independent of the SR window.
  - New: the "Manage" popup is now context-aware. Opened from the SR
    window it only offers list editing (view/±/remove/add player) and
@@ -1387,7 +1387,7 @@ v3.12 (vs. v3.11.1)
    until the item actually drops.
  - New: the same static database is now also used as a fallback in
    TryUpgradeSyntheticLink, so any other placeholder link (MSRv2
-   import, ARF on an unknown item, etc.) can upgrade to a real,
+   import, Open Roll on an unknown item, etc.) can upgrade to a real,
    colored item link without needing GetItemInfo() to succeed.
  - No behavior change for items already resolvable via GetItemInfo()
    or via an actual loot window scan; the existing placeholder-then-

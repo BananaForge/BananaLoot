@@ -141,7 +141,7 @@ BananaLoot never talks to the internet on its own.
   incoming rolls, ties, winner, cancellation) via addon message to other
   raid/party members who also run BananaLoot with the option enabled
 - Recipients get their own small popup window with the item, mode
-  (SR/Open/ARF), a live countdown, and a standings list of incoming rolls –
+  (SR/Open/Open Roll), a live countdown, and a standings list of incoming rolls –
   with MS/OS/TM buttons to roll directly from the popup (same effect as
   typing `/roll` by hand). With Round Robin active, the popup shows each
   player's RR level
@@ -275,7 +275,7 @@ BananaLoot never talks to the internet on its own.
   the main window, together with the **Hand over lead** button. A small
   draggable **GL/ML button** (`/bl mini`) is visible even with the window closed
 - **Loot window** (`/bl loot`): only the items currently visible in the
-  real Blizzard loot window, with Roll/ARF/Award (or Disenchant) actions.
+  real Blizzard loot window, with Roll/Open Roll/Award (or Disenchant) actions.
   Opens automatically whenever loot becomes available
 
 ### Manage window

@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.49"
+BananaLoot.VERSION = "3.50"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -73,7 +73,7 @@ local LOCALE = {
         ROLL_HOWTO = "/roll = Hauptspec, /roll 99 = Off-Spec, /roll 98 = Transmog",
         ROLL_TIME_SUFFIX = " -- Zeit: %d Sek.",
         ROLL_ANNOUNCE_SR = "[BananaLoot] SR-Roll für %s -- %s-- %s",
-        ROLL_ANNOUNCE_ARF = "[BananaLoot] ARF: Roll für %s -- SR ausgesetzt, offen für alle -- %s",
+        ROLL_ANNOUNCE_ARF = "[BananaLoot] Frei-Roll für %s -- SR ausgesetzt, offen für alle -- %s",
         ROLL_ANNOUNCE_OPEN = "[BananaLoot] Roll für %s -- offen für alle -- %s",
         ROLL_HARD_RESERVE_BLOCKED = "|cffff5555[BananaLoot]|r Dieses Item ist Hard Reserve und wird nicht verrollt -- bitte manuell im \"Verwalten\"-Fenster vergeben.",
         ROLL_BANK_RESERVE_BLOCKED = "|cffff5555[BananaLoot]|r Dieses Item ist Bankreserve und wird nicht verrollt -- es wird automatisch vergeben.",
@@ -560,7 +560,7 @@ local LOCALE = {
         UI_RAIDROLL_UNSET = "|cff33ff99BananaLoot|r: %s ist nicht mehr auf der Raid-Roll-Liste.",
         UI_BTN_MANAGE_TIP = "Reservierungen dieses Items ansehen und ändern, Gewinner von Hand eintragen",
         UI_BTN_ROLL_TIP = "Roll für dieses Item starten (mit SR: nur die Reservierer dürfen würfeln)",
-        UI_BTN_ARF_TIP = "Frei-Roll (ARF = Alle Rollen Frei): offener Roll für ALLE, die SR werden für diesen Roll ausgesetzt",
+        UI_BTN_ARF_TIP = "Frei-Roll: offener Roll für ALLE, die SR werden für diesen Roll ausgesetzt",
         UI_BTN_ROLL = "Roll starten",
         UI_BTN_ARF = "Frei-Roll",
         UI_BTN_AWARD = "Vergeben",
@@ -624,7 +624,7 @@ local LOCALE = {
         RSWIN_TITLE = "BananaLoot - Roll",
         RSWIN_MODE_SR = "SR",
         RSWIN_MODE_OPEN = "Offen",
-        RSWIN_MODE_ARF = "ARF",
+        RSWIN_MODE_ARF = "Frei-Roll",
         RSWIN_TIME_LEFT = "Noch %d Sekunden",
         RSWIN_TIE = "|cffffcc00Gleichstand -- bitte erneut rollen!|r",
         RSWIN_WINNER = "Gewinner: %s (Wurf %d, Wertung %d)",
@@ -831,7 +831,7 @@ local LOCALE = {
         ROLL_HOWTO = "/roll = Main Spec, /roll 99 = Off-Spec, /roll 98 = Transmog",
         ROLL_TIME_SUFFIX = " -- Time: %d sec.",
         ROLL_ANNOUNCE_SR = "[BananaLoot] SR roll for %s -- %s-- %s",
-        ROLL_ANNOUNCE_ARF = "[BananaLoot] ARF: Roll for %s -- SR suspended, open to everyone -- %s",
+        ROLL_ANNOUNCE_ARF = "[BananaLoot] Open Roll for %s -- SR suspended, open to everyone -- %s",
         ROLL_ANNOUNCE_OPEN = "[BananaLoot] Roll for %s -- open to everyone -- %s",
         ROLL_HARD_RESERVE_BLOCKED = "|cffff5555[BananaLoot]|r This item is Hard Reserve and will not be rolled -- please award it manually in the \"Manage\" window.",
         ROLL_BANK_RESERVE_BLOCKED = "|cffff5555[BananaLoot]|r This item is Bank Reserve and will not be rolled -- it will be awarded automatically.",
@@ -1312,7 +1312,7 @@ local LOCALE = {
         UI_RAIDROLL_UNSET = "|cff33ff99BananaLoot|r: %s is no longer on the Raid Roll list.",
         UI_BTN_MANAGE_TIP = "View and change the reservations of this item, enter a winner by hand",
         UI_BTN_ROLL_TIP = "Start a roll for this item (with SR: only the reservers may roll)",
-        UI_BTN_ARF_TIP = "Open Roll (ARF = All Rolls Free): open roll for EVERYONE, SR is suspended for this roll",
+        UI_BTN_ARF_TIP = "Open Roll: open roll for EVERYONE, SR is suspended for this roll",
         UI_BTN_ROLL = "Start Roll",
         UI_BTN_ARF = "Open Roll",
         UI_BTN_AWARD = "Award",
@@ -1375,7 +1375,7 @@ local LOCALE = {
         RSWIN_TITLE = "BananaLoot - Roll",
         RSWIN_MODE_SR = "SR",
         RSWIN_MODE_OPEN = "Open",
-        RSWIN_MODE_ARF = "ARF",
+        RSWIN_MODE_ARF = "Open Roll",
         RSWIN_TIME_LEFT = "%d seconds left",
         RSWIN_TIE = "|cffffcc00Tie -- please roll again!|r",
         RSWIN_WINNER = "Winner: %s (roll %d, score %d)",
