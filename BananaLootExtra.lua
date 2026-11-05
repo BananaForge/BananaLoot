@@ -87,7 +87,7 @@ local optActiveTab = TAB_GENERAL
 -- Elemente (siehe AddToTab()-Aufrufe weiter unten) bestimmt.
 local OPT_TAB_HEIGHTS = {
     [TAB_GENERAL] = 680,
-    [TAB_AUTOMATION] = 700,
+    [TAB_AUTOMATION] = 750,
     [TAB_NETWORK] = 500,
     [TAB_DISPLAY] = 820,
     [TAB_MANAGE] = 660,
@@ -885,7 +885,24 @@ BananaLoot_UI.autoAwardHint:SetWidth(360)
 BananaLoot_UI.autoAwardHint:SetJustifyH("LEFT")
 RegisterLocaleText(BananaLoot_UI.autoAwardHint, "OPT_AUTOAWARD_HINT")
 
+-- Weisse/graue Items automatisch raid-rollen (Felder in BananaLoot_UI wegen Locals-Limit)
+BananaLoot_UI.lowRRCheck = CreateFrame("CheckButton", "BananaLootLowRRCheck", optFrame, "UICheckButtonTemplate")
+BananaLoot_UI.lowRRCheck:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 18, -612)
+BananaLoot_UI.lowRRCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot:SetLowQualityRaidRollEnabled(BananaLoot_UI.lowRRCheck:GetChecked() and true or false)
+end)
+BananaLoot_UI.lowRRLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+BananaLoot_UI.lowRRLabel:SetPoint("LEFT", BananaLoot_UI.lowRRCheck, "RIGHT", 2, 0)
+RegisterLocaleText(BananaLoot_UI.lowRRLabel, "OPT_LOWRR_LABEL")
+BananaLoot_UI.lowRRHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+BananaLoot_UI.lowRRHint:SetPoint("TOPLEFT", optFrame, "TOPLEFT", 20, -636)
+BananaLoot_UI.lowRRHint:SetWidth(360)
+BananaLoot_UI.lowRRHint:SetJustifyH("LEFT")
+RegisterLocaleText(BananaLoot_UI.lowRRHint, "OPT_LOWRR_HINT")
+
 AddToTab(TAB_AUTOMATION, {
+    BananaLoot_UI.lowRRCheck, BananaLoot_UI.lowRRLabel, BananaLoot_UI.lowRRHint,
     BananaLoot_UI.autoAwardCheck, BananaLoot_UI.autoAwardLabel, BananaLoot_UI.autoAwardHint,
     autoMLCheck, autoMLLabel, autoMLHint,
     BananaLoot_UI.rrCheck, BananaLoot_UI.rrLabel, BananaLoot_UI.rrHint,
@@ -938,6 +955,7 @@ function BananaLoot_UI:ToggleOptions()
         soundClickCheck:SetChecked(BananaLoot:GetSoundButtonClicksEnabled())
         lootPreviewCheck:SetChecked(BananaLoot:GetLootPreviewEnabled())
         BananaLoot_UI.autoAwardCheck:SetChecked(BananaLoot:GetAutoAwardEnabled())
+        BananaLoot_UI.lowRRCheck:SetChecked(BananaLoot:GetLowQualityRaidRollEnabled())
         maxSREditBox:SetText(tostring(BananaLoot:GetMaxSRCount()))
         autoMLCheck:SetChecked(BananaLoot:GetAutoMasterLootEnabled())
         rollSyncCheck:SetChecked(BananaLoot:GetRollSyncEnabled())

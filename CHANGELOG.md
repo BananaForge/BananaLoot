@@ -1,5 +1,12 @@
 # BananaLoot Changelog
 
+## v3.58 (vs. v3.57)
+
+- **Fix:** The SR list in the main window (and the loot window) can be scrolled with the mouse wheel / scroll bar now; more than 8 items are no longer cut off (up to 120 SR items).
+- **New:** White and grey items are raid-rolled automatically in a running raid (new option "Auto raid-roll white/grey items", on by default, Options > Automation). No raid chat announcement for them; reserved, Hard Reserve and bank reserve items are excluded.
+- **Fix:** After a raidres.top import the imported Hard Reserve items are ticked in the raid setup step "Hard Reserve", are kept by the selected prepared raid and survive "Start raid".
+- **New:** "HR looter" in the raid setup step "Hard Reserve" (choose from the raid members). Hard Reserve items in the loot window get a button "To HR looter": one click, then a confirmation before the item is awarded to that player. Nothing happens automatically.
+
 ## v3.56 (vs. v3.55)
 
 - **Fix:** Deleting the selected prepared raid now also clears its soft reserves from the main window (imported and whispered ones as well, not only those received via raid code). A raid that is currently running keeps its reservations.

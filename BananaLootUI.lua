@@ -15,7 +15,8 @@ BananaLoot_UI = {}
 
 local LOOT_ROW_HEIGHT = 86   -- Zeilenhoehe inkl. 4 Pixel Abstand zwischen den Rahmen
 local SR_ROW_HEIGHT = 40
-local MAX_ROWS = 20
+local MAX_ROWS = 120
+local LOOT_MAX_ROWS = 40
 local MAX_PLAYERS_SHOWN = 3 -- vollständige Liste bleibt im "Verwalten"-Fenster einsehbar
 
 local lootRows = {}
@@ -568,6 +569,22 @@ local srOverflowText = srFrame:CreateFontString(nil, "OVERLAY", "GameFontDisable
 srOverflowText:SetPoint("BOTTOM", srFrame, "BOTTOM", 0, 4)
 srOverflowText:SetText("")
 
+-- Mausrad-Scrollen fuer ScrollFrames (die Standard-Vorlage scrollt nur ueber die Leiste; ausserdem muss der
+-- Scrollbereich nach jeder Aenderung der Kindhoehe neu berechnet werden).
+function BananaLoot_UI.AttachWheel(sf, step)
+    sf:EnableMouseWheel(true)
+    sf:SetScript("OnMouseWheel", function()
+        local cur = sf:GetVerticalScroll()
+        local max = sf:GetVerticalScrollRange()
+        local nv = cur - arg1 * (step or 40)
+        if nv < 0 then nv = 0 end
+        if nv > max then nv = max end
+        sf:SetVerticalScroll(nv)
+        local bar = getglobal(sf:GetName() .. "ScrollBar")
+        if bar then bar:SetValue(nv) end
+    end)
+end
+
 local srScrollFrame = CreateFrame("ScrollFrame", "BananaLootSRScrollFrame", srFrame, "UIPanelScrollFrameTemplate")
 srScrollFrame:SetPoint("TOPLEFT", srFrame, "TOPLEFT", 20, -150)
 srScrollFrame:SetPoint("BOTTOMRIGHT", srFrame, "BOTTOMRIGHT", -34, 20)
@@ -576,6 +593,7 @@ local srScrollChild = CreateFrame("Frame", "BananaLootSRScrollChild", srScrollFr
 srScrollChild:SetWidth(400)
 srScrollChild:SetHeight(1) -- wird dynamisch angepasst
 srScrollFrame:SetScrollChild(srScrollChild)
+BananaLoot_UI.AttachWheel(srScrollFrame, SR_ROW_HEIGHT)
 
 -- Zeilen-Erzeugung (Pool, wiederverwendet). Schlanker als die Loot-Zeile:
 -- kein Status/Roll/ARF/Award noetig, da hier nur die reine Reservierung
@@ -708,6 +726,7 @@ function BananaLoot_UI:RefreshSR()
     end
 
     srScrollChild:SetHeight(math.max(1, shown * SR_ROW_HEIGHT))
+    srScrollFrame:UpdateScrollChildRect()
 end
 
 -- ============================================================
@@ -827,6 +846,7 @@ local lootScrollChild = CreateFrame("Frame", "BananaLootScrollChild", lootScroll
 lootScrollChild:SetWidth(540)
 lootScrollChild:SetHeight(1) -- wird dynamisch angepasst
 lootScrollFrame:SetScrollChild(lootScrollChild)
+BananaLoot_UI.AttachWheel(lootScrollFrame, LOOT_ROW_HEIGHT)
 
 -- ------------------------------------------------------------
 -- Zeilen-Erzeugung (Pool, wiederverwendet)
@@ -982,8 +1002,13 @@ local function CreateLootRow(index)
         if BananaLoot_UI.ShowAssignPicker then BananaLoot_UI:ShowAssignPicker(r.itemID, r.currentLink) end
     end)
     row.assignBtn:SetScript("OnEnter", function()
+        local r = this:GetParent()
         GameTooltip:SetOwner(this, "ANCHOR_TOP")
-        GameTooltip:SetText(BananaLoot:L("ASSIGN_TIP"), 1, 1, 1, 1, 1)
+        if r.itemID and BananaLoot:IsHardReserve(r.itemID) then
+            GameTooltip:SetText(BananaLoot:L(BananaLoot:GetHRLooter() and "HRL_TIP" or "HRL_TIP_NONE"), 1, 1, 1, 1, 1)
+        else
+            GameTooltip:SetText(BananaLoot:L("ASSIGN_TIP"), 1, 1, 1, 1, 1)
+        end
         GameTooltip:Show()
     end)
     row.assignBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1063,7 +1088,7 @@ local function ShowDisenchantButton(row, id)
     end)
 end
 
-for i = 1, MAX_ROWS do
+for i = 1, LOOT_MAX_ROWS do
     lootRows[i] = CreateLootRow(i)
     lootRows[i]:Hide()
 end
@@ -1088,8 +1113,8 @@ function BananaLoot_UI:RefreshLoot()
     end
     table.sort(ids)
 
-    if table.getn(ids) > MAX_ROWS then
-        lootOverflowText:SetText(string.format(BananaLoot:L("UI_OVERFLOW"), table.getn(ids) - MAX_ROWS, MAX_ROWS))
+    if table.getn(ids) > LOOT_MAX_ROWS then
+        lootOverflowText:SetText(string.format(BananaLoot:L("UI_OVERFLOW"), table.getn(ids) - LOOT_MAX_ROWS, LOOT_MAX_ROWS))
     else
         lootOverflowText:SetText("")
     end
@@ -1099,7 +1124,7 @@ function BananaLoot_UI:RefreshLoot()
         local id = ids[i]
         local res = BananaLoot.reservations[id]
         shown = shown + 1
-        if shown > MAX_ROWS then break end
+        if shown > LOOT_MAX_ROWS then break end
 
         local row = lootRows[shown]
         row.itemID = id
@@ -1136,8 +1161,13 @@ function BananaLoot_UI:RefreshLoot()
             row.rrLabel:SetTextColor(1, 1, 1)
         end
 
-        row.assignBtn:SetText(BananaLoot:L("ASSIGN_BTN"))
-        if isHR then row.assignBtn:Disable() else row.assignBtn:Enable() end
+        if isHR then
+            row.assignBtn:SetText(BananaLoot:L("HRL_BTN"))
+            if BananaLoot:GetHRLooter() then row.assignBtn:Enable() else row.assignBtn:Disable() end
+        else
+            row.assignBtn:SetText(BananaLoot:L("ASSIGN_BTN"))
+            row.assignBtn:Enable()
+        end
         row.brLabel:SetText(BananaLoot:L("UI_CHECK_BR"))
         row.brCheck:SetChecked(BananaLoot:IsBankReserve(id))
         if isHR then
@@ -1309,11 +1339,12 @@ function BananaLoot_UI:RefreshLoot()
         end)
     end
 
-    for i = shown + 1, MAX_ROWS do
+    for i = shown + 1, LOOT_MAX_ROWS do
         lootRows[i]:Hide()
     end
 
     lootScrollChild:SetHeight(math.max(1, shown * LOOT_ROW_HEIGHT))
+    lootScrollFrame:UpdateScrollChildRect()
 end
 
 -- ============================================================

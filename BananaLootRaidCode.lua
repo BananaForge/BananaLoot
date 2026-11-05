@@ -1098,10 +1098,45 @@ if StaticPopupDialogs then
     }
 end
 
+-- Hard-Reserve-Item an den HR-Looter: erst nach Klick und Abfrage
+if StaticPopupDialogs then
+    StaticPopupDialogs["BANANALOOT_HR_LOOTER"] = {
+        text = "", button1 = "", button2 = "",
+        OnAccept = function()
+            local a = BananaLoot_UI.hrlPending
+            BananaLoot_UI.hrlPending = nil
+            if not a then return end
+            BananaLoot:AwardItem(a.itemID, a.name)
+            if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+        end,
+        OnCancel = function() BananaLoot_UI.hrlPending = nil end,
+        timeout = 0, whileDead = true, hideOnEscape = true,
+    }
+end
+
+function BananaLoot_UI:ShowHRLooterAward(itemID, link)
+    local name = BananaLoot:GetHRLooter()
+    if not itemID or not name then return end
+    if not BananaLoot:IsNameInGroup(name) and not BananaLoot.testMode then
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(BananaLoot:L("HRL_NOT_IN_GROUP"), name))
+        return
+    end
+    BananaLoot_UI.hrlPending = { itemID = itemID, name = name }
+    local d = StaticPopupDialogs["BANANALOOT_HR_LOOTER"]
+    d.text = string.format(BananaLoot:L("HRL_CONFIRM"), link or ("Item " .. itemID), name)
+    d.button1 = BananaLoot:L("UI_POPUP_YES")
+    d.button2 = BananaLoot:L("UI_POPUP_CANCEL")
+    StaticPopup_Show("BANANALOOT_HR_LOOTER")
+end
+
 function BananaLoot_UI:ShowAssignPicker(itemID, link)
     if not itemID then return end
     if BananaLoot:IsHardReserve(itemID) then
-        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("ASSIGN_HR"))
+        if BananaLoot:GetHRLooter() then
+            BananaLoot_UI:ShowHRLooterAward(itemID, link)
+        else
+            DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("ASSIGN_HR"))
+        end
         return
     end
     BananaLoot_UI:ShowMemberPicker({

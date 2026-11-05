@@ -1449,3 +1449,13 @@ Uebersicht im Schritt "Soft Reserve" (ab v3.55)
 Im Raid-Vorbereitungsfenster zeigt der Schritt "2. Soft Reserve" eine scrollbare Uebersicht aller
 aktuellen Listen: Hard Reserve, Soft Reserve (Item mit Spielern und SR+ in Klammern), Raid-Roll
 und Bankreserve. Nach einem Import dort pruefen.
+
+
+Scrollen, Weiss/Grau, HR-Looter (ab v3.58)
+-------------------------------------------
+- Die SR-Liste im Hauptfenster und das Loot-Fenster lassen sich mit dem Mausrad scrollen.
+- Weisse und graue Items werden im laufenden Raid automatisch per Raid-Roll verlost (ohne
+  Chat-Ansage; Optionen > Automatik; reservierte/HR/BR-Items ausgenommen).
+- Raid vorbereiten > 1. Hard Reserve: "HR-Looter" aus den Raid-Mitgliedern waehlen. Im Loot-Fenster
+  hat jedes HR-Item den Button "An HR-Looter": ein Klick, dann eine Abfrage, erst danach wird vergeben.
+- Importierte HR-Items (raidres.top) werden im Schritt "Hard Reserve" angehakt und bleiben beim Start.

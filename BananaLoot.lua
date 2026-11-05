@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.56"
+BananaLoot.VERSION = "3.58"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -215,6 +215,19 @@ local LOCALE = {
         OPT_TIMEOUT_INVALID = "|cffff5555BananaLoot|r: Bitte eine gültige Zahl (mind. 5) eingeben.",
         OPT_COUNTDOWN_ON = "|cff33ff99BananaLoot|r: Chat-Countdown in den letzten Sekunden aktiviert.",
         OPT_COUNTDOWN_OFF = "|cff33ff99BananaLoot|r: Chat-Countdown deaktiviert.",
+        HRL_BTN = "An HR-Looter",
+        HRL_LABEL = "HR-Looter:",
+        HRL_NONE = "(keiner)",
+        HRL_PICK = "Auswählen...",
+        HRL_PICK_TITLE = "HR-Looter wählen",
+        HRL_PICK_HINT = "Hard-Reserve-Items gehen nach einem Klick und Bestätigung an diese Person.",
+        HRL_CONFIRM = "%s (Hard Reserve) an %s vergeben?",
+        HRL_TIP = "Hard-Reserve-Item an den HR-Looter vergeben (mit Abfrage).",
+        HRL_TIP_NONE = "Kein HR-Looter gesetzt: Raid vorbereiten > 1. Hard Reserve > HR-Looter auswählen.",
+        HRL_CLEAR_TIP = "HR-Looter entfernen",
+        HRL_NOT_IN_GROUP = "|cffff5555[BananaLoot]|r Der HR-Looter %s ist nicht im Raid/der Gruppe.",
+        OPT_LOWRR_LABEL = "Weiße/graue Items automatisch raid-rollen",
+        OPT_LOWRR_HINT = "Im laufenden Raid werden weiße und graue Items beim Öffnen der Beute ohne Chat-Ansage unter dem Raid verlost (reservierte, HR- und BR-Items ausgenommen).",
         OPT_AUTOAWARD_LABEL = "Auto-Modus vergibt automatisch",
         OPT_AUTOAWARD_HINT = "Im Auto-Modus wird nach dem Gewinner kurz gewartet (3 Sekunden) und das Item dann automatisch vergeben, danach folgt der nächste Roll. Aus: der Auto-Modus wartet nach jedem Gewinner auf \"Vergeben\". Hard-Reserve-Items werden nie automatisch vergeben.",
         OPT_AUTOAWARD_ON = "|cff33ff99BananaLoot|r: Auto-Modus vergibt Gewinner automatisch: an.",
@@ -233,7 +246,7 @@ local LOCALE = {
         SETUP_BTN_SAVE = "Raid speichern",
         SETUP_SAVED = "|cff33ff99BananaLoot|r: Raid vorbereitet: %s (%s, %d Hard Reserve, %d Bankreserve, %d Raid-Roll). Wähle ihn im Hauptfenster aus und starte ihn mit \"Raid starten\".",
         SETUP_HINT_HR = "Haken = Item kommt auf die Hard-Reserve-Liste (wird nie verrollt, nur manuell vergeben). Maus über ein Item zeigt den Tooltip.",
-        SETUP_HINT_RR = "Haken = Item wird beim Looten automatisch per Raid-Roll unter allen Raidmitgliedern verlost. Tipp: Qualitätsfilter \"Grün\" + \"Alle\".",
+        SETUP_HINT_RR = "Haken = Item wird beim Looten automatisch per Raid-Roll unter allen Raidmitgliedern verlost. Tipp: Qualitätsfilter \"Grün\" + \"Alle\". Weiße und graue Items werden im laufenden Raid ohnehin automatisch verlost (Optionen > Automatik).",
         SETUP_QUAL_LABEL = "Qualität:",
         SETUP_QUAL_1 = "Weiß",
         SETUP_QUAL_2 = "Grün",
@@ -981,6 +994,19 @@ local LOCALE = {
         OPT_TIMEOUT_INVALID = "|cffff5555BananaLoot|r: Please enter a valid number (min. 5).",
         OPT_COUNTDOWN_ON = "|cff33ff99BananaLoot|r: Chat countdown in the final seconds enabled.",
         OPT_COUNTDOWN_OFF = "|cff33ff99BananaLoot|r: Chat countdown disabled.",
+        HRL_BTN = "To HR looter",
+        HRL_LABEL = "HR looter:",
+        HRL_NONE = "(none)",
+        HRL_PICK = "Choose...",
+        HRL_PICK_TITLE = "Choose HR looter",
+        HRL_PICK_HINT = "Hard Reserve items go to this person after one click and a confirmation.",
+        HRL_CONFIRM = "Award %s (Hard Reserve) to %s?",
+        HRL_TIP = "Award the Hard Reserve item to the HR looter (with confirmation).",
+        HRL_TIP_NONE = "No HR looter set: Prepare raid > 1. Hard Reserve > choose HR looter.",
+        HRL_CLEAR_TIP = "Remove HR looter",
+        HRL_NOT_IN_GROUP = "|cffff5555[BananaLoot]|r The HR looter %s is not in the raid/group.",
+        OPT_LOWRR_LABEL = "Auto raid-roll white/grey items",
+        OPT_LOWRR_HINT = "In a running raid, white and grey items are raffled among the raid when the loot opens, without a chat announcement (reserved, HR and BR items excepted).",
         OPT_AUTOAWARD_LABEL = "Auto mode awards automatically",
         OPT_AUTOAWARD_HINT = "In auto mode the addon waits briefly after the winner (3 seconds) and then awards the item automatically, then the next roll follows. Off: auto mode waits for \"Award\" after every winner. Hard Reserve items are never awarded automatically.",
         OPT_AUTOAWARD_ON = "|cff33ff99BananaLoot|r: Auto mode awards winners automatically: on.",
@@ -999,7 +1025,7 @@ local LOCALE = {
         SETUP_BTN_SAVE = "Save raid",
         SETUP_SAVED = "|cff33ff99BananaLoot|r: Raid prepared: %s (%s, %d Hard Reserve, %d Bank Reserve, %d Raid Roll). Select it in the main window and start it with \"Start raid\".",
         SETUP_HINT_HR = "Check = item goes on the Hard Reserve list (never rolled, only awarded manually). Hover an item for its tooltip.",
-        SETUP_HINT_RR = "Check = item is automatically raid-rolled among all raid members when looted. Tip: quality filter \"Green\" + \"All\".",
+        SETUP_HINT_RR = "Check = item is automatically raid-rolled among all raid members when looted. Tip: quality filter \"Green\" + \"All\". White and grey items are raid-rolled automatically in a running raid anyway (Options > Automation).",
         SETUP_QUAL_LABEL = "Quality:",
         SETUP_QUAL_1 = "White",
         SETUP_QUAL_2 = "Green",
@@ -1662,6 +1688,19 @@ function BananaLoot:SetRollTimeout(value)
 end
 
 -- Chat-Countdown in den letzten Sekunden vor Rollende (Standard: an)
+-- Weisse und graue Items (Qualitaet 0/1) im laufenden Raid automatisch per Raid-Roll verlosen
+-- (ohne Chat-Ansage, damit der Raidchat nicht mit Muell vollaeuft). Standard: an.
+function BananaLoot:GetLowQualityRaidRollEnabled()
+    EnsureDB()
+    if BananaLoot_DB.settings.lowQualityRaidRoll == nil then return true end
+    return BananaLoot_DB.settings.lowQualityRaidRoll
+end
+
+function BananaLoot:SetLowQualityRaidRollEnabled(value)
+    EnsureDB()
+    BananaLoot_DB.settings.lowQualityRaidRoll = value and true or false
+end
+
 function BananaLoot:GetChatCountdownEnabled()
     EnsureDB()
     if BananaLoot_DB.settings.chatCountdown == nil then return true end
@@ -2366,6 +2405,19 @@ function BananaLoot:GetBRLooter()
     local n = BananaLoot_DB.settings.brLooter
     if n and n ~= "" then return n end
     return nil
+end
+
+function BananaLoot:GetHRLooter()
+    EnsureDB()
+    local n = BananaLoot_DB.settings.hrLooter
+    if n and n ~= "" then return n end
+    return nil
+end
+
+function BananaLoot:SetHRLooter(name)
+    EnsureDB()
+    BananaLoot_DB.settings.hrLooter = NormalizePlayerName(name)
+    return BananaLoot_DB.settings.hrLooter
 end
 
 function BananaLoot:SetBRLooter(name)
@@ -3906,7 +3958,22 @@ end
 -- Vergibt EIN Item der Raidroll-Liste direkt beim Oeffnen des Loot-Fensters.
 -- Gewinner wird erst angesagt/geloggt, wenn die Zuteilung geklappt hat; sonst
 -- bleibt das Item im Loot-Fenster fuer die normale Verarbeitung.
-function BananaLoot:AwardRaidRollItem(itemID, link, usedSlots)
+-- Soll dieses Item automatisch per Raid-Roll verlost werden (Liste ODER weiss/grau im laufenden Raid)?
+-- Rueckgabe: ja/nein, leise (= ohne Raidchat-Ansage).
+function BananaLoot:IsAutoRaidRollLoot(it)
+    if not it then return false end
+    if self:IsHardReserve(it.itemID) or self:IsBankReserve(it.itemID) then return false end
+    if self:IsRaidRollItem(it.itemID) then return true, false end
+    if self:GetLowQualityRaidRollEnabled() and it.quality and it.quality <= 1 then
+        local res = self.reservations[it.itemID]
+        if res and self:CountRealReservers(res) > 0 then return false end   -- reserviertes Item nie automatisch
+        local session = self:GetRaidSession()
+        if self.testMode or (session and session.running) then return true, true end
+    end
+    return false
+end
+
+function BananaLoot:AwardRaidRollItem(itemID, link, usedSlots, quiet)
     local names = self:GetRaidRollCandidates()
     if table.getn(names) == 0 then return false end
     local winner = names[math.random(1, table.getn(names))]
@@ -3917,9 +3984,11 @@ function BananaLoot:AwardRaidRollItem(itemID, link, usedSlots)
         return false
     end
 
-    pcall(function()
-        SendChatMessage(string.format(self:L("RAID_ROLL_ANNOUNCE"), link, winner), self:GetAnnounceChannel())
-    end)
+    if not quiet then
+        pcall(function()
+            SendChatMessage(string.format(self:L("RAID_ROLL_ANNOUNCE"), link, winner), self:GetAnnounceChannel())
+        end)
+    end
     self:LogAward(link, winner, self:L("POOL_RAIDROLL"))
     EnsureDB()
     BananaLoot_DB.awardedItems[itemID] = { winner = winner }
@@ -3939,8 +4008,9 @@ function BananaLoot:ProcessRaidRollItems(items)
     local usedSlots = {}
     for i = 1, table.getn(items) do
         local it = items[i]
-        if self:IsRaidRollItem(it.itemID) and not self:IsHardReserve(it.itemID) and not self:IsBankReserve(it.itemID) then
-            if not self:AwardRaidRollItem(it.itemID, it.link, usedSlots) then
+        local isRR, quiet = self:IsAutoRaidRollLoot(it)
+        if isRR then
+            if not self:AwardRaidRollItem(it.itemID, it.link, usedSlots, quiet) then
                 table.insert(remaining, it)
             end
         else
@@ -3972,8 +4042,8 @@ function BananaLoot:ScanLootWindow()
                 -- Loot-Fenster-Datenpaket -- eine andere Quelle als
                 -- GetItemInfo/GetItemIcon, die auf manchen Servern nur
                 -- eine für den Client nutzlose numerische ID liefern.
-                local lootIcon = GetLootSlotInfo(slot)
-                table.insert(items, { itemID = id, link = link, icon = lootIcon })
+                local lootIcon, _, _, lootQuality = GetLootSlotInfo(slot)
+                table.insert(items, { itemID = id, link = link, icon = lootIcon, quality = lootQuality })
             end
         end
     end
@@ -4308,9 +4378,9 @@ function BananaLoot:AutoAdvance()
 
     -- Steht das Item (inzwischen) auf der Raid-Roll-Liste, wird es sofort unter dem Raid verlost
     -- statt gerollt, z.B. wenn der Haken "Raid-Roll" erst nach dem Start des Auto-Modus gesetzt wurde.
-    if self:IsRaidRollItem(nextItem.itemID) and not self:IsHardReserve(nextItem.itemID)
-        and not self:IsBankReserve(nextItem.itemID) and (self.lootCounts[nextItem.itemID] or 0) > 0 then
-        if self:AwardRaidRollItem(nextItem.itemID, nextItem.link, {}) then
+    local isRR, rrQuiet = self:IsAutoRaidRollLoot(nextItem)
+    if isRR and (self.lootCounts[nextItem.itemID] or 0) > 0 then
+        if self:AwardRaidRollItem(nextItem.itemID, nextItem.link, {}, rrQuiet) then
             local c = (self.lootCounts[nextItem.itemID] or 1) - 1
             if c <= 0 then self.lootCounts[nextItem.itemID] = nil else self.lootCounts[nextItem.itemID] = c end
             self:RefreshKnownLootItems()
@@ -5363,6 +5433,7 @@ function BananaLoot:ImportRaidResData(rawText)
     local importCountPerPlayer = {}
     local itemCount = 0
     local hrCount = 0
+    local importedHR = nil   -- IDs der importierten Hard-Reserve-Items
     local droppedCount = 0
     local unmatchedNames = {}
     local unmatchedSeen = {}
@@ -5407,6 +5478,8 @@ function BananaLoot:ImportRaidResData(rawText)
                     end
                     self:AddHardReserve(link)
                     hrCount = hrCount + 1
+                    importedHR = importedHR or {}
+                    table.insert(importedHR, id)
                 end
             end
         end
@@ -5613,6 +5686,10 @@ function BananaLoot:ImportRaidResData(rawText)
     end
 
     self:SaveSession()
+
+    -- Importierte HR-Items auch in die Auswahl des Raid-Setups bzw. des gewaehlten vorbereiteten Raids
+    -- uebernehmen (sonst entfernt "Raid starten" sie wieder und der Schritt "Hard Reserve" zeigt sie nicht).
+    if importedHR and self.OnImportedHardReserves then self:OnImportedHardReserves(importedHR) end
 
     return true, nil, {
         itemCount = itemCount,

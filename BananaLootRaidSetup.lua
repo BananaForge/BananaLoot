@@ -531,7 +531,7 @@ StaticPopupDialogs["BANANALOOT_SETUP_TEMPLATE"] = {
 -- ------------------------------------------------------------
 -- 2b) Setup-Fenster
 -- ------------------------------------------------------------
-local FW, FH = 780, 520
+local FW, FH = 780, 556
 S.frame = MakeWindow("BananaLootRaidSetupFrame", FW, FH)
 local F = S.frame
 
@@ -881,6 +881,67 @@ function BananaLoot_UI:RefreshSetupOverview()
     if F.srPane:IsShown() then S.BuildOverview() end
 end
 
+-- HR-Looter (nur im Schritt "Hard Reserve"): Auswahl aus dem Raid; Hard-Reserve-Items koennen im
+-- Loot-Fenster nach einem Klick und einer Abfrage an diese Person vergeben werden.
+F.hrlLabel = F:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+F.hrlLabel:SetPoint("BOTTOMLEFT", F, "BOTTOMLEFT", 24, 56)
+F.hrlName = F:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+F.hrlName:SetPoint("LEFT", F.hrlLabel, "RIGHT", 8, 0)
+F.hrlName:SetWidth(150)
+F.hrlName:SetJustifyH("LEFT")
+F.hrlPick = MakeButton("BananaLootRaidSetupHRLPick", F, 120, 22)
+F.hrlPick:SetPoint("LEFT", F.hrlName, "RIGHT", 4, 0)
+F.hrlPick:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.ShowMemberPicker then
+        BananaLoot_UI:ShowMemberPicker({
+            title = BananaLoot:L("HRL_PICK_TITLE"),
+            hint = BananaLoot:L("HRL_PICK_HINT"),
+            includeSelf = true,
+            onPick = function(name)
+                BananaLoot:SetHRLooter(name)
+                S.Refresh()
+                if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+            end,
+        })
+    end
+end)
+F.hrlClear = MakeButton("BananaLootRaidSetupHRLClear", F, 26, 22)
+F.hrlClear:SetPoint("LEFT", F.hrlPick, "RIGHT", 4, 0)
+F.hrlClear:SetText("X")
+F.hrlClear:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot:SetHRLooter(nil)
+    S.Refresh()
+    if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+end)
+F.hrlClear:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(this, "ANCHOR_TOP")
+    GameTooltip:SetText(BananaLoot:L("HRL_CLEAR_TIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+F.hrlClear:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+-- Import (raidres.top): importierte HR-Items in die Auswahl uebernehmen
+function BananaLoot:OnImportedHardReserves(ids)
+    for i = 1, table.getn(ids) do
+        local id = ids[i]
+        -- offener Setup-Dialog (Raid vorbereiten / laufender Raid)
+        S.selHR[id] = true
+        S.selRR[id] = nil
+        S.selBR[id] = nil
+        -- ausgewaehlter vorbereiteter Raid
+        local e = self:GetSelectedPreparedRaid()
+        if e then
+            e.hr = e.hr or {}
+            e.hr[id] = true
+            if e.rr then e.rr[id] = nil end
+            if e.br then e.br[id] = nil end
+        end
+    end
+    if F:IsShown() then S.Refresh() end
+end
+
 -- Untere Buttonleiste
 F.allBtn = MakeButton("BananaLootRaidSetupAll", F, 90, 24)
 F.allBtn:SetPoint("BOTTOMLEFT", F, "BOTTOMLEFT", 20, 18)
@@ -1129,6 +1190,16 @@ function S.Refresh()
     F.srImportBtn:SetText(BananaLoot:L("SETUP_SR_IMPORT"))
     F.srOpenBtn:SetText(BananaLoot:L("SETUP_SR_OPEN"))
 
+    local isHRTab = (S.tab == "HR")
+    if isHRTab then
+        F.hrlLabel:SetText(BananaLoot:L("HRL_LABEL"))
+        local hl = BananaLoot:GetHRLooter()
+        F.hrlName:SetText(hl and BananaLoot:ColoredName(hl) or ("|cff888888" .. BananaLoot:L("HRL_NONE") .. "|r"))
+        F.hrlPick:SetText(BananaLoot:L("HRL_PICK"))
+        F.hrlLabel:Show(); F.hrlName:Show(); F.hrlPick:Show(); F.hrlClear:Show()
+    else
+        F.hrlLabel:Hide(); F.hrlName:Hide(); F.hrlPick:Hide(); F.hrlClear:Hide()
+    end
     local isSR = (S.tab == "SR")
     local isDrops = (S.tab == "DROPS")
     local isPick = (S.tab == "HR" or S.tab == "RR" or S.tab == "BR")
