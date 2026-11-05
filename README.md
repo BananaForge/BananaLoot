@@ -407,10 +407,15 @@ BananaLoot never talks to the internet on its own.
 
 ### Test mode
 
-- "Start test run" (Options → Management) simulates a complete loot drop on
-  the **real** engine: 10 made-up Naxxramas loot slots and 10 made-up
-  raiders who roll, chat and emote. Includes a Bank Reserve item and a
-  disenchanter, so every award path can be tried
+- "Start test run" (Options → Management) first asks for one of **five test
+  raids** (Molten Core, Blackwing Lair, AQ40 with 2 SR per player, Naxxramas,
+  UBRS). Each is a prepared raid with 2 Hard Reserve, 1 Bank Reserve, 2 Raid
+  Roll items and the SR of 10 made-up players. The chosen raid is started the
+  **real way** (select raid, start raid): lists are set, the SR appear in the
+  main window, then about 16 loot slots drop into the loot window and the
+  made-up raiders roll, chat and emote on the **real** engine. Every award
+  path can be tried (SR, SR+, ties, off-spec, no roll, Hard Reserve, Bank
+  Reserve with a test BR looter, Raid Roll, disenchant)
 - Everything is announced locally only (marked `[TEST]`), and your real
   data and settings are backed up and restored automatically
 

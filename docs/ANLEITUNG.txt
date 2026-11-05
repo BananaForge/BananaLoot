@@ -260,10 +260,18 @@ Im Optionsfenster, Reiter "Verwaltung", startet "Testlauf starten" eine
 Simulation, mit der sich alle Einstellungen gefahrlos an einem echten
 Roll-Ablauf ausprobieren lassen -- ohne Raid und ohne echte Items.
 
- - Nach 10 Sekunden Countdown droppen 10 erfundene Loot-Slots (echte
-   Naxxramas-Items, eines davon als Duplikat) auf einmal ins normale
-   Loot-Fenster -- samt Loot-Erkannt-Sound, Chat-Zusammenfassung und
-   Loot-Vorschau, wie bei einer echten Kiste.
+ - Zuerst waehlst du einen von FUENF Test-Raids: Molten Core, Blackwing
+   Lair, AQ40 (mit 2 SR pro Spieler), Naxxramas und UBRS. Jeder ist ein
+   vorbereiteter Raid mit 2 Hard Reserve, 1 Bankreserve, 2 Raid-Roll und
+   den SR von 10 erfundenen Spielern auf 5 Items. Alle fuenf stehen
+   waehrend des Tests in der Raid-Liste (Ueberschrift im Hauptfenster).
+ - Nach 10 Sekunden Countdown wird der gewaehlte Test-Raid ueber den
+   ECHTEN Weg gestartet (Raid waehlen > Raid starten): die Listen werden
+   gesetzt, die SR erscheinen im Hauptfenster, die SR-Liste wird gesperrt.
+   Danach droppen ca. 16 Loot-Slots (echte Items der Raid-Beute) auf einmal
+   ins normale Loot-Fenster -- samt Loot-Erkannt-Sound, Chat-Zusammen-
+   fassung und Loot-Vorschau, wie bei einer echten Kiste. Bankreserve- und
+   Raid-Roll-Items werden dabei sofort automatisch vergeben.
  - Du verrollst und vergibst wie im Raid: Roll starten, ARF, Verwalten
    (inkl. Gewinner/Raid Roll), /bl auto, /bl award. Mit /roll kannst du
    selbst mitwürfeln.
@@ -280,11 +288,15 @@ Roll-Ablauf ausprobieren lassen -- ohne Raid und ohne echte Items.
    Reservierer würfelt trotzdem mit und wird ignoriert), ein SR-Item mit
    SR+ Bonus, der das Ergebnis dreht, ein Item bei dem niemand würfelt,
    reine Off-Spec-Würfe, ein Gleichstand mit Rewürfeln, ein Duplikat
-   (Mehrfachgewinner bzw. Einzelrolls je nach Option) und ein Hard-
-   Reserve-Item (im Verwalten-Fenster einen Spieler wie Testopher
-   eintragen und per "Gewinner" vergeben).
- - Deine echten Daten (SR-Liste, SR+ Werte, Hard-/Bankreserve, Loot-Log,
-   vergebene Items, Wiederherstellungsliste) werden beim Start
+   (Mehrfachgewinner bzw. Einzelrolls je nach Option), zwei Hard-Reserve-
+   Items (im Verwalten-Fenster einen Spieler wie Testopher eintragen und
+   per "Gewinner" vergeben), ein Bankreserve-Item (geht automatisch an den
+   Test-BR-Looter) und zwei Raid-Roll-Items (automatische Verlosung).
+   Die Items werden je Test-Raid mit festem Startwert aus der Beute des
+   Raids gewuerfelt: jeder Lauf mit demselben Test-Raid ist gleich.
+ - Deine echten Daten (SR-Liste, SR+ Werte, Hard-/Bankreserve, Raid-Roll-
+   Liste, Loot-Log, vergebene Items, Wiederherstellungsliste, vorbereitete
+   Raids, Raid-Vorlagen, laufender Raid, SR-Sperre und SR-Limit) werden beim Start
    beiseitegelegt und beim Ende exakt wiederhergestellt. Die Sicherung
    liegt auch in den SavedVariables: bei /reload oder Absturz mitten im
    Test stellt der nächste Login alles automatisch wieder her.

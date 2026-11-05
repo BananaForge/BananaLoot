@@ -1,7 +1,12 @@
 -- BananaLootTest.lua
 -- TESTMODUS: laesst die ECHTE BananaLoot-Engine auf einem simulierten Raid
--- laufen. 10 erfundene Items landen auf einen Schlag im normalen Loot-
--- Fenster, 10 erfundene Raider wuerfeln mit sichtbaren Meldungen mit, und du
+-- laufen -- jetzt mit der neuen Raid-Struktur: Es gibt 5 vorbereitete Test-Raids
+-- (Molten Core, Blackwing Lair, AQ40, Naxxramas, UBRS) mit Hard Reserve, Bankreserve,
+-- Raid-Roll und SR von erfundenen Spielern. Beim Teststart wird der gewaehlte Test-
+-- Raid ueber den echten Weg gestartet (Raid waehlen > Raid starten): die Listen
+-- werden gesetzt, die SR erscheinen im Hauptfenster, danach landen ca. 15 Items auf
+-- einen Schlag im normalen Loot-Fenster, 10 erfundene Raider wuerfeln mit
+-- sichtbaren Meldungen mit, und du
 -- verrollst/vergibst wie im Raid (Roll, ARF, Verwalten, Raid Roll, /bl auto,
 -- /bl award ...). Auch du selbst kannst per /roll mitwuerfeln. Es gelten das
 -- echte Roll-Timeout, SR+ Bonus, Countdown, "Top N gewinnen", Loot-Vorschau.
@@ -22,7 +27,8 @@
 --     gesetzt.
 --   - Die echte Loot-API (GiveMasterLoot) wird nie angefasst.
 --   - Alle echten Daten (SR-Liste, SR+ Werte, Hard/Bankreserve, Loot-Log,
---     vergebene Items, Wiederherstellungsliste) werden beim Teststart
+--     vergebene Items, Wiederherstellungsliste, vorbereitete Raids, Raid-
+--     Vorlagen, laufender Raid, SR-Sperre, SR-Limit) werden beim Teststart
 --     beiseitegelegt (auch in den SavedVariables, falls mitten im Test ein
 --     /reload oder Absturz passiert) und beim Testende bzw. beim naechsten
 --     Login wieder eingesetzt.
@@ -48,9 +54,7 @@ local TEST_ROSTER = {
     { "Ninjaloot", "ROGUE" },
 }
 
--- Echte Naxxramas-Item-IDs aus der mitgelieferten Item-Datenbank (nur die
--- Vergabe ist simuliert, nicht die Items). "behavior" steuert, wie die
--- erfundenen Raider auf einen Roll reagieren:
+-- "behavior" steuert, wie die erfundenen Raider auf einen Roll reagieren:
 --   normal  - 4-7 Raider wuerfeln (meist Hauptspec, ein paar Off-Spec)
 --   sr      - die Reservierer wuerfeln, ein Nicht-Reservierer wuerfelt
 --             mit (wird von der Engine ignoriert)
@@ -61,19 +65,117 @@ local TEST_ROSTER = {
 --   tie     - zwei Raider wuerfeln denselben Hoechstwert (-> Rewuerfeln)
 --   hr      - Hard Reserve, nur manuelle Vergabe
 --   br      - Bankreserve, geht automatisch an den (Test-)BR-Looter
+--   rr      - Raid-Roll-Item, wird beim Oeffnen automatisch unter dem Raid verlost
 -- "qty" = Anzahl Kopien (je eigener Loot-Slot), "reservers" = Roster-Indizes.
-local TEST_ITEMS = {
-    { id = 16939, behavior = "sr",      reservers = { 2, 4 } },  -- Dragonstalker's Helm
-    { id = 23054, behavior = "normal" },                         -- Gressil, Dawn of Ruin
-    { id = 23075, behavior = "nobody" },                         -- Death's Bargain
-    { id = 22804, behavior = "offspec" },                        -- Maexxna's Fang
-    { id = 16958, behavior = "srbonus", reservers = { 8, 7 } },  -- Judgement Breastplate
-    { id = 23044, behavior = "tie" },                            -- Harbinger of Doom
-    { id = 22981, behavior = "normal",  qty = 2 },               -- Gluth's Missing Collar (x2)
-    { id = 22520, behavior = "hr" },                             -- The Phylactery of Kel'Thuzad
-    { id = 22727, behavior = "sr",      reservers = { 5, 9 } },  -- Frame of Atiesh
-    { id = 22732, behavior = "br" },                             -- Mark of C'Thun (Bankreserve)
+
+-- Die 5 Test-Raids. Items, Reservierungen und Listen werden aus der Beute des Raids
+-- (BananaLoot_RaidLoot) mit festem Startwert gewuerfelt: jeder Lauf mit demselben Raid ist
+-- gleich, die fuenf Raids unterscheiden sich. maxSR = SR-Limit pro Spieler im Test.
+local TEST_RAIDS = {
+    { key = "MC",   name = "Test: Molten Core",     seed = 101, maxSR = 1 },
+    { key = "BWL",  name = "Test: Blackwing Lair",  seed = 202, maxSR = 1 },
+    { key = "AQ40", name = "Test: AQ40 (2 SR pro Spieler)", seed = 303, maxSR = 2 },
+    { key = "NAXX", name = "Test: Naxxramas",       seed = 404, maxSR = 1 },
+    { key = "UBRS", name = "Test: UBRS",            seed = 505, maxSR = 1 },
 }
+
+-- Eigener Zufallsgenerator (Park-Miller), damit der globale math.random unberuehrt bleibt.
+local function MakeRng(seed)
+    local state = seed
+    return function(n)
+        state = math.mod(state * 16807, 2147483647)
+        return math.mod(state, n) + 1
+    end
+end
+
+-- Baut einen Test-Raid: { name, raidKey, hr, rr, br, sr (Spieler -> IDs), items (Loot-Plan), maxSR }
+local function BuildScenario(def)
+    local raid = BananaLoot_RaidLoot and BananaLoot_RaidLoot[def.key]
+    if not raid then return nil end
+    -- Pool: alle Items des Raids mit Qualitaet >= gruen, ohne Doppelte
+    local pool, seen = {}, {}
+    for b = 1, table.getn(raid) do
+        local ids = raid[b][2]
+        for k = 1, table.getn(ids) do
+            local id = ids[k]
+            if not seen[id] then
+                seen[id] = true
+                local _, q = BananaLoot:SetupItemInfo(id)
+                if q >= 2 then table.insert(pool, id) end
+            end
+        end
+    end
+    if table.getn(pool) < 20 then return nil end
+    local rng = MakeRng(def.seed)
+    -- mischen (Fisher-Yates)
+    for k = table.getn(pool), 2, -1 do
+        local r = rng(k)
+        pool[k], pool[r] = pool[r], pool[k]
+    end
+    local nextItem = 0
+    local function take()
+        nextItem = nextItem + 1
+        return pool[nextItem]
+    end
+
+    local sc = { name = def.name, raidKey = def.key, maxSR = def.maxSR or 1,
+        hr = {}, rr = {}, br = {}, sr = {}, items = {} }
+    local function add(id, behavior, extra)
+        local it = { id = id, behavior = behavior }
+        if extra then for k, v in pairs(extra) do it[k] = v end end
+        table.insert(sc.items, it)
+        return it
+    end
+    -- Hard Reserve (2), Bankreserve (1), Raid-Roll (2)
+    for _ = 1, 2 do local id = take(); sc.hr[id] = true; add(id, "hr") end
+    do local id = take(); sc.br[id] = true; add(id, "br") end
+    for _ = 1, 2 do local id = take(); sc.rr[id] = true; add(id, "rr") end
+    -- SR-Items (5) mit 2/2/3/1/2 Reservierern aus dem Fake-Roster (je Spieler genau eine
+    -- erste SR; bei SR-Limit 2 haben ein paar Spieler zusaetzlich eine zweite)
+    local counts = { 2, 2, 3, 1, 2 }
+    local srItems = {}
+    local player = 0
+    for k = 1, 5 do
+        local id = take()
+        local reservers = {}
+        for _ = 1, counts[k] do
+            player = player + 1
+            table.insert(reservers, player)
+            local pname = TEST_ROSTER[player][1]
+            sc.sr[pname] = { id }
+        end
+        table.insert(srItems, id)
+        add(id, (k == 2) and "srbonus" or "sr", { reservers = reservers })
+    end
+    if sc.maxSR >= 2 then
+        -- zweite SR: Spieler 1, 3 und 5 reservieren zusaetzlich das naechste SR-Item
+        local second = { [1] = 2, [3] = 4, [5] = 1 }
+        for p, k in pairs(second) do
+            local pname = TEST_ROSTER[p][1]
+            local id = srItems[k]
+            if id and sc.sr[pname][1] ~= id then table.insert(sc.sr[pname], id) end
+        end
+    end
+    -- Items ohne Reservierung: normal (x2 und x1), niemand, Off-Spec, Gleichstand
+    add(take(), "normal", { qty = 2 })
+    add(take(), "normal")
+    add(take(), "nobody")
+    add(take(), "offspec")
+    add(take(), "tie")
+    return sc
+end
+
+TEST.scenarios = nil
+local function GetScenarios()
+    if not TEST.scenarios then
+        TEST.scenarios = {}
+        for k = 1, table.getn(TEST_RAIDS) do
+            TEST.scenarios[k] = BuildScenario(TEST_RAIDS[k])
+        end
+    end
+    return TEST.scenarios
+end
+BananaLoot_TestScenarios = GetScenarios
 
 -- Waehrend des Tests gesetzte Empfaenger (Roster-Namen): Disenchanter fuer
 -- "Disenchant" bei "Niemand hat gerollt", BR-Looter fuer Bankreserve-Items.
@@ -215,18 +317,29 @@ local function RestoreFromBackup(backup)
     db.lastOverwritten = backup.lastOverwritten
     db.hardReserves = backup.hardReserves
     db.bankReserves = backup.bankReserves
+    db.raidRolls = backup.raidRolls or {}
     db.awardedItems = backup.awardedItems
     db.log = backup.log
     db.settings.disenchanter = backup.disenchanter
     db.settings.brLooter = backup.brLooter
+    -- neue Raid-Struktur (vorbereitete Raids, Vorlagen, laufender Raid, SR-Sperre/-Limit)
+    db.preparedRaids = backup.preparedRaids
+    db.selectedPreparedRaid = backup.selectedPreparedRaid
+    db.nextPreparedId = backup.nextPreparedId
+    db.raidTemplates = backup.raidTemplates
+    db.raidSession = backup.raidSession
+    db.currentRaidName = backup.currentRaidName
+    db.settings.srLocked = backup.srLocked
+    db.settings.maxSRCount = backup.maxSRCount
     BananaLoot.reservations = backup.reservations
     BananaLoot.playerReservedItems = backup.playerReservedItems
     db.testBackup = nil
     BananaLoot:SaveSession()
 end
 
-local function SeedTestData()
-    local db = BananaLoot_DB
+-- Fake-Roster und Loot-Slots des gewaehlten Test-Raids einspeisen. Hard Reserve, Bankreserve,
+-- Raid-Roll und SR setzt der echte Raid-Start (BananaLoot_UI:StartPreparedRaid).
+local function SeedTestData(sc)
     local names = {}
     for i = 1, table.getn(TEST_ROSTER) do
         names[i] = TEST_ROSTER[i][1]
@@ -239,39 +352,18 @@ local function SeedTestData()
     BananaLoot.lootCounts = {}
     BananaLoot.lootQueue = {}
     BananaLoot.lastLootSignature = nil
+    TEST.plan = sc.items
 
-    for i = 1, table.getn(TEST_ITEMS) do
-        local plan = TEST_ITEMS[i]
-        local info = BananaLoot:GetStaticItemInfo(plan.id)
-        local name = (info and info.name) or ("Item " .. plan.id)
-        if info and info.quality then BananaLoot.itemQualityHints[plan.id] = info.quality end
-        local link = BananaLoot:BuildItemLink(plan.id, name)
-
+    for i = 1, table.getn(sc.items) do
+        local plan = sc.items[i]
+        local link = BananaLoot:SetupItemLink(plan.id)
         for c = 1, (plan.qty or 1) do
             table.insert(BananaLoot.testLootItems, { itemID = plan.id, link = link })
         end
-
-        if plan.behavior == "hr" then
-            db.hardReserves[plan.id] = { link = link }
-        end
-        if plan.behavior == "br" then
-            db.bankReserves[plan.id] = { link = link }
-        end
-
-        if plan.reservers then
-            local res = { link = link, name = name, players = {}, order = {} }
-            for r = 1, table.getn(plan.reservers) do
-                local pname = TEST_ROSTER[plan.reservers[r]][1]
-                res.players[pname] = true
-                table.insert(res.order, pname)
-                BananaLoot.playerReservedItems[pname] = { plan.id }
-            end
-            BananaLoot.reservations[plan.id] = res
-            -- SR+ Demonstration: der erste Reservierer hat dieses Item schon
-            -- zweimal verloren (SR+ gilt pro Item, siehe GetStack).
-            if plan.behavior == "srbonus" then
-                BananaLoot:SetStack(TEST_ROSTER[plan.reservers[1]][1], plan.id, 2)
-            end
+        -- SR+ Demonstration: der erste Reservierer hat dieses Item schon zweimal
+        -- verloren (SR+ gilt pro Item, siehe GetStack).
+        if plan.behavior == "srbonus" and plan.reservers then
+            BananaLoot:SetStack(TEST_ROSTER[plan.reservers[1]][1], plan.id, 2)
         end
     end
     TEST.totalSlots = table.getn(BananaLoot.testLootItems)
@@ -302,6 +394,7 @@ local function EndTest(silent)
         end
         RemoveOverrides()
         if BananaLoot_DB.testBackup then RestoreFromBackup(BananaLoot_DB.testBackup) end
+        TEST.plan = nil
         if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
         if not silent then
             TPrint(string.format(BananaLoot:L("TEST_ENDED"), TEST.awarded))
@@ -317,12 +410,13 @@ local hooks = {}
 
 hooks.OnRollStart = function(ar)
     local plan
-    for i = 1, table.getn(TEST_ITEMS) do
-        if TEST_ITEMS[i].id == ar.itemID then plan = TEST_ITEMS[i] end
+    local list = TEST.plan or {}
+    for i = 1, table.getn(list) do
+        if list[i].id == ar.itemID then plan = list[i] end
     end
     local beh = plan and plan.behavior or "normal"
     local me = UnitName("player")
-    if beh == "nobody" or beh == "hr" then return end
+    if beh == "nobody" or beh == "hr" or beh == "rr" or beh == "br" then return end
 
     local used = {}
     used[me] = true
@@ -455,12 +549,25 @@ end
 local function BeginRun()
     BananaLoot.EnsureDB()
     local db = BananaLoot_DB
+    local scenarios = GetScenarios()
+    local chosen = TEST.chosen or 1
+    if not scenarios[chosen] then
+        TPrint(BananaLoot:L("TEST_NO_SCENARIO"))
+        TEST.phase = "idle"
+        BananaLoot_UI:RefreshTest()
+        return
+    end
 
     db.testBackup = {
         players = db.players, lastOverwritten = db.lastOverwritten,
         hardReserves = db.hardReserves, bankReserves = db.bankReserves,
+        raidRolls = db.raidRolls,
         awardedItems = db.awardedItems, log = db.log,
         disenchanter = db.settings.disenchanter, brLooter = db.settings.brLooter,
+        preparedRaids = db.preparedRaids, selectedPreparedRaid = db.selectedPreparedRaid,
+        nextPreparedId = db.nextPreparedId, raidTemplates = db.raidTemplates,
+        raidSession = db.raidSession, currentRaidName = db.currentRaidName,
+        srLocked = db.settings.srLocked, maxSRCount = db.settings.maxSRCount,
         reservations = BananaLoot.reservations,
         playerReservedItems = BananaLoot.playerReservedItems,
     }
@@ -468,8 +575,13 @@ local function BeginRun()
     db.lastOverwritten = {}
     db.hardReserves = {}
     db.bankReserves = {}
+    db.raidRolls = {}
     db.awardedItems = {}
     db.log = {}
+    db.preparedRaids = {}
+    db.selectedPreparedRaid = nil
+    db.raidTemplates = {}
+    db.raidSession = nil
     db.settings.disenchanter = TEST_DISENCHANTER
     db.settings.brLooter = TEST_BR_LOOTER
     BananaLoot.reservations = {}
@@ -484,8 +596,32 @@ local function BeginRun()
     BananaLoot.testMode = true
     BananaLoot.testHooks = hooks
     TEST.phase = "running"
-    SeedTestData()
 
+    -- Alle 5 Test-Raids als vorbereitete Raids anlegen (sichtbar in der Raid-Liste, mit
+    -- Code, Hard Reserve, Bankreserve, Raid-Roll und SR der erfundenen Spieler).
+    local entries = {}
+    for k = 1, table.getn(scenarios) do
+        local sc = scenarios[k]
+        if sc then
+            local e = BananaLoot:SavePreparedRaid(nil, sc.name, sc.raidKey, sc.hr, sc.rr, sc.br)
+            e.sr = {}
+            for pname, ids in pairs(sc.sr) do e.sr[pname] = ids end
+            entries[k] = e
+        end
+    end
+    local sc = scenarios[chosen]
+    db.settings.maxSRCount = sc.maxSR
+
+    -- Gewaehlten Raid ueber den ECHTEN Weg starten: auswaehlen, dann "Raid starten"
+    -- (Listen setzen, SR ins Hauptfenster, SR-Liste sperren).
+    BananaLoot:SelectPreparedRaid(entries[chosen].id)
+    SeedTestData(sc)
+    BananaLoot_UI:StartPreparedRaid(entries[chosen].id)
+    local srFrame = getglobal("BananaLootSRFrame")
+    if srFrame then srFrame:Show() end
+    if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+
+    TPrint(string.format(BananaLoot:L("TEST_RAID_READY"), sc.name))
     TPrint(BananaLoot:L("TEST_DROPPED"))
     TPrint(BananaLoot:L("TEST_HINT_HR"))
     BananaLoot:OnLootOpened()
@@ -579,7 +715,78 @@ end)
 -- ============================================================
 -- 8) EINSTIEGSPUNKT (Button im Optionsfenster, Reiter Verwaltung)
 -- ============================================================
-function BananaLoot_UI:StartTest()
+-- Auswahlfenster: welcher der 5 Test-Raids soll laufen?
+TEST.pick = CreateFrame("Frame", "BananaLootTestPickFrame", UIParent)
+TEST.pick:SetWidth(520)
+TEST.pick:SetHeight(300)
+TEST.pick:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
+TEST.pick:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 32,
+    insets = { left = 11, right = 11, top = 11, bottom = 11 },
+})
+BananaLoot_Theme.Darken(TEST.pick)
+TEST.pick:SetMovable(true)
+TEST.pick:EnableMouse(true)
+TEST.pick:RegisterForDrag("LeftButton")
+TEST.pick:SetScript("OnDragStart", function() TEST.pick:StartMoving() end)
+TEST.pick:SetScript("OnDragStop", function() TEST.pick:StopMovingOrSizing() end)
+TEST.pick:SetFrameStrata("DIALOG")
+TEST.pick:Hide()
+TEST.pickClose = CreateFrame("Button", "BananaLootTestPickClose", TEST.pick, "UIPanelCloseButton")
+TEST.pickClose:SetPoint("TOPRIGHT", TEST.pick, "TOPRIGHT", -4, -4)
+TEST.pickClose:SetScript("OnClick", function() BananaLoot:PlayClickSound(); TEST.pick:Hide() end)
+TEST.pickTitle = TEST.pick:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+TEST.pickTitle:SetPoint("TOP", TEST.pick, "TOP", 0, -16)
+TEST.pickHint = TEST.pick:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+TEST.pickHint:SetPoint("TOP", TEST.pick, "TOP", 0, -40)
+TEST.pickHint:SetWidth(470)
+TEST.pickBtns = {}
+for k = 1, table.getn(TEST_RAIDS) do
+    local b = CreateFrame("Button", "BananaLootTestPickBtn" .. k, TEST.pick, "UIPanelButtonTemplate")
+    b:SetWidth(470)
+    b:SetHeight(34)
+    b:SetPoint("TOPLEFT", TEST.pick, "TOPLEFT", 25, -68 - (k - 1) * 40)
+    b.idx = k
+    b:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        TEST.pick:Hide()
+        BananaLoot_UI:StartTest(this.idx)
+    end)
+    TEST.pickBtns[k] = b
+end
+
+local function CountSet(t)
+    local n = 0
+    if t then for _ in pairs(t) do n = n + 1 end end
+    return n
+end
+
+function BananaLoot_UI:ShowTestPick()
+    local scenarios = GetScenarios()
+    TEST.pickTitle:SetText(BananaLoot:L("TEST_PICK_TITLE"))
+    TEST.pickHint:SetText(BananaLoot:L("TEST_PICK_HINT"))
+    for k = 1, table.getn(TEST.pickBtns) do
+        local sc = scenarios[k]
+        if sc then
+            local srItems, players = {}, 0
+            for _, ids in pairs(sc.sr) do
+                players = players + 1
+                for i = 1, table.getn(ids) do srItems[ids[i]] = true end
+            end
+            TEST.pickBtns[k]:SetText(string.format(BananaLoot:L("TEST_PICK_ROW"), sc.name,
+                CountSet(sc.hr), CountSet(sc.br), CountSet(sc.rr), players))
+            TEST.pickBtns[k]:Enable()
+        else
+            TEST.pickBtns[k]:SetText(TEST_RAIDS[k].name .. " (" .. BananaLoot:L("TEST_PICK_NODATA") .. ")")
+            TEST.pickBtns[k]:Disable()
+        end
+    end
+    TEST.pick:Show()
+end
+
+function BananaLoot_UI:StartTest(idx)
     if TEST.phase ~= "idle" then
         TPrint(BananaLoot:L("TEST_ALREADY_RUNNING"))
         TEST.frame:Show()
@@ -590,6 +797,12 @@ function BananaLoot_UI:StartTest()
         TPrint(BananaLoot:L("TEST_BLOCKED_REAL"))
         return
     end
+    if not idx then
+        -- erst den Test-Raid waehlen
+        BananaLoot_UI:ShowTestPick()
+        return
+    end
+    TEST.chosen = idx
 
     TEST.phase = "countdown"
     TEST.scheduled = {}
@@ -611,6 +824,7 @@ function BananaLoot_UI:StartTest()
 end
 
 function BananaLoot_UI:ApplyLocaleTest()
+    if TEST.pick:IsShown() then BananaLoot_UI:ShowTestPick() end
     TEST.title:SetText(BananaLoot:L("WIN_TEST_TITLE"))
     TEST.banner:SetText(BananaLoot:L("TEST_BANNER"))
     BananaLoot_UI:RefreshTest()

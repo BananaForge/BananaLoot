@@ -470,6 +470,7 @@ end
 
 -- Beutelisten des Raids im Hintergrund beim Server abfragen (Tooltips/Icons).
 function S.PrefetchRaid(key)
+    if BananaLoot.testMode then return end   -- im Testlauf keine Server-Abfragen
     if not BananaLoot.PrefetchZoneItems or not BananaLoot:GetPrefetchEnabled() then return end
     local raids = BananaLoot:GetSetupRaids()
     for i = 1, table.getn(raids) do
