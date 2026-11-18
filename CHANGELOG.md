@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.68 (vs. v3.67)
+
+- **Changed:** Reference Raider version for the versions window is now 1.15 (typed model values and model animation in Raider).
+
 ## v3.67 (vs. v3.66)
 
 - **Changed:** Reference Raider version for the versions window is now 1.14 (Raider icon now also found when the addon folder is called "BananaLoot-Raider").
