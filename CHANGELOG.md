@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.69 (vs. v3.68)
+
+- **Changed:** Reference Raider version for the versions window is now 1.16 (3D boss model replaced by a still boss image in Raider).
+
 ## v3.68 (vs. v3.67)
 
 - **Changed:** Reference Raider version for the versions window is now 1.15 (typed model values and model animation in Raider).
