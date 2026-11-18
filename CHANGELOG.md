@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.65 (vs. v3.64)
+
+- **Changed:** Reference Raider version for the versions window is now 1.12 (boss model colouring and zoom fix in Raider).
+
 ## v3.64 (vs. v3.63)
 
 - **Changed:** Reference Raider version for the versions window is now 1.11 (65 boss models in the Raider boss window).
