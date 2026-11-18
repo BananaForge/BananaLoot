@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.67 (vs. v3.66)
+
+- **Changed:** Reference Raider version for the versions window is now 1.14 (Raider icon now also found when the addon folder is called "BananaLoot-Raider").
+
 ## v3.66 (vs. v3.65)
 
 - **Changed:** The test run's raid list is tidier: it shows only the raid names (no counts any more) and a shorter hint.
