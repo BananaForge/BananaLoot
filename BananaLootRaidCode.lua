@@ -668,7 +668,7 @@ end
 -- (gruen = aktuell, orange = veraltet, grau = keine Antwort). Quelle: HA/RV-Antworten auf HQ.
 -- BananaLoot.RAIDER_LATEST = neueste bekannte Raider-Version (bei jeder Raider-Aenderung mitpflegen).
 -- ============================================================
-BananaLoot.RAIDER_LATEST = "1.6"
+BananaLoot.RAIDER_LATEST = "1.7"
 local VW = { rows = {}, offset = 0 }
 local VROWS = 14
 BananaLoot_UI.versionWin = VW

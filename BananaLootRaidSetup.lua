@@ -669,14 +669,17 @@ F.list:EnableMouseWheel(true)
 F.slider = CreateFrame("Slider", "BananaLootRaidSetupSlider", F, "UIPanelScrollBarTemplate")
 F.slider:SetPoint("TOPLEFT", F.list, "TOPRIGHT", 6, -16)
 F.slider:SetPoint("BOTTOMLEFT", F.list, "BOTTOMRIGHT", 6, 16)
-F.slider:SetMinMaxValues(0, 0)
-F.slider:SetValueStep(1)
-F.slider:SetValue(0)
+-- WICHTIG: den eigenen OnValueChanged-Handler VOR SetMinMaxValues/SetValue setzen. Die Vorlage
+-- UIPanelScrollBarTemplate ruft sonst this:GetParent():SetVerticalScroll() auf (der Eltern-Frame ist
+-- kein ScrollFrame) - neuere Clients loesen den Handler schon beim Setzen der Werte aus (Lua-Fehler).
 F.slider:SetScript("OnValueChanged", function()
     if S.loading then return end
     S.offset = math.floor((arg1 or 0) + 0.5)
-    S.UpdateRows()
+    if S.UpdateRows then S.UpdateRows() end
 end)
+F.slider:SetMinMaxValues(0, 0)
+F.slider:SetValueStep(1)
+F.slider:SetValue(0)
 local upBtn = getglobal("BananaLootRaidSetupSliderScrollUpButton")
 local downBtn = getglobal("BananaLootRaidSetupSliderScrollDownButton")
 if upBtn then

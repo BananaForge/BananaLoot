@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.59 (vs. v3.58)
+
+- **Fix:** Lua error `attempt to call method 'SetVerticalScroll' (a nil value)` in the raid setup window on newer clients (seen after the OctoWow update, without pfUI). The slider's own handler is now installed before its values are set.
+
 ## v3.58 (vs. v3.57)
 
 - **Fix:** The SR list in the main window (and the loot window) can be scrolled with the mouse wheel / scroll bar now; more than 8 items are no longer cut off (up to 120 SR items).
