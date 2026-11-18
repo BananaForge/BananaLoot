@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.63 (vs. v3.62)
+
+- **Changed:** Reference Raider version for the versions window is now 1.10 (BananaLoot Raider gets a 3D boss model in its boss window, see its changelog).
+
 ## v3.62 (vs. v3.61)
 
 - **New:** Boss popup for the raid leader: when you (as raid leader or configured sender) target a boss, a small window appears with the buttons "Text 1 to chat" and "Text 2 to chat" (raid chat, party chat; Say during the test run) - in addition to the Raider info window. Closes on X or when combat starts; per boss once every 5 minutes. Switch in the raid lead window ("Popup with chat buttons ...").
