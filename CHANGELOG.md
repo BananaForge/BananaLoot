@@ -1,5 +1,11 @@
 # BananaLoot Changelog
 
+## v3.60 (vs. v3.59)
+
+- **Changed:** Boss texts revised after research (Onyxia, Ebonroc, Baron Geddon, Lord Kazzak, Rend & Gyth, Bloodlord Mandokir, Ragnaros corrected); the filler sentence "no curses to cleanse" is gone from all texts (39 places). Longest text: 248 bytes (limit 255).
+- **New:** Button "To chat" next to every text field in the raid lead window: posts exactly that text to raid/party chat (in a test run: Say). Texts over 255 characters are refused.
+- **New:** Button "Test run (Say)" per raid in the raid lead window: posts the raid's welcome, trash, every enabled boss text (1 and 2) and the closing message one after another in SAY chat, as a test. "Stop test" cancels it. Nothing counts as "announced".
+
 ## v3.59 (vs. v3.58)
 
 - **Fix:** Lua error `attempt to call method 'SetVerticalScroll' (a nil value)` in the raid setup window on newer clients (seen after the OctoWow update, without pfUI). The slider's own handler is now installed before its values are set.

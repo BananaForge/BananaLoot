@@ -1459,3 +1459,11 @@ Scrollen, Weiss/Grau, HR-Looter (ab v3.58)
 - Raid vorbereiten > 1. Hard Reserve: "HR-Looter" aus den Raid-Mitgliedern waehlen. Im Loot-Fenster
   hat jedes HR-Item den Button "An HR-Looter": ein Klick, dann eine Abfrage, erst danach wird vergeben.
 - Importierte HR-Items (raidres.top) werden im Schritt "Hard Reserve" angehakt und bleiben beim Start.
+
+
+Chat-Knopf und Nachrichten-Testlauf (ab v3.60)
+----------------------------------------------
+Raidlead-Fenster: Neben jedem Textfeld steht "In Chat" - postet genau diesen Text in den Raid-/Gruppenchat
+(im Testlauf in Say). Oben rechts im Raid-Bereich: "Testlauf (Say)" postet alle Nachrichten des gewaehlten
+Raids (Willkommen, Trash, je Boss Text 1/2, Abschluss) nacheinander im Say-Chat, nur zum Testen.
+"Test stoppen" bricht ab.

@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.59"
+BananaLoot.VERSION = "3.60"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -536,6 +536,18 @@ local LOCALE = {
         RL_WELCOME = "Willkommensnachricht (bei Raid starten)",
         RL_TRASH = "Trash-Hinweise (direkt danach)",
         RL_ENDING = "Abschlussnachricht (bei Raid beenden)",
+        RL_BTN_CHAT = "In Chat",
+        RL_BTN_CHAT_TIP = "Diesen Text jetzt in den Raid-/Gruppenchat posten (im Testlauf: Say).",
+        RL_BTN_TEST = "Testlauf (Say)",
+        RL_BTN_TEST_STOP = "Test stoppen",
+        RL_BTN_TEST_TIP = "Postet alle Nachrichten dieses Raids nacheinander im SAY-Chat (nur ein Test, nicht im Raidchat).",
+        RL_CHAT_NOGROUP = "|cffffcc00BananaLoot|r: Nicht in einer Gruppe/einem Raid - kein Raidchat zum Posten.",
+        RL_CHAT_EMPTY = "|cffffcc00BananaLoot|r: Der Text ist leer.",
+        RL_CHAT_TOO_LONG = "|cffff5555BananaLoot|r: Der Text ist zu lang (%d / 255 Zeichen) und wird nicht gepostet.",
+        RL_TEST_HEADER = "[BananaLoot Testlauf] %s",
+        RL_TEST_STARTED = "|cff33ff99BananaLoot|r: Testlauf: %d Zeilen für %s werden im Say-Chat gepostet ...",
+        RL_TEST_DONE = "|cff33ff99BananaLoot|r: Testlauf beendet.",
+        RL_TEST_STOPPED = "|cffffcc00BananaLoot|r: Testlauf gestoppt.",
         RL_BTN_SEND2 = "Senden 2",
         RL_BTN_SEND1 = "Senden 1",
         RL_BTN_RESET = "Auf Standard",
@@ -1315,6 +1327,18 @@ local LOCALE = {
         RL_WELCOME = "Welcome message (on Start Raid)",
         RL_TRASH = "Trash notes (right after)",
         RL_ENDING = "Closing message (on End Raid)",
+        RL_BTN_CHAT = "To chat",
+        RL_BTN_CHAT_TIP = "Post this text to raid/party chat now (in a test run: Say).",
+        RL_BTN_TEST = "Test run (Say)",
+        RL_BTN_TEST_STOP = "Stop test",
+        RL_BTN_TEST_TIP = "Posts all messages of this raid one after another in SAY chat (a test only, not raid chat).",
+        RL_CHAT_NOGROUP = "|cffffcc00BananaLoot|r: Not in a group/raid - no raid chat to post to.",
+        RL_CHAT_EMPTY = "|cffffcc00BananaLoot|r: The text is empty.",
+        RL_CHAT_TOO_LONG = "|cffff5555BananaLoot|r: The text is too long (%d / 255 characters) and will not be posted.",
+        RL_TEST_HEADER = "[BananaLoot test run] %s",
+        RL_TEST_STARTED = "|cff33ff99BananaLoot|r: Test run: %d lines for %s are being posted to Say chat ...",
+        RL_TEST_DONE = "|cff33ff99BananaLoot|r: Test run finished.",
+        RL_TEST_STOPPED = "|cffffcc00BananaLoot|r: Test run stopped.",
         RL_BTN_SEND2 = "Send 2",
         RL_BTN_SEND1 = "Send 1",
         RL_BTN_RESET = "Defaults",
@@ -6258,6 +6282,89 @@ function BananaLoot:TickRLTimers()
             self:RLAnnounceBoss(e.raid, e.boss, e.field)
         end
     end
+end
+
+-- Kanal fuer Chat-Posts der Raidlead-Texte: im Testlauf (Nachrichten-Test oder Loot-Testmodus) SAY,
+-- sonst Raid, sonst Gruppe (nil ausserhalb einer Gruppe).
+function BananaLoot:RLChatChannel()
+    if self.rlTestRun or self.testMode then return "SAY" end
+    return self:RLChannel()
+end
+
+-- Postet einen Text (Knopf "In Chat"). Rueckgabe: true, wenn eingereiht.
+function BananaLoot:RLPostChat(text)
+    text = text and string.gsub(text, "^%s+", "") or ""
+    text = string.gsub(text, "%s+$", "")
+    if text == "" then
+        DEFAULT_CHAT_FRAME:AddMessage(self:L("RL_CHAT_EMPTY"))
+        return false
+    end
+    if string.len(text) > 255 then
+        DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L("RL_CHAT_TOO_LONG"), string.len(text)))
+        return false
+    end
+    local channel = self:RLChatChannel()
+    if not channel then
+        DEFAULT_CHAT_FRAME:AddMessage(self:L("RL_CHAT_NOGROUP"))
+        return false
+    end
+    self:ScheduleChat(0.1, channel, text)
+    return true
+end
+
+-- Testlauf der Nachrichten eines Raids im SAY-Chat: Willkommen, Trash, je aktiviertem Boss Nachricht 1/2,
+-- Abschluss - nacheinander (Chat-Warteschlange, ca. 1,2 s Abstand). Nichts davon zaehlt als "angesagt".
+function BananaLoot:RLStartMessageTest(raidKey)
+    if self.rlTestRun then return false end
+    local raid = self:RLGetRaid(raidKey)
+    local name = raid and raid.name or self:L("RL_GENERAL")
+    local lines = {}
+    local function add(t) if t and t ~= "" then table.insert(lines, t) end end
+    add(string.format(self:L("RL_TEST_HEADER"), name))
+    local function raidText(field)
+        local t = self:RLGetRaidText(raidKey or "GENERAL", field)
+        if t == "" then t = self:RLGetRaidText("GENERAL", field) end
+        return t
+    end
+    add(raidText("welcome"))
+    add(raidText("trash"))
+    if raid then
+        for b = 1, table.getn(raid.bosses) do
+            local boss = raid.bosses[b]
+            if self:RLIsBossEnabled(raid.key, boss.key) then
+                local m1 = self:RLGetBossText(raid.key, boss, "m1")
+                local m2 = self:RLGetBossText(raid.key, boss, "m2")
+                if m1 ~= "" or m2 ~= "" then
+                    add("[Test] " .. boss.label)
+                    add(m1)
+                    add(m2)
+                end
+            end
+        end
+    end
+    add(raidText("ending"))
+    if table.getn(lines) == 0 then return false end
+    self.rlTestRun = true
+    self.rlTestSeq = (self.rlTestSeq or 0) + 1
+    local runId = self.rlTestSeq
+    local me = self
+    local n = table.getn(lines)
+    for i = 1, n do
+        local isLast = (i == n)
+        self:ScheduleChat(0.1, "SAY", lines[i], function() return me.rlTestRun and me.rlTestSeq == runId end, isLast and function()
+            me.rlTestRun = false
+            DEFAULT_CHAT_FRAME:AddMessage(me:L("RL_TEST_DONE"))
+            if BananaLoot_UI and BananaLoot_UI.RefreshRaidleadTestBtn then BananaLoot_UI:RefreshRaidleadTestBtn() end
+        end or nil)
+    end
+    DEFAULT_CHAT_FRAME:AddMessage(string.format(self:L("RL_TEST_STARTED"), n, name))
+    return true
+end
+
+function BananaLoot:RLStopMessageTest()
+    if not self.rlTestRun then return end
+    self.rlTestRun = false
+    DEFAULT_CHAT_FRAME:AddMessage(self:L("RL_TEST_STOPPED"))
 end
 
 -- Manuell: Nachricht 2 eines Bosses senden (Button im Raidlead-Fenster).

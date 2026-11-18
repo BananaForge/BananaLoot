@@ -51,6 +51,9 @@ Option: *Automatische Raidlead-Ansagen* (nur Raidleiter bzw. eingetragener Absen
 - **Boss anvisieren**: seit v3.51 **kein Chat-Text mehr**, sondern Addon-Nachricht an BananaLoot Raider (Info-Fenster mit der Erklärung für die Rolle des Spielers)
 - **Raid beenden**: Abschlussnachricht
 
+Seit v3.60 hat jedes Textfeld im Raidlead-Fenster einen Knopf "In Chat" (postet genau diesen Text in Raid-/Gruppenchat, im Testlauf in Say)
+und es gibt pro Raid einen "Testlauf (Say)", der alle Nachrichten des Raids nacheinander im Say-Chat postet.
+
 ## 7) Raid-Code
 Button "Code posten" (`CODE_POST_TEXT`), Kanal Raid, sonst Gruppe/Gilde:
 `BananaLoot Raid-Code fuer <Raid>: <Code>  (SR einreichen: BananaLoot Raider, /blr sr)`

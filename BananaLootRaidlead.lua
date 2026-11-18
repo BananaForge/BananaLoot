@@ -125,13 +125,23 @@ local headerText = child:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 headerText:SetPoint("TOPLEFT", child, "TOPLEFT", 0, 0)
 
 local noteText = child:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-noteText:SetWidth(CONTENT_W - 90)
+noteText:SetWidth(CONTENT_W - 220)
 noteText:SetJustifyH("LEFT")
 
 local resetBtn = CreateFrame("Button", "BananaLootRaidleadReset", child, "UIPanelButtonTemplate")
 resetBtn:SetWidth(90)
 resetBtn:SetHeight(20)
 resetBtn:SetPoint("TOPRIGHT", child, "TOPRIGHT", 0, 0)
+
+-- Testlauf der Nachrichten dieses Raids im Say-Chat (siehe BananaLoot:RLStartMessageTest)
+local testBtn = CreateFrame("Button", "BananaLootRaidleadTest", child, "UIPanelButtonTemplate")
+testBtn:SetWidth(120)
+testBtn:SetHeight(20)
+testBtn:SetPoint("RIGHT", resetBtn, "LEFT", -6, 0)
+BananaLoot_UI.rlTestBtn = testBtn
+function BananaLoot_UI:RefreshRaidleadTestBtn()
+    testBtn:SetText(BananaLoot:L(BananaLoot.rlTestRun and "RL_BTN_TEST_STOP" or "RL_BTN_TEST"))
+end
 
 -- Mausrad ueber Textfeldern/Bloecken scrollt das aeussere Fenster (die
 -- Textfelder und ihre inneren ScrollFrames fangen das Mausrad sonst ab).
@@ -149,7 +159,7 @@ end
 -- ScrollFrames (nur so waechst/wrappt sie im Vanilla-Client zuverlaessig),
 -- umgeben von einem Rahmen fester Hoehe (BOX_H), in den 255 Zeichen
 -- vollstaendig sichtbar passen. Ein Klick irgendwo im Rahmen fokussiert.
-local function MakeBox(width, height, onChange, tag)
+local function MakeBox(width, height, onChange, tag, chatKind)
     local holder = CreateFrame("Frame", nil, child)
     holder:SetWidth(width)
     holder:SetHeight(height)
@@ -178,6 +188,23 @@ local function MakeBox(width, height, onChange, tag)
     holder.tag = tag or ""
     holder.counter = holder:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     holder.counter:SetPoint("BOTTOMRIGHT", holder, "BOTTOMRIGHT", -7, 4)
+
+    -- Knopf "In Chat": postet genau den Text aus diesem Feld (Raid-/Gruppenchat, im Test: Say)
+    holder.chatBtn = CreateFrame("Button", nil, holder, "UIPanelButtonTemplate")
+    holder.chatBtn:SetWidth(52)
+    holder.chatBtn:SetHeight(22)
+    holder.chatBtn:SetPoint("TOPLEFT", holder, "TOPRIGHT", 4, -2)
+    holder.chatBtn:SetText(BananaLoot:L("RL_BTN_CHAT"))
+    holder.chatBtn:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        BananaLoot:RLPostChat(box:GetText())
+    end)
+    holder.chatBtn:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        GameTooltip:SetText(BananaLoot:L("RL_BTN_CHAT_TIP"), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    holder.chatBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     holder:SetScript("OnMouseDown", function() box:SetFocus() end)
     holder:EnableMouseWheel(true)
@@ -213,7 +240,7 @@ local raidBoxes = {}
 for i = 1, table.getn(raidFields) do
     local field = raidFields[i]
     raidCaptions[field] = child:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    raidBoxes[field] = MakeBox(CONTENT_W - 6, BOX_H, function(text)
+    raidBoxes[field] = MakeBox(CONTENT_W - 62, BOX_H, function(text)
         BananaLoot:RLSetRaidText(selectedKey, field, text)
     end)
 end
@@ -234,11 +261,11 @@ for i = 1, MAX_BLOCKS do
             BananaLoot:RLSetBossEnabled(selectedKey, boss.key, blk.check:GetChecked() and true or false)
         end
     end)
-    blk.box1 = MakeBox(CONTENT_W - 6, BOX_H, function(text)
+    blk.box1 = MakeBox(CONTENT_W - 62, BOX_H, function(text)
         local boss = currentBosses[index]
         if boss then BananaLoot:RLSetBossText(selectedKey, boss.key, "m1", text) end
     end, "1:  ")
-    blk.box2 = MakeBox(CONTENT_W - 6, BOX_H, function(text)
+    blk.box2 = MakeBox(CONTENT_W - 62, BOX_H, function(text)
         local boss = currentBosses[index]
         if boss then BananaLoot:RLSetBossText(selectedKey, boss.key, "m2", text) end
     end, "2:  ")
@@ -341,6 +368,7 @@ local function LoadRaid(key)
     scroll:UpdateScrollChildRect()
     scroll:SetVerticalScroll(0)
     resetBtn:SetText(BananaLoot:L("RL_BTN_RESET"))
+    BananaLoot_UI:RefreshRaidleadTestBtn()
     if raid then resetBtn:Show() else resetBtn:Show() end
 end
 
@@ -351,6 +379,22 @@ for i = 1, table.getn(listButtons) do
         LoadRaid(raidList[index].key)
     end)
 end
+
+testBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot.rlTestRun then
+        BananaLoot:RLStopMessageTest()
+    else
+        BananaLoot:RLStartMessageTest(selectedKey)
+    end
+    BananaLoot_UI:RefreshRaidleadTestBtn()
+end)
+testBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(testBtn, "ANCHOR_TOP")
+    GameTooltip:SetText(BananaLoot:L("RL_BTN_TEST_TIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+testBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 -- Zuruecksetzen mit Rueckfrage
 if StaticPopupDialogs then
