@@ -701,6 +701,7 @@ TEST.endBtn:SetScript("OnClick", function()
 end)
 
 function BananaLoot_UI:RefreshTest()
+    if BananaLoot_UI.UpdateRaiderTestBtn then BananaLoot_UI:UpdateRaiderTestBtn() end
     if TEST.phase == "idle" then
         TEST.frame:Hide()
         return

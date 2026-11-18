@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.61"
+BananaLoot.VERSION = "3.62"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -548,6 +548,18 @@ local LOCALE = {
         RL_TEST_STARTED = "|cff33ff99BananaLoot|r: Testlauf: %d Zeilen für %s werden im Say-Chat gepostet ...",
         RL_TEST_DONE = "|cff33ff99BananaLoot|r: Testlauf beendet.",
         RL_TEST_STOPPED = "|cffffcc00BananaLoot|r: Testlauf gestoppt.",
+        RL_POPUP_SEND1 = "Text 1 in Chat",
+        RL_POPUP_SEND2 = "Text 2 in Chat",
+        RL_POPUP_SENT = "|cff33ff99gesendet|r",
+        RL_POPUP_CHANNEL = "Kanal: %s (zusätzlich zum Raider-Fenster)",
+        RL_POPUP_OPT = "Popup mit Chat-Knöpfen beim Anvisieren eines Bosses",
+        RL_CH_SAY = "Say (Test)",
+        RL_CH_RAID = "Raid",
+        RL_CH_PARTY = "Gruppe",
+        UI_BTN_RAIDER_TEST = "Raider-Boss-Test",
+        UI_BTN_RAIDER_TEST_TIP = "Öffnet in BananaLoot Raider die Boss-Übersicht des Testlaufs: jeden Boss anklicken zeigt sein Info-Fenster, wie es ein Raider sieht. Nur während des BananaLoot-Testlaufs.",
+        RAIDER_TEST_NEED_RUN = "|cffffcc00BananaLoot|r: Der Raider-Boss-Test geht nur während des Testlaufs. Starte zuerst \"Testlauf starten\".",
+        RAIDER_TEST_NO_RAIDER = "|cffffcc00BananaLoot|r: BananaLoot Raider ist nicht (in einer neuen Version) geladen.",
         RL_BTN_SEND2 = "Senden 2",
         RL_BTN_SEND1 = "Senden 1",
         RL_BTN_RESET = "Auf Standard",
@@ -1339,6 +1351,18 @@ local LOCALE = {
         RL_TEST_STARTED = "|cff33ff99BananaLoot|r: Test run: %d lines for %s are being posted to Say chat ...",
         RL_TEST_DONE = "|cff33ff99BananaLoot|r: Test run finished.",
         RL_TEST_STOPPED = "|cffffcc00BananaLoot|r: Test run stopped.",
+        RL_POPUP_SEND1 = "Text 1 to chat",
+        RL_POPUP_SEND2 = "Text 2 to chat",
+        RL_POPUP_SENT = "|cff33ff99sent|r",
+        RL_POPUP_CHANNEL = "Channel: %s (in addition to the Raider window)",
+        RL_POPUP_OPT = "Popup with chat buttons when targeting a boss",
+        RL_CH_SAY = "Say (test)",
+        RL_CH_RAID = "Raid",
+        RL_CH_PARTY = "Party",
+        UI_BTN_RAIDER_TEST = "Raider boss test",
+        UI_BTN_RAIDER_TEST_TIP = "Opens the boss overview of the test run in BananaLoot Raider: click any boss to see its info window the way a raider sees it. Only during the BananaLoot test run.",
+        RAIDER_TEST_NEED_RUN = "|cffffcc00BananaLoot|r: The Raider boss test only works during the test run. Start \"Start test run\" first.",
+        RAIDER_TEST_NO_RAIDER = "|cffffcc00BananaLoot|r: BananaLoot Raider is not loaded (or too old).",
         RL_BTN_SEND2 = "Send 2",
         RL_BTN_SEND1 = "Send 1",
         RL_BTN_RESET = "Defaults",
@@ -6717,6 +6741,7 @@ eventFrame:SetScript("OnEvent", function()
     elseif event == "PLAYER_TARGET_CHANGED" then
         TryAutoMasterLoot()
         BananaLoot:RaidleadOnTarget()
+        if BananaLoot.RLBossPopupOnTarget then BananaLoot:RLBossPopupOnTarget() end
 
     elseif event == "TRADE_ACCEPT_UPDATE" then
         -- arg1/arg2 = playerAccepted/targetAccepted (0 oder 1). Erst wenn

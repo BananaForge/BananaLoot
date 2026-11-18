@@ -453,13 +453,137 @@ function BananaLoot_UI:ShowRaidlead()
     senderBox:SetText(rl.sender or "")
     delayBox:SetText(tostring(rl.msg2delay or 0))
     loading = false
+    BananaLoot_UI:RefreshRaidleadPopupOption()
     LoadRaid(selectedKey)
     frame:Show()
 end
 
 function BananaLoot_UI:ApplyLocaleRaidlead()
+    if BananaLoot_UI.RefreshRaidleadPopupOption then BananaLoot_UI:RefreshRaidleadPopupOption() end
     if frame:IsShown() then
         RefreshTexts()
         LoadRaid(selectedKey)
     end
+end
+
+
+-- ============================================================
+-- Boss-Popup fuer den Raidleiter: beim Anvisieren eines Bosses erscheint ein kleines Fenster mit
+-- "Text 1 in Chat" / "Text 2 in Chat" (zusaetzlich zur Raider-Info). Nur fuer den, der Ansagen
+-- senden darf (Raidleiter bzw. eingetragener Absender); im Testlauf immer.
+-- ============================================================
+local BP = { shown = {} }
+BP.frame = CreateFrame("Frame", "BananaLootBossPopup", UIParent)
+local PF = BP.frame
+PF:SetWidth(330)
+PF:SetHeight(112)
+PF:SetPoint("TOP", UIParent, "TOP", 0, -210)
+PF:SetFrameStrata("HIGH")
+PF:SetBackdrop({
+    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 32, edgeSize = 32,
+    insets = { left = 11, right = 11, top = 11, bottom = 11 },
+})
+BananaLoot_Theme.Darken(PF)
+PF:SetMovable(true)
+PF:EnableMouse(true)
+PF:RegisterForDrag("LeftButton")
+PF:SetScript("OnDragStart", function() PF:StartMoving() end)
+PF:SetScript("OnDragStop", function() PF:StopMovingOrSizing() end)
+PF:Hide()
+PF.close = CreateFrame("Button", "BananaLootBossPopupClose", PF, "UIPanelCloseButton")
+PF.close:SetPoint("TOPRIGHT", PF, "TOPRIGHT", -4, -4)
+PF.close:SetScript("OnClick", function() BananaLoot:PlayClickSound(); PF:Hide() end)
+PF.title = PF:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+PF.title:SetPoint("TOP", PF, "TOP", 0, -16)
+PF.sub = PF:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+PF.sub:SetPoint("TOP", PF.title, "BOTTOM", 0, -2)
+PF.btn = {}
+for i = 1, 2 do
+    local b = CreateFrame("Button", "BananaLootBossPopupSend" .. i, PF, "UIPanelButtonTemplate")
+    b:SetWidth(140)
+    b:SetHeight(24)
+    b:SetPoint("BOTTOMLEFT", PF, "BOTTOMLEFT", 20 + (i - 1) * 150, 20)
+    b.field = (i == 1) and "m1" or "m2"
+    b:SetScript("OnClick", function()
+        BananaLoot:PlayClickSound()
+        if not BP.raid or not BP.boss then return end
+        local text = BananaLoot:RLGetBossText(BP.raid.key, BP.boss, this.field)
+        if BananaLoot:RLPostChat(text) then
+            this:SetText(BananaLoot:L("RL_POPUP_SENT"))
+            this.sent = true
+        end
+    end)
+    b:SetScript("OnEnter", function()
+        if not BP.raid or not BP.boss then return end
+        GameTooltip:SetOwner(this, "ANCHOR_TOP")
+        GameTooltip:SetText(BananaLoot:RLGetBossText(BP.raid.key, BP.boss, this.field), 1, 1, 1, 1, 1)
+        GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    PF.btn[i] = b
+end
+
+function BP.Show(raid, boss)
+    BP.raid, BP.boss = raid, boss
+    PF.title:SetText(boss.label)
+    local ch = BananaLoot:RLChatChannel()
+    PF.sub:SetText(string.format(BananaLoot:L("RL_POPUP_CHANNEL"), ch == "SAY" and BananaLoot:L("RL_CH_SAY") or (ch == "RAID" and BananaLoot:L("RL_CH_RAID") or (ch == "PARTY" and BananaLoot:L("RL_CH_PARTY") or "-"))))
+    for i = 1, 2 do
+        local b = PF.btn[i]
+        b.sent = false
+        b:SetText(BananaLoot:L(i == 1 and "RL_POPUP_SEND1" or "RL_POPUP_SEND2"))
+        local t = BananaLoot:RLGetBossText(raid.key, boss, b.field)
+        if t == "" then b:Disable() else b:Enable() end
+    end
+    PF:Show()
+end
+
+-- Aufruf bei PLAYER_TARGET_CHANGED
+function BananaLoot:RLBossPopupOnTarget()
+    local rl = self:RLEnsure()
+    if not rl.enabled or rl.chatPopup == false then return end
+    if not self.testMode and not self:RLCanSend() then return end
+    if not UnitExists("target") or UnitIsPlayer("target") or UnitIsDead("target") then return end
+    if not UnitCanAttack("player", "target") then return end
+    if UnitAffectingCombat and UnitAffectingCombat("player") then return end
+    local raid, boss = self:FindBossByUnit(UnitName("target"))
+    if not boss or not self:RLIsBossEnabled(raid.key, boss.key) then return end
+    local key = raid.key .. ":" .. boss.key
+    if BP.shown[key] and (GetTime() - BP.shown[key]) < 300 then return end
+    if self:RLGetBossText(raid.key, boss, "m1") == "" and self:RLGetBossText(raid.key, boss, "m2") == "" then return end
+    BP.shown[key] = GetTime()
+    BP.Show(raid, boss)
+end
+
+-- Kampfbeginn schliesst das Popup
+local bpEvents = CreateFrame("Frame")
+bpEvents:RegisterEvent("PLAYER_REGEN_DISABLED")
+bpEvents:SetScript("OnEvent", function() PF:Hide() end)
+
+function BananaLoot_UI:ShowBossPopupFor(raidKey, bossKey)   -- fuer Tests
+    local raid = BananaLoot:RLGetRaid(raidKey)
+    if not raid then return end
+    for b = 1, table.getn(raid.bosses) do
+        if raid.bosses[b].key == bossKey then BP.Show(raid, raid.bosses[b]) return end
+    end
+end
+BananaLoot_UI.bossPopup = BP
+
+-- Einstellung im Raidlead-Fenster: Popup an/aus
+local popupCheck = CreateFrame("CheckButton", "BananaLootRaidleadPopupCheck", frame, "UICheckButtonTemplate")
+popupCheck:SetPoint("TOPLEFT", frame, "TOPLEFT", 300, -64)
+popupCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot:RLEnsure().chatPopup = popupCheck:GetChecked() and true or false
+end)
+local popupLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+popupLabel:SetPoint("LEFT", popupCheck, "RIGHT", 2, 0)
+popupLabel:SetWidth(270)
+popupLabel:SetJustifyH("LEFT")
+BananaLoot_UI.rlPopupCheck, BananaLoot_UI.rlPopupLabel = popupCheck, popupLabel
+function BananaLoot_UI:RefreshRaidleadPopupOption()
+    popupLabel:SetText(BananaLoot:L("RL_POPUP_OPT"))
+    popupCheck:SetChecked(BananaLoot:RLEnsure().chatPopup ~= false)
 end

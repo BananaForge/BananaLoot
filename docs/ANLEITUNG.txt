@@ -1469,3 +1469,12 @@ Raidlead-Fenster: Neben jedem Textfeld steht "In Chat" - postet genau diesen Tex
 (im Testlauf in Say). Oben rechts im Raid-Bereich: "Testlauf (Say)" postet alle Nachrichten des gewaehlten
 Raids (Willkommen, Trash, je Boss Text 1/2, Abschluss) nacheinander im Say-Chat, nur zum Testen.
 "Test stoppen" bricht ab.
+
+
+Boss-Popup und Raider-Boss-Test (ab v3.62)
+------------------------------------------
+- Visierst du als Raidleiter (bzw. eingetragener Absender) einen Boss an, erscheint ein kleines Fenster mit
+  "Text 1 in Chat" und "Text 2 in Chat" (Raid-/Gruppenchat, im Testlauf Say), zusaetzlich zum Raider-Fenster.
+  Ein-/ausschaltbar im Raidlead-Fenster.
+- Optionen > Verwaltung > "Raider-Boss-Test" (nur im Testlauf): oeffnet in BananaLoot Raider die Boss-Uebersicht.
+  Jeder Boss laesst sich anklicken, das Info-Fenster zeigt, was ein Raider sieht (Rolle/Klasse hervorgehoben).

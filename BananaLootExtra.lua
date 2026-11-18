@@ -780,6 +780,32 @@ end)
 BananaLoot_UI.optTestBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 -- Raidlead-Fenster oeffnen (siehe BananaLootRaidlead.lua). Ohne lokale Variable.
+-- Raider-Boss-Test (nur waehrend des Testlaufs): oeffnet die Boss-Uebersicht von BananaLoot Raider
+BananaLoot_UI.optRaiderTestBtn = CreateFrame("Button", "BananaLootRaiderTestBtn", optFrame, "UIPanelButtonTemplate")
+BananaLoot_UI.optRaiderTestBtn:SetWidth(160)
+BananaLoot_UI.optRaiderTestBtn:SetHeight(20)
+BananaLoot_UI.optRaiderTestBtn:SetPoint("LEFT", BananaLoot_UI.optTestBtn, "RIGHT", 8, 0)
+RegisterLocaleText(BananaLoot_UI.optRaiderTestBtn, "UI_BTN_RAIDER_TEST")
+BananaLoot_UI.optRaiderTestBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if not BananaLoot.testMode then
+        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("RAIDER_TEST_NEED_RUN"))
+    elseif BananaLootRaider and BananaLootRaider.OpenBossTest then
+        BananaLootRaider:OpenBossTest()
+    else
+        DEFAULT_CHAT_FRAME:AddMessage(BananaLoot:L("RAIDER_TEST_NO_RAIDER"))
+    end
+end)
+BananaLoot_UI.optRaiderTestBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(BananaLoot_UI.optRaiderTestBtn, "ANCHOR_RIGHT")
+    GameTooltip:SetText(BananaLoot:L("UI_BTN_RAIDER_TEST_TIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+BananaLoot_UI.optRaiderTestBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+function BananaLoot_UI:UpdateRaiderTestBtn()
+    if BananaLoot.testMode then BananaLoot_UI.optRaiderTestBtn:Enable() else BananaLoot_UI.optRaiderTestBtn:Disable() end
+end
+
 BananaLoot_UI.optRaidleadBtn = CreateFrame("Button", "BananaLootRaidleadOpenBtn", optFrame, "UIPanelButtonTemplate")
 BananaLoot_UI.optRaidleadBtn:SetWidth(160)
 BananaLoot_UI.optRaidleadBtn:SetHeight(20)
@@ -925,7 +951,7 @@ AddToTab(TAB_DISPLAY, {
     soundClickCheck, soundClickLabel })
 
 AddToTab(TAB_MANAGE, {
-    manageSectionLabel, optResetBtn, optWipeBtn, optCsvBtn, optCsvLogBtn,
+    BananaLoot_UI.optRaiderTestBtn, manageSectionLabel, optResetBtn, optWipeBtn, optCsvBtn, optCsvLogBtn,
     optClearLogBtn, optAliasBtn, recoveryBtn, BananaLoot_UI.optTestBtn, BananaLoot_UI.optRaidleadBtn,
     BananaLoot_UI.rlEnableCheck, BananaLoot_UI.rlEnableLabel, BananaLoot_UI.rlEnableHint,
     BananaLoot_UI.ubrsCheck, BananaLoot_UI.ubrsLabel, BananaLoot_UI.ubrsHint })
@@ -963,6 +989,7 @@ function BananaLoot_UI:ToggleOptions()
         multiWinnerCheck:SetChecked(BananaLoot:GetMultiWinnerEnabled())
         tradeTrackingCheck:SetChecked(BananaLoot:GetTradeTrackingEnabled())
         ShowOptTab(TAB_GENERAL)
+        BananaLoot_UI:UpdateRaiderTestBtn()
         optFrame:Show()
     end
 end

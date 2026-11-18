@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.62 (vs. v3.61)
+
+- **New:** Boss popup for the raid leader: when you (as raid leader or configured sender) target a boss, a small window appears with the buttons "Text 1 to chat" and "Text 2 to chat" (raid chat, party chat; Say during the test run) - in addition to the Raider info window. Closes on X or when combat starts; per boss once every 5 minutes. Switch in the raid lead window ("Popup with chat buttons ...").
+- **New:** "Raider boss test" button next to "Start test run" (Options > Management), usable only while the test run is active: opens BananaLoot Raider's boss overview (all raids, collapsible, click a boss to see its info window; role/class can be simulated).
+
 ## v3.61 (vs. v3.60)
 
 - **New:** The test run now offers a test raid for **every raid with loot data** (12 instead of 5): Molten Core, Onyxia, Blackwing Lair, Zul'Gurub, AQ20, AQ40, Naxxramas, Timbermaw Hold, Lower Karazhan, Tower of Karazhan, Emerald Sanctum, UBRS. World bosses have no loot data and are not included. All are prepared raids during the test (usable for the message test run and the raid list, too).
