@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.61 (vs. v3.60)
+
+- **New:** The test run now offers a test raid for **every raid with loot data** (12 instead of 5): Molten Core, Onyxia, Blackwing Lair, Zul'Gurub, AQ20, AQ40, Naxxramas, Timbermaw Hold, Lower Karazhan, Tower of Karazhan, Emerald Sanctum, UBRS. World bosses have no loot data and are not included. All are prepared raids during the test (usable for the message test run and the raid list, too).
+
 ## v3.60 (vs. v3.59)
 
 - **Changed:** Boss texts revised after research (Onyxia, Ebonroc, Baron Geddon, Lord Kazzak, Rend & Gyth, Bloodlord Mandokir, Ragnaros corrected); the filler sentence "no curses to cleanse" is gone from all texts (39 places). Longest text: 248 bytes (limit 255).

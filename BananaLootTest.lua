@@ -68,16 +68,20 @@ local TEST_ROSTER = {
 --   rr      - Raid-Roll-Item, wird beim Oeffnen automatisch unter dem Raid verlost
 -- "qty" = Anzahl Kopien (je eigener Loot-Slot), "reservers" = Roster-Indizes.
 
--- Die 5 Test-Raids. Items, Reservierungen und Listen werden aus der Beute des Raids
--- (BananaLoot_RaidLoot) mit festem Startwert gewuerfelt: jeder Lauf mit demselben Raid ist
--- gleich, die fuenf Raids unterscheiden sich. maxSR = SR-Limit pro Spieler im Test.
-local TEST_RAIDS = {
-    { key = "MC",   name = "Test: Molten Core",     seed = 101, maxSR = 1 },
-    { key = "BWL",  name = "Test: Blackwing Lair",  seed = 202, maxSR = 1 },
-    { key = "AQ40", name = "Test: AQ40 (2 SR pro Spieler)", seed = 303, maxSR = 2 },
-    { key = "NAXX", name = "Test: Naxxramas",       seed = 404, maxSR = 1 },
-    { key = "UBRS", name = "Test: UBRS",            seed = 505, maxSR = 1 },
-}
+-- Test-Raids: ein Test-Raid fuer JEDEN Raid mit Beutedaten (BananaLoot_RaidLoot; Welt-Bosse haben keine).
+-- Items, Reservierungen und Listen werden aus der Beute des Raids mit festem Startwert gewuerfelt: jeder
+-- Lauf mit demselben Raid ist gleich, die Raids unterscheiden sich. maxSR = SR-Limit pro Spieler im Test.
+local TEST_RAID_KEYS = { "MC", "ONY", "BWL", "ZG", "AQ20", "AQ40", "NAXX", "TIMB", "LKH", "UKH", "ES", "UBRS" }
+local TEST_RAIDS = {}
+for k = 1, table.getn(TEST_RAID_KEYS) do
+    local key = TEST_RAID_KEYS[k]
+    local nm = key
+    for r = 1, table.getn(BananaLoot_RaidData or {}) do
+        if BananaLoot_RaidData[r].key == key then nm = BananaLoot_RaidData[r].name end
+    end
+    if key == "AQ40" then nm = nm .. " (2 SR pro Spieler)" end
+    table.insert(TEST_RAIDS, { key = key, name = "Test: " .. nm, seed = 101 * k, maxSR = (key == "AQ40") and 2 or 1 })
+end
 
 -- Eigener Zufallsgenerator (Park-Miller), damit der globale math.random unberuehrt bleibt.
 local function MakeRng(seed)
@@ -608,7 +612,7 @@ local function BeginRun()
     BananaLoot.testHooks = hooks
     TEST.phase = "running"
 
-    -- Alle 5 Test-Raids als vorbereitete Raids anlegen (sichtbar in der Raid-Liste, mit
+    -- Alle Test-Raids als vorbereitete Raids anlegen (sichtbar in der Raid-Liste, mit
     -- Code, Hard Reserve, Bankreserve, Raid-Roll und SR der erfundenen Spieler).
     local entries = {}
     for k = 1, table.getn(scenarios) do
@@ -734,10 +738,10 @@ end)
 -- ============================================================
 -- 8) EINSTIEGSPUNKT (Button im Optionsfenster, Reiter Verwaltung)
 -- ============================================================
--- Auswahlfenster: welcher der 5 Test-Raids soll laufen?
+-- Auswahlfenster: welcher der Test-Raids soll laufen? (einer je Raid mit Beutedaten)
 TEST.pick = CreateFrame("Frame", "BananaLootTestPickFrame", UIParent)
 TEST.pick:SetWidth(520)
-TEST.pick:SetHeight(300)
+TEST.pick:SetHeight(68 + table.getn(TEST_RAIDS) * 32 + 28)
 TEST.pick:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
 TEST.pick:SetBackdrop({
     bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -765,8 +769,8 @@ TEST.pickBtns = {}
 for k = 1, table.getn(TEST_RAIDS) do
     local b = CreateFrame("Button", "BananaLootTestPickBtn" .. k, TEST.pick, "UIPanelButtonTemplate")
     b:SetWidth(470)
-    b:SetHeight(34)
-    b:SetPoint("TOPLEFT", TEST.pick, "TOPLEFT", 25, -68 - (k - 1) * 40)
+    b:SetHeight(28)
+    b:SetPoint("TOPLEFT", TEST.pick, "TOPLEFT", 25, -68 - (k - 1) * 32)
     b.idx = k
     b:SetScript("OnClick", function()
         BananaLoot:PlayClickSound()

@@ -299,10 +299,12 @@ Im Optionsfenster, Reiter "Verwaltung", startet "Testlauf starten" eine
 Simulation, mit der sich alle Einstellungen gefahrlos an einem echten
 Roll-Ablauf ausprobieren lassen -- ohne Raid und ohne echte Items.
 
- - Zuerst waehlst du einen von FUENF Test-Raids: Molten Core, Blackwing
-   Lair, AQ40 (mit 2 SR pro Spieler), Naxxramas und UBRS. Jeder ist ein
+ - Zuerst waehlst du einen von ZWOELF Test-Raids (einer je Raid mit Beutedaten):
+   Molten Core, Onyxia, Blackwing Lair, Zul'Gurub, AQ20, AQ40 (mit 2 SR pro
+   Spieler), Naxxramas, Timbermaw Hold, Lower Karazhan, Tower of Karazhan,
+   Emerald Sanctum und UBRS. Jeder ist ein
    vorbereiteter Raid mit 2 Hard Reserve, 1 Bankreserve, 2 Raid-Roll und
-   den SR von 10 erfundenen Spielern auf 5 Items. Alle fuenf stehen
+   den SR von 10 erfundenen Spielern auf 5 Items. Alle stehen
    waehrend des Tests in der Raid-Liste (Ueberschrift im Hauptfenster).
  - Nach 10 Sekunden Countdown wird der gewaehlte Test-Raid ueber den
    ECHTEN Weg gestartet (Raid waehlen > Raid starten): die Listen werden

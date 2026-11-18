@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.60"
+BananaLoot.VERSION = "3.61"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -779,7 +779,7 @@ local LOCALE = {
         TEST_COUNTDOWN_STARTING = "|cffffcc00[TEST]|r Testlauf wird in %d Sekunden gestartet. Es wird NICHTS im echten Chat gepostet.",
         TEST_COUNTDOWN_TEXT = "Startet in %d Sekunden...",
         TEST_PICK_TITLE = "Testlauf: Welcher Test-Raid?",
-        TEST_PICK_HINT = "Fünf vorbereitete Test-Raids mit Hard Reserve, Bankreserve, Raid-Roll und SR erfundener Spieler. Der gewählte Raid wird wie ein echter gestartet, danach fallen ca. 15 Items.",
+        TEST_PICK_HINT = "Ein vorbereiteter Test-Raid für jeden Raid mit Beutedaten, mit Hard Reserve, Bankreserve, Raid-Roll und SR erfundener Spieler. Der gewählte Raid wird wie ein echter gestartet, danach fallen ca. 15 Items.",
         TEST_PICK_ROW = "%s  |  %d HR, %d BR, %d Raid-Roll, SR von %d Spielern",
         TEST_PICK_NODATA = "keine Beutedaten",
         TEST_NO_SCENARIO = "|cffff5555BananaLoot|r: Für diesen Test-Raid fehlen die Beutedaten.",
@@ -1564,7 +1564,7 @@ local LOCALE = {
         TEST_COUNTDOWN_STARTING = "|cffffcc00[TEST]|r Test run starts in %d seconds. NOTHING is posted to real chat.",
         TEST_COUNTDOWN_TEXT = "Starting in %d seconds...",
         TEST_PICK_TITLE = "Test run: which test raid?",
-        TEST_PICK_HINT = "Five prepared test raids with Hard Reserve, Bank Reserve, Raid Roll and SR of made-up players. The chosen raid is started like a real one, then about 15 items drop.",
+        TEST_PICK_HINT = "One prepared test raid for every raid with loot data, with Hard Reserve, Bank Reserve, Raid Roll and SR of made-up players. The chosen raid is started like a real one, then about 15 items drop.",
         TEST_PICK_ROW = "%s  |  %d HR, %d BR, %d Raid Roll, SR of %d players",
         TEST_PICK_NODATA = "no loot data",
         TEST_NO_SCENARIO = "|cffff5555BananaLoot|r: The loot data for this test raid is missing.",

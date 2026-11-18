@@ -437,9 +437,10 @@ BananaLoot never talks to the internet on its own.
 - With BananaLoot Raider installed, every test roll also shows the Raider's roll
   popup (roll along with MS/OS/TM) and the awards fill the Raider's loot history;
   test run only, nothing is sent over the network
-- "Start test run" (Options → Management) first asks for one of **five test
-  raids** (Molten Core, Blackwing Lair, AQ40 with 2 SR per player, Naxxramas,
-  UBRS). Each is a prepared raid with 2 Hard Reserve, 1 Bank Reserve, 2 Raid
+- "Start test run" (Options → Management) first asks for one of **twelve test
+  raids** - one for every raid with loot data (Molten Core, Onyxia, Blackwing
+  Lair, Zul'Gurub, AQ20, AQ40 with 2 SR per player, Naxxramas, Timbermaw Hold,
+  Lower Karazhan, Tower of Karazhan, Emerald Sanctum, UBRS). Each is a prepared raid with 2 Hard Reserve, 1 Bank Reserve, 2 Raid
   Roll items and the SR of 10 made-up players. The chosen raid is started the
   **real way** (select raid, start raid): lists are set, the SR appear in the
   main window, then about 16 loot slots drop into the loot window and the
