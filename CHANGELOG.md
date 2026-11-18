@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.66 (vs. v3.65)
+
+- **Changed:** The test run's raid list is tidier: it shows only the raid names (no counts any more) and a shorter hint.
+- **Changed:** Reference Raider version for the versions window is now 1.13.
+
 ## v3.65 (vs. v3.64)
 
 - **Changed:** Reference Raider version for the versions window is now 1.12 (boss model colouring and zoom fix in Raider).

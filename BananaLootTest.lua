@@ -79,8 +79,9 @@ for k = 1, table.getn(TEST_RAID_KEYS) do
     for r = 1, table.getn(BananaLoot_RaidData or {}) do
         if BananaLoot_RaidData[r].key == key then nm = BananaLoot_RaidData[r].name end
     end
+    local label = nm
     if key == "AQ40" then nm = nm .. " (2 SR pro Spieler)" end
-    table.insert(TEST_RAIDS, { key = key, name = "Test: " .. nm, seed = 101 * k, maxSR = (key == "AQ40") and 2 or 1 })
+    table.insert(TEST_RAIDS, { key = key, name = "Test: " .. nm, label = label, seed = 101 * k, maxSR = (key == "AQ40") and 2 or 1 })
 end
 
 -- Eigener Zufallsgenerator (Park-Miller), damit der globale math.random unberuehrt bleibt.
@@ -799,11 +800,10 @@ function BananaLoot_UI:ShowTestPick()
                 players = players + 1
                 for i = 1, table.getn(ids) do srItems[ids[i]] = true end
             end
-            TEST.pickBtns[k]:SetText(string.format(BananaLoot:L("TEST_PICK_ROW"), sc.name,
-                CountSet(sc.hr), CountSet(sc.br), CountSet(sc.rr), players))
+            TEST.pickBtns[k]:SetText(TEST_RAIDS[k].label or sc.name)
             TEST.pickBtns[k]:Enable()
         else
-            TEST.pickBtns[k]:SetText(TEST_RAIDS[k].name .. " (" .. BananaLoot:L("TEST_PICK_NODATA") .. ")")
+            TEST.pickBtns[k]:SetText((TEST_RAIDS[k].label or TEST_RAIDS[k].name) .. " (" .. BananaLoot:L("TEST_PICK_NODATA") .. ")")
             TEST.pickBtns[k]:Disable()
         end
     end
