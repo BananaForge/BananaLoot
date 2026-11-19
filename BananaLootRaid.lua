@@ -23,7 +23,7 @@ local PANEL_PAD = 12
 -- ============================================================
 local panel = CreateFrame("Frame", "BananaLootSRMenuPanel", srFrame)
 panel:SetWidth(PANEL_W)
-panel:SetHeight(280)
+panel:SetHeight(312)
 -- Der Fensterrahmen des SR-Fensters liegt optisch einige Pixel innerhalb der
 -- Frame-Kante, daher negativer Versatz, damit das Panel buendig anliegt.
 panel:SetPoint("TOPLEFT", srFrame, "TOPRIGHT", -5, -60)
@@ -285,8 +285,25 @@ autoMLBtn:SetScript("OnClick", function()
     if BananaLootAutoMLCheck then BananaLootAutoMLCheck:SetChecked(BananaLoot:GetAutoMasterLootEnabled()) end
 end)
 
+-- Raider-Sync: SR+-Uebersicht aller vorbereiteten Raids an BananaLoot Raider (Gruppe + Gilde) schicken
+local syncBtn = CreateFrame("Button", "BananaLootRaiderSyncBtn", panel, "UIPanelButtonTemplate")
+syncBtn:SetWidth(BTN_W)
+syncBtn:SetHeight(BTN_H)
+syncBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -268)
+syncBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot.SyncOverviewManual then BananaLoot:SyncOverviewManual() end
+end)
+syncBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(syncBtn, "ANCHOR_LEFT")
+    GameTooltip:SetText(BananaLoot:L("RAID_BTN_SYNC_TIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+syncBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
 local function RefreshSetButtonTexts()
     UpdateAutoMLBtn()
+    syncBtn:SetText(BananaLoot:L("RAID_BTN_SYNC"))
     deBtn:SetText(BananaLoot:L("RAID_BTN_SET_DE"))
     brBtn:SetText(BananaLoot:L("RAID_BTN_SET_BR"))
     RefreshSetFrame()

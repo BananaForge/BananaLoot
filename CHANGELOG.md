@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.70 (vs. v3.69)
+
+- **New:** **SR+ overview sync to BananaLoot Raider.** New file `BananaLootSRSync.lua`: BananaLoot sends the reservations (with SR+) of the active raid and, on request, of all prepared raids to BananaLoot Raider via addon messages (`OB`/`OI`/`OE`, request `OQ`). When: at raid start (raid/party **and guild**), when the active raid's reservations or SR+ change (raid/party only, at most every 40 s), when a Raider asks ("Ask again"), and with the new side-menu button **"Raider sync"** / `/bl sync` (all raids, raid/party + guild). Option "Send SR+ overview to Raider automatically" (Options > Network, default on).
+- **New:** The test run seeds several different SR+ values per item (two items with 4 and 3 reservers) in all twelve test raids and sends the overview of all test raids to Raider, so the list and the tooltips can be tried out.
+
 ## v3.69 (vs. v3.68)
 
 - **Changed:** Reference Raider version for the versions window is now 1.16 (3D boss model replaced by a still boss image in Raider).

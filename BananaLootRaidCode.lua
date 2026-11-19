@@ -417,7 +417,7 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
     if not text or (string.len(text) > 2 and string.sub(text, 3, 3) ~= "~") then return false end
     local t = string.sub(text, 1, 2)
     if t ~= "SR" and t ~= "SQ" and t ~= "SJ" and t ~= "SS" and t ~= "SH" and t ~= "SD" and t ~= "SA"
-        and t ~= "SW" and t ~= "SC" and t ~= "HQ" and t ~= "HA" and t ~= "HO" and t ~= "RV" then
+        and t ~= "SW" and t ~= "SC" and t ~= "HQ" and t ~= "HA" and t ~= "HO" and t ~= "RV" and t ~= "OQ" then
         return false
     end
     local fields = Split(text, "~")
@@ -487,6 +487,12 @@ function BananaLoot:HandleCodeMessage(text, sender, channel)
         return true
     end
     if t == "SC" then return true end   -- nur fuer Raider
+
+    -- OQ: Raider fragt die SR+-Uebersicht an (siehe BananaLootSRSync.lua)
+    if t == "OQ" then
+        if self.SRSyncOnRequest then self:SRSyncOnRequest(fields[2], channel) end
+        return true
+    end
 
     -- HQ/HA: wer hat BananaLoot? (Raid-Lead abgeben)
     if t == "HQ" then
@@ -668,7 +674,7 @@ end
 -- (gruen = aktuell, orange = veraltet, grau = keine Antwort). Quelle: HA/RV-Antworten auf HQ.
 -- BananaLoot.RAIDER_LATEST = neueste bekannte Raider-Version (bei jeder Raider-Aenderung mitpflegen).
 -- ============================================================
-BananaLoot.RAIDER_LATEST = "1.16"
+BananaLoot.RAIDER_LATEST = "1.17"
 local VW = { rows = {}, offset = 0 }
 local VROWS = 14
 BananaLoot_UI.versionWin = VW

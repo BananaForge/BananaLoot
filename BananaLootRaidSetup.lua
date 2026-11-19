@@ -1668,6 +1668,7 @@ function BananaLoot_UI:StartPreparedRaid(id)
     end
     S.PrefetchRaid(e.raidKey)
     if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end
+    if BananaLoot.SRSyncOnRaidStart then BananaLoot:SRSyncOnRaidStart() end   -- SR+-Uebersicht an Raider/Gilde
     return true
 end
 

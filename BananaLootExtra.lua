@@ -88,7 +88,7 @@ local optActiveTab = TAB_GENERAL
 local OPT_TAB_HEIGHTS = {
     [TAB_GENERAL] = 680,
     [TAB_AUTOMATION] = 750,
-    [TAB_NETWORK] = 500,
+    [TAB_NETWORK] = 620,
     [TAB_DISPLAY] = 820,
     [TAB_MANAGE] = 660,
     [6] = 680, -- Statistik (BananaLootStats.lua)
@@ -742,6 +742,22 @@ tradeTrackingHint:SetWidth(360)
 tradeTrackingHint:SetJustifyH("LEFT")
 RegisterLocaleText(tradeTrackingHint, "OPT_TRADETRACKING_HINT")
 
+-- SR+-Uebersicht automatisch an BananaLoot Raider senden (Felder in BananaLoot_UI wegen Locals-Limit)
+BananaLoot_UI.srSyncCheck = CreateFrame("CheckButton", "BananaLootSRSyncCheck", optFrame, "UICheckButtonTemplate")
+BananaLoot_UI.srSyncCheck:SetPoint("TOPLEFT", tradeTrackingHint, "BOTTOMLEFT", -2, -34)
+BananaLoot_UI.srSyncCheck:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    BananaLoot:SetSRSyncAuto(BananaLoot_UI.srSyncCheck:GetChecked() and true or false)
+end)
+BananaLoot_UI.srSyncLabel = optFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+BananaLoot_UI.srSyncLabel:SetPoint("LEFT", BananaLoot_UI.srSyncCheck, "RIGHT", 2, 0)
+RegisterLocaleText(BananaLoot_UI.srSyncLabel, "OPT_SRSYNC_LABEL")
+BananaLoot_UI.srSyncHint = optFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+BananaLoot_UI.srSyncHint:SetPoint("TOPLEFT", BananaLoot_UI.srSyncCheck, "BOTTOMLEFT", 2, 0)
+BananaLoot_UI.srSyncHint:SetWidth(360)
+BananaLoot_UI.srSyncHint:SetJustifyH("LEFT")
+RegisterLocaleText(BananaLoot_UI.srSyncHint, "OPT_SRSYNC_HINT")
+
 -- SR+-Wiederherstellung: zeigt das zuletzt durch eine neue Reservierung
 -- verdrängte Item je Spieler zum manuellen Zurückholen (siehe Extra 2e).
 local recoveryBtn = CreateFrame("Button", "BananaLootRecoveryBtn", optFrame, "UIPanelButtonTemplate")
@@ -939,7 +955,8 @@ AddToTab(TAB_AUTOMATION, {
 AddToTab(TAB_NETWORK, {
     rollSyncCheck, rollSyncLabel, rollSyncHint,
     rollSyncSenderCheck, rollSyncSenderLabel,
-    tradeTrackingCheck, tradeTrackingLabel, tradeTrackingHint })
+    tradeTrackingCheck, tradeTrackingLabel, tradeTrackingHint,
+    BananaLoot_UI.srSyncCheck, BananaLoot_UI.srSyncLabel, BananaLoot_UI.srSyncHint })
 
 AddToTab(TAB_DISPLAY, {
     languageLabel, langDeBtn, langEnBtn,
@@ -988,6 +1005,7 @@ function BananaLoot_UI:ToggleOptions()
         rollSyncSenderCheck:SetChecked(BananaLoot:GetRollSyncShowForSender())
         multiWinnerCheck:SetChecked(BananaLoot:GetMultiWinnerEnabled())
         tradeTrackingCheck:SetChecked(BananaLoot:GetTradeTrackingEnabled())
+        BananaLoot_UI.srSyncCheck:SetChecked(BananaLoot:GetSRSyncAuto())
         ShowOptTab(TAB_GENERAL)
         BananaLoot_UI:UpdateRaiderTestBtn()
         optFrame:Show()

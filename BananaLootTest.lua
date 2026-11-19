@@ -137,7 +137,8 @@ local function BuildScenario(def)
     for _ = 1, 2 do local id = take(); sc.rr[id] = true; add(id, "rr") end
     -- SR-Items (5) mit 2/2/3/1/2 Reservierern aus dem Fake-Roster (je Spieler genau eine
     -- erste SR; bei SR-Limit 2 haben ein paar Spieler zusaetzlich eine zweite)
-    local counts = { 2, 2, 3, 1, 2 }
+    -- Zwei Items mit 4 bzw. 3 Reservierern (gut zum Ansehen der SR+-Liste im Tooltip), der Rest je 1
+    local counts = { 4, 3, 1, 1, 1 }
     local srItems = {}
     local player = 0
     for k = 1, 5 do
@@ -354,6 +355,20 @@ end
 
 -- Fake-Roster und Loot-Slots des gewaehlten Test-Raids einspeisen. Hard Reserve, Bankreserve,
 -- Raid-Roll und SR setzt der echte Raid-Start (BananaLoot_UI:StartPreparedRaid).
+-- SR+ Demonstration fuer ALLE Test-Raids: jeder Reservierer eines Items hat einen eigenen SR+-Stand (0 bis 3), bei
+-- Items mit mehreren Reservierern also mehrere unterschiedliche SR+ - fuer die SR+-Uebersicht und den Tooltip in Raider.
+local function SeedStacks(sc)
+    for i = 1, table.getn(sc.items) do
+        local plan = sc.items[i]
+        if plan.reservers then
+            for ri = 1, table.getn(plan.reservers) do
+                local stack = math.mod(ri + i, 4)
+                if stack > 0 then BananaLoot:SetStack(TEST_ROSTER[plan.reservers[ri]][1], plan.id, stack) end
+            end
+        end
+    end
+end
+
 local function SeedTestData(sc)
     local names = {}
     for i = 1, table.getn(TEST_ROSTER) do
@@ -631,8 +646,12 @@ local function BeginRun()
     -- Gewaehlten Raid ueber den ECHTEN Weg starten: auswaehlen, dann "Raid starten"
     -- (Listen setzen, SR ins Hauptfenster, SR-Liste sperren).
     BananaLoot:SelectPreparedRaid(entries[chosen].id)
+    for k = 1, table.getn(scenarios) do
+        if scenarios[k] then SeedStacks(scenarios[k]) end
+    end
     SeedTestData(sc)
     BananaLoot_UI:StartPreparedRaid(entries[chosen].id)
+    if BananaLoot.SRSyncTestStart then BananaLoot:SRSyncTestStart() end   -- SR+-Uebersicht aller Test-Raids an Raider
     local srFrame = getglobal("BananaLootSRFrame")
     if srFrame then srFrame:Show() end
     if BananaLoot_UI and BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end

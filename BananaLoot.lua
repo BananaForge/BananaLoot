@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.69"
+BananaLoot.VERSION = "3.70"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -460,6 +460,13 @@ local LOCALE = {
         UI_WINNER_LABEL = "Gewinner: %s",
         UI_DE_LABEL = "Disenchanter: %s",
         UI_DE_NOT_SET_LABEL = "|cffff5555Kein Disenchanter gesetzt|r",
+        RAID_BTN_SYNC = "Raider-Sync",
+        RAID_BTN_SYNC_TIP = "Schickt die SR+-Übersicht aller vorbereiteten Raids an BananaLoot Raider (Raid/Gruppe und Gilde), damit alle sehen, wer was reserviert hat.",
+        SRS_SENT = "|cff33ff99BananaLoot|r: Raider-Sync: %d Raid(s), %d Item(s) gesendet (%d Kanal/Kanäle).",
+        SRS_NOGROUP = "|cffffcc00BananaLoot|r: Raider-Sync: weder in einer Gruppe noch in einer Gilde - nichts gesendet.",
+        SRS_NORAID = "|cffffcc00BananaLoot|r: Raider-Sync: kein vorbereiteter Raid vorhanden.",
+        OPT_SRSYNC_LABEL = "SR+-Übersicht automatisch an Raider senden",
+        OPT_SRSYNC_HINT = "Sendet die SR+-Übersicht des aktiven Raids beim Raid-Start (Raid und Gilde) und bei Änderungen (nur Raid/Gruppe, höchstens alle 40 Sekunden) an BananaLoot Raider. Mit dem Knopf \"Raider-Sync\" im Seitenmenü schickst du alle Raids.",
         RAID_BTN_SET_DE = "Disenchanter setzen",
         RAID_BTN_SET_BR = "BR-Looter setzen",
         SETPLAYER_DE_TITLE = "Disenchanter setzen",
@@ -1263,6 +1270,13 @@ local LOCALE = {
         UI_WINNER_LABEL = "Winner: %s",
         UI_DE_LABEL = "Disenchanter: %s",
         UI_DE_NOT_SET_LABEL = "|cffff5555No disenchanter set|r",
+        RAID_BTN_SYNC = "Raider sync",
+        RAID_BTN_SYNC_TIP = "Sends the SR+ overview of all prepared raids to BananaLoot Raider (raid/party and guild) so everyone can see who reserved what.",
+        SRS_SENT = "|cff33ff99BananaLoot|r: Raider sync: %d raid(s), %d item(s) sent (%d channel(s)).",
+        SRS_NOGROUP = "|cffffcc00BananaLoot|r: Raider sync: neither in a group nor in a guild - nothing sent.",
+        SRS_NORAID = "|cffffcc00BananaLoot|r: Raider sync: no prepared raid.",
+        OPT_SRSYNC_LABEL = "Send SR+ overview to Raider automatically",
+        OPT_SRSYNC_HINT = "Sends the SR+ overview of the active raid to BananaLoot Raider when the raid starts (raid and guild) and when it changes (raid/party only, at most every 40 seconds). Use the \"Raider sync\" button in the side menu to send all raids.",
         RAID_BTN_SET_DE = "Set Disenchanter",
         RAID_BTN_SET_BR = "Set BR Looter",
         SETPLAYER_DE_TITLE = "Set Disenchanter",
@@ -7047,6 +7061,9 @@ SlashCmdList["BANANALOOT"] = function(msg)
     elseif string.find(cmd, "^join ") then
         local code = Trim(string.sub(msg, 6))
         if BananaLoot.JoinRaidCode then BananaLoot:JoinRaidCode(code) end
+
+    elseif cmd == "sync" then
+        if BananaLoot.SyncOverviewManual then BananaLoot:SyncOverviewManual() end
 
     elseif cmd == "version" or cmd == "ver" then
         if BananaLoot.ShowGroupVersions then BananaLoot:ShowGroupVersions() end

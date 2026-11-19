@@ -194,6 +194,10 @@ BananaLoot never talks to the internet on its own.
   cannot load the link itself (no web access in WoW). CSV has no SR+ values.
 - The raid setup step "Soft Reserve" lists everything currently set: Hard Reserve, SR items with
   players (SR+), Raid Roll and bank reserve - handy to check a raidres.top import.
+- **SR+ overview for Raiders** (`/bl sync`, side-menu button "Raider sync"): BananaLoot sends the
+  reservations with SR+ of the active raid (at raid start to raid/party and guild, on changes to
+  raid/party) and of all prepared raids (button) to BananaLoot Raider, which shows them as a list and
+  as tooltips (also when clicking an item link posted in raid chat). Option in Options > Network.
 - **Versions window** (button in the main window): who in the raid has which BananaLoot and
   BananaLoot Raider version (green current, orange outdated, grey no answer).
 - **"Assign" button** (not for Hard Reserve): pick a raid member, then two confirmations
