@@ -176,6 +176,10 @@ function BananaLoot:SyncOverview(scope, includeGuild, channels)
     end
     if raids == 0 then return nil, "noraid" end
     S.lastSend = GetTime()
+    -- vollstaendige Sendung (Gruppe + Gilde): der Auto-Check muss denselben Stand nicht gleich nochmal senden
+    if includeGuild and (activeEntry or running) then
+        S.lastSig = Signature(self:BuildSROverview(activeEntry, true, session))
+    end
     return raids, items, table.getn(channels)
 end
 
