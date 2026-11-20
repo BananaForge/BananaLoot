@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.71"
+BananaLoot.VERSION = "3.72"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -3817,7 +3817,15 @@ function BananaLoot:AwardItem(itemID, winnerName, poolOverride, poolCodeOverride
         self.lootCounts[itemID] = remaining
     end
     if not remaining or remaining <= 0 then
-        if res then self.reservations[itemID] = nil end
+        -- Die Reservierung nur loeschen, wenn niemand mehr darauf steht. Haben
+        -- weitere Spieler dasselbe Item reserviert (Verlierer des Rolls), bleibt
+        -- ihre SR bestehen: sie behalten die Reservierung und bekommen beim
+        -- Raid-Ende ihr +1 SR+ (EndRaid erhoeht nur noch bestehende SR).
+        if res then
+            local others = false
+            for _ in pairs(res.players) do others = true break end
+            if not others then self.reservations[itemID] = nil end
+        end
         self.knownLootItems[itemID] = nil
         self.lootCounts[itemID] = nil
     end

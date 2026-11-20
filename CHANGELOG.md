@@ -1,5 +1,9 @@
 # BananaLoot Changelog
 
+## v3.72 (vs. v3.71)
+
+- **Fix:** If several players had reserved the same item and one of them won it, the item disappeared from the SR list of **all** of them and the losers got no SR+ at the end of the raid. Now only the winner's reservation is removed (and the winner's SR+ reset); the other reservers keep their SR and receive +1 SR+ when the raid ends. The reservation is only deleted once nobody is left on it.
+
 ## v3.71 (vs. v3.70)
 
 - **Fix:** After a manual "Raider sync" the automatic check no longer re-sends the same state a few seconds later.
