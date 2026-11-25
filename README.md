@@ -194,6 +194,8 @@ BananaLoot never talks to the internet on its own.
   cannot load the link itself (no web access in WoW). CSV has no SR+ values.
 - The raid setup step "Soft Reserve" lists everything currently set: Hard Reserve, SR items with
   players (SR+), Raid Roll and bank reserve - handy to check a raidres.top import.
+- **Discord export/import of a raid** (side menu > "Discord export/import"): exports a prepared raid (raid ID, timestamp, name, every player with SR and SR+, HR/BR/raid-roll lists) as text lines for a protected Discord channel; a stand-in pastes them into the same window and imports after a safety prompt. The import only replaces the local raid if the export is **newer** (same raid ID); BananaLoot Raider recognises the raid by that ID.
+- **LFM assistant with start time**: time + one time zone (CET/CEST, GMT/BST, EET/EEST, EST/EDT, PST/PDT, summer time automatic) + weekday, server time always added, "starts in N min" within the last hour (minutes updated on every post), plus a free text field.
 - **SR+ overview for Raiders** (`/bl sync`, side-menu button "Raider sync"): BananaLoot sends the
   reservations with SR+ of the active raid (at raid start to raid/party and guild, on changes to
   raid/party) and of all prepared raids (button) to BananaLoot Raider, which shows them as a list and

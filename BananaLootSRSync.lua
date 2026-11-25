@@ -3,7 +3,7 @@
 -- Addon-Nachricht an BananaLoot Raider (Raid-/Gruppen- und Gildenchat); Raider zeigt sie als Liste und als Tooltip.
 --
 -- Nachrichten (Praefix "BananaLoot", "~"-getrennt):
---   OB~id~A|N~raidKey~name       Beginn eines Raids (A = aktiver/laufender bzw. ausgewaehlter Raid)
+--   OB~id~A|N~raidKey~name~stamp       Beginn eines Raids (A = aktiver/laufender bzw. ausgewaehlter Raid)
 --   OI~id~itemID~teil~N:p,N:p    Reservierer eines Items mit SR+ (teil 1 ersetzt, danach angehaengt)
 --   OE~id~anzahl                 Ende; erst jetzt uebernimmt Raider die Daten
 --   OQ~cur|all                   Raider -> Loot-Master: Uebersicht (erneut) senden
@@ -57,7 +57,8 @@ end
 function BananaLoot:BuildSROverview(entry, active, session)
     local ov = { id = 0, name = "", key = "", active = active and true or false, items = {} }
     if entry then
-        ov.id, ov.name, ov.key = entry.id or 0, entry.name or "", entry.raidKey or ""
+        -- id = Raid-ID (uid, bleibt beim Discord-Export/-Import gleich), damit Raider denselben Raid wiedererkennt
+        ov.id, ov.name, ov.key = entry.uid or entry.id or 0, entry.name or "", entry.raidKey or ""
     elseif session then
         ov.name, ov.key = session.raidName or "", session.raidKey or ""
     end
@@ -133,7 +134,7 @@ local function SendOverview(ov, channels)
     local ids = SortedItemIds(ov)
     for c = 1, table.getn(channels) do
         local ch = channels[c]
-        Out("OB~" .. ov.id .. "~" .. (ov.active and "A" or "N") .. "~" .. Clean(ov.key) .. "~" .. Clean(ov.name), ch)
+        Out("OB~" .. ov.id .. "~" .. (ov.active and "A" or "N") .. "~" .. Clean(ov.key) .. "~" .. Clean(ov.name) .. "~" .. time(), ch)
         for i = 1, table.getn(ids) do
             local list = ov.items[ids[i]]
             local part, text, n = 1, "", 0
@@ -168,6 +169,7 @@ function BananaLoot:SyncOverview(scope, includeGuild, channels)
         for i = 1, table.getn(list) do
             local e = list[i]
             local isActive = activeEntry and activeEntry.id == e.id
+            if self.EnsureRaidUID then self:EnsureRaidUID(e) end
             send(self:BuildSROverview(e, isActive, isActive and session or nil))
         end
         if running and not activeEntry then send(self:BuildSROverview(nil, true, session)) end

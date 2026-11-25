@@ -23,7 +23,7 @@ local PANEL_PAD = 12
 -- ============================================================
 local panel = CreateFrame("Frame", "BananaLootSRMenuPanel", srFrame)
 panel:SetWidth(PANEL_W)
-panel:SetHeight(312)
+panel:SetHeight(344)
 -- Der Fensterrahmen des SR-Fensters liegt optisch einige Pixel innerhalb der
 -- Frame-Kante, daher negativer Versatz, damit das Panel buendig anliegt.
 panel:SetPoint("TOPLEFT", srFrame, "TOPRIGHT", -5, -60)
@@ -301,8 +301,25 @@ syncBtn:SetScript("OnEnter", function()
 end)
 syncBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+-- Discord-Export/-Import eines Raids (siehe BananaLootRaidIO.lua)
+local ioBtn = CreateFrame("Button", "BananaLootRaidIOMenuBtn", panel, "UIPanelButtonTemplate")
+ioBtn:SetWidth(BTN_W)
+ioBtn:SetHeight(BTN_H)
+ioBtn:SetPoint("TOPLEFT", panel, "TOPLEFT", PANEL_PAD, -300)
+ioBtn:SetScript("OnClick", function()
+    BananaLoot:PlayClickSound()
+    if BananaLoot_UI.ShowRaidIO then BananaLoot_UI:ShowRaidIO() end
+end)
+ioBtn:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(ioBtn, "ANCHOR_LEFT")
+    GameTooltip:SetText(BananaLoot:L("RAID_BTN_IO_TIP"), 1, 1, 1, 1, 1)
+    GameTooltip:Show()
+end)
+ioBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
 local function RefreshSetButtonTexts()
     UpdateAutoMLBtn()
+    ioBtn:SetText(BananaLoot:L("RAID_BTN_IO"))
     syncBtn:SetText(BananaLoot:L("RAID_BTN_SYNC"))
     deBtn:SetText(BananaLoot:L("RAID_BTN_SET_DE"))
     brBtn:SetText(BananaLoot:L("RAID_BTN_SET_BR"))

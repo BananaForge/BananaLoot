@@ -62,7 +62,7 @@ Button "Code posten" (`CODE_POST_TEXT`), Kanal Raid, sonst Gruppe/Gilde:
 `WHISPER_*`: SR bestätigt ("%s wurde für dich reserviert" + SR+-Bonus/Ersetzt-Hinweis), Item nicht erkannt, Link fehlt, Limit erreicht, Hard Reserve / Bankreserve nicht reservierbar, SR-Liste gesperrt, Befehl unbekannt, eigene SR-Liste / "Ebenfalls auf SR", HR-Liste, Raidres-Import-Hinweise (`WHISPER_RAIDRES_*`).
 
 ## 9) Weltkanal – LFM
-LFM-Assistent/-Fenster: der von dir erzeugte bzw. bearbeitete Text (englisch), im eingestellten Intervall, `[Item]` wird zum Link.
+LFM-Assistent/-Fenster: der von dir erzeugte bzw. bearbeitete Text (englisch), im eingestellten Intervall, `[Item]` wird zum Link. Optional mit Startzeit: `Sat 20:00 (CET), 20:00 (ServerTime)` bzw. `starts in 45 min` (aus dem Platzhalter `{TIME}`, bei jedem Posten neu berechnet) und Freitext.
 
 ## Was BananaLoot Raider postet
 Nur Whispers an den Lootmaster: `sr [Item]` / `unsr [Item]` (Fenster "SR einreichen" / "Whisper-SR"). Keine Raid-Chat-Texte.

@@ -1489,3 +1489,19 @@ BananaLoot schickt die Reservierungen mit SR+ per Addon-Nachricht an BananaLoot 
 - per Knopf "Raider-Sync" im Seitenmenue bzw. /bl sync: alle vorbereiteten Raids (Raid/Gruppe + Gilde).
 Raider zeigt sie als Liste nach Item sortiert, als Tooltip in der SR-Auswahlliste und im Item-Fenster, wenn man
 einen im Raidchat geposteten Item-Link anklickt. Im Testlauf haben die Test-Raids mehrere SR+ pro Item.
+
+
+Discord-Export/-Import eines Raids (ab v3.73)
+---------------------------------------------
+Seitenmenue > "Discord Export/Import". Das Fenster zeigt den Export des gewaehlten Raids (mit < > wechseln, "Neu exportieren"
+setzt einen neuen Zeitstempel). Der Text besteht aus Zeilen "BLX/1/2/...", jede Zeile als eigene Nachricht in den geschuetzten
+Discord-Kanal posten. Enthalten: Raid-ID, Zeitstempel, Raid-Name/-Typ/-Code, alle Spieler mit SR und SR+, HR-, BR- und Raid-Roll-Liste.
+Import: Zeilen aus Discord in dasselbe Fenster einfuegen, "Importieren", Sicherheitsabfrage bestaetigen. Ersetzt wird nur, wenn der Export
+NEUER ist als der eigene Stand desselben Raids (gleiche Raid-ID); ein aelterer Export wird abgelehnt, ein unbekannter Raid neu angelegt.
+Eine Pruefsumme erkennt abgeschnittene oder veraenderte Texte. BananaLoot Raider erkennt den Raid an der Raid-ID.
+
+LFM mit Startzeit (ab v3.74)
+----------------------------
+LFM-Assistent > Zeile "Start": Uhrzeit (z.B. 20:00), EINE Zeitzone (CET/CEST, GMT/BST, EET/EEST, EST/EDT, PST/PDT - Sommerzeit wird
+automatisch berechnet) und Tag (Heute, Mo-So). Im Text stehen Wochentag (oder "today"), die Zeit in der Zone und immer die Server-Zeit.
+Ab einer Stunde vor dem Start steht nur "starts in N min" (bei jedem Posten neu berechnet). Dazu ein Freitext-Feld. Der Text bleibt englisch.

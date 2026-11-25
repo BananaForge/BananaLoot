@@ -1,5 +1,14 @@
 # BananaLoot Changelog
 
+## v3.74 (vs. v3.73)
+
+- **New:** **LFM text with start time and time zone.** The LFM assistant has a new row "Start": enter a time (e.g. `20:00`), pick **one** time zone (CET/CEST, GMT/BST, EET/EEST, EST/EDT, PST/PDT - summer/winter time is calculated automatically for the date) and a day (Today or Mon-Sun). The text always adds the **server time** and the weekday (or "today"): `... - Sat 20:00 (CET), 20:00 (ServerTime) - ...`. Within one hour before the start it only says `starts in 45 min`; the minutes are **recalculated every time the message is posted** (the saved LFM text contains the placeholder `{TIME}`). New **free text** field (added after the settings, before "/w for invite"). Roles, time and the HR note are always kept when the line is too long; HR items are dropped first, the free text is shortened last. The text stays English.
+
+## v3.73 (vs. v3.72)
+
+- **New:** **Discord export/import of a raid** (side menu > "Discord export/import", new file `BananaLootRaidIO.lua`). The export contains the raid ID, a timestamp, the raid name/type/code, every player with their SR and SR+, and the HR, BR and raid-roll lists. It is split into lines that each fit into one Discord message (`BLX/part/total/...`) and carries a checksum, so truncated or altered text is detected. Import runs in the same window: paste the text, click "Import", confirm the safety prompt. The import **only replaces the local raid if the export is newer** (same raid ID); an older export is refused, an unknown raid is created as a new one. The group-wide addon sync of the raid lists itself is not part of this.
+- **New:** Every prepared raid now has a stable **raid ID (uid)** and a timestamp. The SR+ overview sent to BananaLoot Raider uses this ID and carries the send time, so Raider recognises the same raid even when a stand-in imported it and sends it from their client (the newer state wins).
+
 ## v3.72 (vs. v3.71)
 
 - **Fix:** If several players had reserved the same item and one of them won it, the item disappeared from the SR list of **all** of them and the losers got no SR+ at the end of the raid. Now only the winner's reservation is removed (and the winner's SR+ reset); the other reservers keep their SR and receive +1 SR+ when the raid ends. The reservation is only deleted once nobody is left on it.

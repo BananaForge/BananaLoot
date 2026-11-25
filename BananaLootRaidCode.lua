@@ -126,6 +126,7 @@ function BananaLoot:EnsurePreparedCode(entry)
     if not entry.code then entry.code = self:GenerateRaidCode(entry.raidKey) end
     if entry.srOpen == nil then entry.srOpen = true end
     if not entry.sr then entry.sr = {} end
+    if self.EnsureRaidUID then self:EnsureRaidUID(entry) end   -- Raid-ID + Stand fuer Export/Import und Raider
 end
 
 function BananaLoot:CountPreparedSR(entry)
@@ -674,7 +675,7 @@ end
 -- (gruen = aktuell, orange = veraltet, grau = keine Antwort). Quelle: HA/RV-Antworten auf HQ.
 -- BananaLoot.RAIDER_LATEST = neueste bekannte Raider-Version (bei jeder Raider-Aenderung mitpflegen).
 -- ============================================================
-BananaLoot.RAIDER_LATEST = "1.18"
+BananaLoot.RAIDER_LATEST = "1.19"
 local VW = { rows = {}, offset = 0 }
 local VROWS = 14
 BananaLoot_UI.versionWin = VW

@@ -5,7 +5,7 @@
 -- Vanilla 1.12 kompatibel (Lua 5.0 -> KEIN "#" Operator, KEIN string.gmatch!)
 
 BananaLoot = {}
-BananaLoot.VERSION = "3.72"
+BananaLoot.VERSION = "3.74"
 BananaLoot.DB_VERSION = 1 -- bei künftigen Strukturänderungen an BananaLoot_DB erhöhen und Migration in MigrateDB() ergänzen
 
 -- ============================================================
@@ -292,6 +292,9 @@ local LOCALE = {
         MINI_TOOLTIP = "Loot-Methode wechseln (GL = Gruppenloot, ML = Masterloot). Ziehen verschiebt den Button.",
         MINI_ON = "|cff33ff99BananaLoot|r: GL/ML-Button eingeblendet.",
         MINI_OFF = "|cff33ff99BananaLoot|r: GL/ML-Button ausgeblendet (wieder einblenden mit /bl mini).",
+        LFMB_TIME_LABEL = "Start:",
+        LFMB_TIME_HINT = "Uhrzeit in der gewählten Zeitzone, z.B. 20:00. Server-Zeit wird automatisch ergänzt; ab 1 Stunde vorher steht \"starts in N min\".",
+        LFMB_FREE_LABEL = "Freitext:",
         LFMB_OPEN_BTN = "Text erstellen...",
         LFMB_OPEN_TIP = "LFM-Text aus einem vorbereiteten Raid und der Suche (Rolle, Klasse, Spezialisierung) erzeugen",
         LFMB_TITLE = "LFM-Assistent",
@@ -462,6 +465,24 @@ local LOCALE = {
         UI_DE_NOT_SET_LABEL = "|cffff5555Kein Disenchanter gesetzt|r",
         RAID_BTN_SYNC = "Raider-Sync",
         RAID_BTN_SYNC_TIP = "Schickt die SR+-Übersicht aller vorbereiteten Raids an BananaLoot Raider (Raid/Gruppe und Gilde), damit alle sehen, wer was reserviert hat.",
+        RAID_BTN_IO = "Discord Export/Import",
+        RAID_BTN_IO_TIP = "Exportiert einen Raid (Name, Spieler mit SR und SR+, HR/BR/Raid-Roll-Liste, Zeitstempel) als Text für einen geschützten Discord-Kanal bzw. importiert so einen Text.",
+        IO_TITLE = "Raid Export / Import (Discord)",
+        IO_REFRESH = "Neu exportieren",
+        IO_HINT = "Export: Text kopieren (Strg+A, Strg+C), jede Zeile als eigene Discord-Nachricht. Import: Text(e) hier einfügen und Importieren klicken.",
+        IO_IMPORT = "Importieren",
+        IO_CLOSE = "Schließen",
+        IO_NORAID = "Kein vorbereiteter Raid vorhanden.",
+        IO_EXPORTED = "Export erstellt, Stand %s.",
+        IO_ERR_EMPTY = "Das Textfeld ist leer - bitte den Export aus Discord einfügen.",
+        IO_ERR_INCOMPLETE = "Export unvollständig: %d von %d Teilen gefunden. Bitte alle Zeilen einfügen.",
+        IO_ERR_CHECKSUM = "Prüfsumme stimmt nicht - der Text wurde beim Kopieren verändert oder abgeschnitten.",
+        IO_ERR_FORMAT = "Das ist kein BananaLoot-Raid-Export.",
+        IO_OLDER = "Nicht importiert: der Export (Stand %s) ist nicht neuer als dein lokaler Raid (Stand %s).",
+        IO_CONFIRM_NEW = "Raid \"%s\" als NEUEN Raid importieren?\n\n%d Spieler, %d Reservierungen\nStand des Exports: %s",
+        IO_CONFIRM_REPLACE = "Raid \"%s\" importieren und deinen lokalen Stand ERSETZEN?\n\n%d Spieler, %d Reservierungen\nExport: %s\nDein Stand: %s",
+        IO_DONE_NEW = "Raid \"%s\" importiert (%d Spieler) und neu angelegt.",
+        IO_DONE_REPLACED = "Raid \"%s\" importiert (%d Spieler), lokaler Stand ersetzt.",
         SRS_SENT = "|cff33ff99BananaLoot|r: Raider-Sync: %d Raid(s), %d Item(s) gesendet (%d Kanal/Kanäle).",
         SRS_NOGROUP = "|cffffcc00BananaLoot|r: Raider-Sync: weder in einer Gruppe noch in einer Gilde - nichts gesendet.",
         SRS_NORAID = "|cffffcc00BananaLoot|r: Raider-Sync: kein vorbereiteter Raid vorhanden.",
@@ -1102,6 +1123,9 @@ local LOCALE = {
         MINI_TOOLTIP = "Switch loot method (GL = group loot, ML = master loot). Drag to move the button.",
         MINI_ON = "|cff33ff99BananaLoot|r: GL/ML button shown.",
         MINI_OFF = "|cff33ff99BananaLoot|r: GL/ML button hidden (show it again with /bl mini).",
+        LFMB_TIME_LABEL = "Start:",
+        LFMB_TIME_HINT = "Time in the chosen time zone, e.g. 20:00. Server time is added automatically; within 1 hour before the start it says \"starts in N min\".",
+        LFMB_FREE_LABEL = "Free text:",
         LFMB_OPEN_BTN = "Build text...",
         LFMB_OPEN_TIP = "Build the LFM text from a prepared raid and what you look for (role, class, spec)",
         LFMB_TITLE = "LFM assistant",
@@ -1272,6 +1296,24 @@ local LOCALE = {
         UI_DE_NOT_SET_LABEL = "|cffff5555No disenchanter set|r",
         RAID_BTN_SYNC = "Raider sync",
         RAID_BTN_SYNC_TIP = "Sends the SR+ overview of all prepared raids to BananaLoot Raider (raid/party and guild) so everyone can see who reserved what.",
+        RAID_BTN_IO = "Discord export/import",
+        RAID_BTN_IO_TIP = "Exports a raid (name, players with SR and SR+, HR/BR/raid roll lists, timestamp) as text for a protected Discord channel, or imports such a text.",
+        IO_TITLE = "Raid export / import (Discord)",
+        IO_REFRESH = "Export again",
+        IO_HINT = "Export: copy the text (Ctrl+A, Ctrl+C), post every line as its own Discord message. Import: paste the text(s) here and click Import.",
+        IO_IMPORT = "Import",
+        IO_CLOSE = "Close",
+        IO_NORAID = "No prepared raid available.",
+        IO_EXPORTED = "Export created, state %s.",
+        IO_ERR_EMPTY = "The text box is empty - please paste the export from Discord.",
+        IO_ERR_INCOMPLETE = "Export incomplete: found %d of %d parts. Please paste all lines.",
+        IO_ERR_CHECKSUM = "Checksum mismatch - the text was changed or cut off while copying.",
+        IO_ERR_FORMAT = "This is not a BananaLoot raid export.",
+        IO_OLDER = "Not imported: the export (state %s) is not newer than your local raid (state %s).",
+        IO_CONFIRM_NEW = "Import raid \"%s\" as a NEW raid?\n\n%d players, %d reservations\nExport state: %s",
+        IO_CONFIRM_REPLACE = "Import raid \"%s\" and REPLACE your local state?\n\n%d players, %d reservations\nExport: %s\nYour state: %s",
+        IO_DONE_NEW = "Raid \"%s\" imported (%d players) and created.",
+        IO_DONE_REPLACED = "Raid \"%s\" imported (%d players), local state replaced.",
         SRS_SENT = "|cff33ff99BananaLoot|r: Raider sync: %d raid(s), %d item(s) sent (%d channel(s)).",
         SRS_NOGROUP = "|cffffcc00BananaLoot|r: Raider sync: neither in a group nor in a guild - nothing sent.",
         SRS_NORAID = "|cffffcc00BananaLoot|r: Raider sync: no prepared raid.",
@@ -6642,6 +6684,8 @@ local function PostLFMMessage()
     end
 
     -- [Item-Name] des LFM-Assistenten -> anklickbarer Item-Link
+    -- {TIME} -> aktuelle Startzeit bzw. "starts in N min" (bei jedem Posten neu berechnet)
+    if BananaLoot.LFMExpandTime then text = BananaLoot:LFMExpandTime(text) end
     if BananaLoot.LFMSubstituteLinks then text = BananaLoot:LFMSubstituteLinks(text) end
     SendChatMessage(text, "CHANNEL", nil, channelIndex)
     BananaLoot.lfmLastPostTime = GetTime()
