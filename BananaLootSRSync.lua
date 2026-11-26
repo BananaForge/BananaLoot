@@ -65,7 +65,8 @@ function BananaLoot:BuildSROverview(entry, active, session)
     local bonus = self:GetBonusPerStack() or 0
     local function add(itemID, player)
         if not ov.items[itemID] then ov.items[itemID] = {} end
-        table.insert(ov.items[itemID], { n = player, p = (self:GetStack(player, itemID) or 0) * bonus })
+        local stack = (entry and not active) and self:PreparedStack(entry, player, itemID) or self:GetStack(player, itemID)
+        table.insert(ov.items[itemID], { n = player, p = (stack or 0) * bonus })
     end
     if active then
         -- laufender/ausgewaehlter Raid: die aktuellen Reservierungen (auch per Fluestern eingegangene)
@@ -78,7 +79,8 @@ function BananaLoot:BuildSROverview(entry, active, session)
             end
         end
     elseif entry then
-        for player, ids in pairs(entry.sr or {}) do
+        -- gesicherter Stand des (nicht ausgewaehlten) Raids: seine eigenen SR und SR+
+        for player, ids in pairs(self:PreparedSRMap(entry)) do
             for i = 1, table.getn(ids) do add(ids[i], player) end
         end
     end

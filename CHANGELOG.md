@@ -1,5 +1,10 @@
 # BananaLoot Changelog
 
+## v3.75 (vs. v3.74)
+
+- **Fix (important):** **Every prepared raid now has its own data.** Before, SR (also from raidres.top imports), SR+, Hard Reserve, Bank Reserve and Raid Roll lists were shared by all raids, so creating a new raid (e.g. Zul'Gurub) and importing raidres data overwrote the lists of the raid before (e.g. Kara10). Now: a **new raid starts completely empty** (no players, no SR/SR+, only the HR/BR/Raid-Roll selection from its setup), you can import and set everything independently, and when you **switch back** to an older raid it comes back with exactly the state you left it in (SR, SR+, HR, BR, Raid Roll, SR+ restore list). Only the selected/running raid is "live"; the others are stored in the raid itself.
+- The Discord export/import and the SR+ overview for BananaLoot Raider use the raid's own data as well (also for raids that are not selected). An import into a raid replaces only that raid.
+
 ## v3.74 (vs. v3.73)
 
 - **New:** **LFM text with start time and time zone.** The LFM assistant has a new row "Start": enter a time (e.g. `20:00`), pick **one** time zone (CET/CEST, GMT/BST, EET/EEST, EST/EDT, PST/PDT - summer/winter time is calculated automatically for the date) and a day (Today or Mon-Sun). The text always adds the **server time** and the weekday (or "today"): `... - Sat 20:00 (CET), 20:00 (ServerTime) - ...`. Within one hour before the start it only says `starts in 45 min`; the minutes are **recalculated every time the message is posted** (the saved LFM text contains the placeholder `{TIME}`). New **free text** field (added after the settings, before "/w for invite"). Roles, time and the HR note are always kept when the line is too long; HR items are dropped first, the free text is shortened last. The text stays English.

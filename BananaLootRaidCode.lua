@@ -320,7 +320,12 @@ end
 function BananaLoot:CodeOnSelectionChanged(old, new)
     local session = self:GetRaidSession()
     if session and session.running then return end
-    if old and (not new or old.id ~= new.id) then self:CodeClearLive(old) end
+    if new and self.RaidStateSwitch and (old or new.snap) and not (old and old.id == new.id) then
+        -- jeder Raid hat seine eigenen Daten (SR, SR+, HR, BR, Raid-Roll): alten Stand sichern, neuen laden
+        self:RaidStateSwitch(old, new)
+    elseif old and (not new or old.id ~= new.id) then
+        self:CodeClearLive(old)
+    end
     if new then
         self:EnsurePreparedCode(new)
         self:SetSRLocked(new.srOpen == false)   -- Sperre auf den Status des Raids stellen

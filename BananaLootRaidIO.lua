@@ -50,6 +50,138 @@ local function SortedKeys(set)
 end
 
 -- ------------------------------------------------------------
+-- Eigene Daten je Raid
+-- ------------------------------------------------------------
+-- Jeder vorbereitete Raid hat seine EIGENEN Daten: Reservierungen (SR), SR+-Staende, Hard Reserve, Bankreserve,
+-- Raid-Roll-Liste und die SR+-Wiederherstellungsliste. Aktiv (live) ist immer nur der ausgewaehlte/laufende Raid;
+-- beim Wechsel wird der Stand des alten Raids in entry.snap gesichert und der des neuen geladen. Ein neuer Raid
+-- hat keinen Snapshot und startet daher leer (nur die HR/BR/Raid-Roll-Auswahl aus seiner Einrichtung).
+local function DeepCopy(v)
+    if type(v) ~= "table" then return v end
+    local t = {}
+    for k, x in pairs(v) do t[k] = DeepCopy(x) end
+    return t
+end
+
+function BananaLoot:RaidStateSnapshot()
+    BananaLoot.EnsureDB()
+    return {
+        reservations = DeepCopy(self.reservations),
+        playerReservedItems = DeepCopy(self.playerReservedItems),
+        players = DeepCopy(BananaLoot_DB.players),
+        lastOverwritten = DeepCopy(BananaLoot_DB.lastOverwritten),
+        hardReserves = DeepCopy(BananaLoot_DB.hardReserves),
+        bankReserves = DeepCopy(BananaLoot_DB.bankReserves),
+        raidRolls = DeepCopy(BananaLoot_DB.raidRolls),
+    }
+end
+
+function BananaLoot:RaidStateWipe()
+    BananaLoot.EnsureDB()
+    self.reservations = {}
+    self.playerReservedItems = {}
+    BananaLoot_DB.players = {}
+    BananaLoot_DB.lastOverwritten = {}
+    BananaLoot_DB.hardReserves = {}
+    BananaLoot_DB.bankReserves = {}
+    BananaLoot_DB.raidRolls = {}
+end
+
+function BananaLoot:RaidStateRestore(snap)
+    BananaLoot.EnsureDB()
+    self.reservations = DeepCopy(snap.reservations or {})
+    self.playerReservedItems = DeepCopy(snap.playerReservedItems or {})
+    BananaLoot_DB.players = DeepCopy(snap.players or {})
+    BananaLoot_DB.lastOverwritten = DeepCopy(snap.lastOverwritten or {})
+    BananaLoot_DB.hardReserves = DeepCopy(snap.hardReserves or {})
+    BananaLoot_DB.bankReserves = DeepCopy(snap.bankReserves or {})
+    BananaLoot_DB.raidRolls = DeepCopy(snap.raidRolls or {})
+end
+
+-- Die live gepflegten HR-/BR-/Raid-Roll-Listen (auch per raidres.top-Import oder "Verwalten" geaendert) in die
+-- Auswahl des Raids uebernehmen, begrenzt auf die Items dieses Raids.
+function BananaLoot:SyncEntryListsFromLive(entry)
+    -- nur fuer Raids, deren Listen schon einmal live angewendet wurden (sonst koennten die Listen aus der
+    -- Einrichtung durch fremde, noch nicht angewendete Live-Daten ersetzt werden)
+    if not entry.seeded then return end
+    BananaLoot.EnsureDB()
+    local pool = self:GetSetupPool(entry.raidKey)
+    local function live(db)
+        local set = {}
+        for id in pairs(db or {}) do
+            if pool[id] or not next(pool) then set[id] = true end
+        end
+        return set
+    end
+    entry.hr = live(BananaLoot_DB.hardReserves)
+    entry.br = live(BananaLoot_DB.bankReserves)
+    entry.rr = live(BananaLoot_DB.raidRolls)
+end
+
+-- Auswahl im Hauptfenster gewechselt (nicht bei laufendem Raid): Stand des alten Raids sichern, den des neuen laden.
+function BananaLoot:RaidStateSwitch(old, new)
+    if not new then return end
+    if old and old.id == new.id then return end
+    if old then
+        self:SyncEntryListsFromLive(old)
+        old.snap = self:RaidStateSnapshot()
+        old.live = nil
+    end
+    if old or new.snap then self:RaidStateWipe() end
+    if new.snap then
+        self:RaidStateRestore(new.snap)
+        new.snap = nil           -- ab jetzt gilt der Live-Stand
+    end
+    new.live = nil
+    -- HR/BR/Raid-Roll-Auswahl aus der Einrichtung des Raids (gewinnt bei Aenderungen im Raid-Dialog)
+    if new.raidKey then self:ApplyRaidSetup(new.raidKey, new.hr or {}, new.rr or {}, new.br or {}, true) end
+    new.seeded = true
+    self:SaveSession()
+end
+
+local function AddResPlayers(out, reservations)
+    for itemID, res in pairs(reservations or {}) do
+        if res and res.order then
+            for i = 1, table.getn(res.order) do
+                local name = res.order[i]
+                if not (res.temp and res.temp[name]) then
+                    out[name] = out[name] or {}
+                    table.insert(out[name], itemID)
+                end
+            end
+        end
+    end
+end
+
+-- SR eines Raids als Spieler -> { Item-IDs }, unabhaengig davon, ob er live oder gesichert ist
+function BananaLoot:PreparedSRMap(entry)
+    local out = {}
+    if self:IsActivePrepared(entry) then
+        AddResPlayers(out, self.reservations)
+    else
+        if entry.snap then AddResPlayers(out, entry.snap.reservations) end
+        for player, ids in pairs(entry.sr or {}) do
+            out[player] = out[player] or {}
+            local have = {}
+            for i = 1, table.getn(out[player]) do have[out[player][i]] = true end
+            for i = 1, table.getn(ids) do
+                if not have[ids[i]] then table.insert(out[player], ids[i]) end
+            end
+        end
+    end
+    return out
+end
+
+-- SR+-Stand eines Spielers auf ein Item in DIESEM Raid
+function BananaLoot:PreparedStack(entry, player, itemID)
+    if self:IsActivePrepared(entry) or not (entry.snap and entry.snap.players) then
+        return self:GetStack(player, itemID)
+    end
+    local p = entry.snap.players[player]
+    return (p and p[itemID]) or 0
+end
+
+-- ------------------------------------------------------------
 -- Raid-ID und Zeitstempel
 -- ------------------------------------------------------------
 function BananaLoot:EnsureRaidUID(entry)
@@ -75,26 +207,7 @@ end
 -- Spieler -> Liste der Item-IDs: beim aktiven (laufenden/ausgewaehlten) Raid die aktuellen Reservierungen,
 -- sonst die im Raid gespeicherten SR.
 local function CollectSR(entry)
-    local out = {}
-    if BananaLoot:IsActivePrepared(entry) then
-        for itemID, res in pairs(BananaLoot.reservations or {}) do
-            if res and res.order then
-                for i = 1, table.getn(res.order) do
-                    local name = res.order[i]
-                    if not (res.temp and res.temp[name]) then
-                        out[name] = out[name] or {}
-                        table.insert(out[name], itemID)
-                    end
-                end
-            end
-        end
-    else
-        for player, ids in pairs(entry.sr or {}) do
-            out[player] = {}
-            for i = 1, table.getn(ids) do table.insert(out[player], ids[i]) end
-        end
-    end
-    return out
+    return BananaLoot:PreparedSRMap(entry)
 end
 
 local function IdList(set)
@@ -124,10 +237,12 @@ function BananaLoot:ExportPreparedRaid(entry)
         table.sort(sr[p])
         for k = 1, table.getn(sr[p]) do
             local id = sr[p][k]
-            table.insert(parts, id .. ":" .. (self:GetStack(p, id) or 0))
+            table.insert(parts, id .. ":" .. (self:PreparedStack(entry, p, id) or 0))
         end
         table.insert(rec, "S^" .. Clean(p, 24) .. "^" .. table.concat(parts, ","))
     end
+    -- aktiver Raid: die live gepflegten Listen (auch per raidres.top-Import/Verwalten geaendert)
+    if self:IsActivePrepared(entry) then self:SyncEntryListsFromLive(entry) end
     table.insert(rec, "H^" .. IdList(entry.hr))
     table.insert(rec, "B^" .. IdList(entry.br))
     table.insert(rec, "R^" .. IdList(entry.rr))
@@ -249,10 +364,7 @@ function BananaLoot:ApplyRaidImport(data)
         table.insert(list, entry)
         created = true
     end
-    local session = self:GetRaidSession()
-    local running = self:IsRunningPrepared(entry)
-    local selected = (not running) and self:IsActivePrepared(entry)
-    if selected then self:CodeClearLive(entry) end
+    local active = self:IsActivePrepared(entry)   -- laufender oder ausgewaehlter Raid: seine Daten sind "live"
 
     entry.uid = data.uid
     entry.stamp = data.stamp
@@ -262,18 +374,32 @@ function BananaLoot:ApplyRaidImport(data)
     if data.code and data.code ~= "" then entry.code = data.code end
     entry.live = nil
     entry.sr = {}
+    local stacks = {}       -- Spieler -> { [Item] = SR+ }
     for player, items in pairs(data.sr) do
         local ids = {}
+        stacks[player] = {}
         for i = 1, table.getn(items) do
             table.insert(ids, items[i].id)
-            BananaLoot_DB.players[player] = BananaLoot_DB.players[player] or {}
-            BananaLoot_DB.players[player][items[i].id] = items[i].plus
+            stacks[player][items[i].id] = items[i].plus
         end
         entry.sr[player] = ids
     end
     self:EnsurePreparedCode(entry)
 
-    if selected or running then self:CodeApplyLive(entry) end
+    if active then
+        -- Live-Stand komplett durch den Export ersetzen (nur dieser Raid, andere Raids bleiben unberuehrt)
+        self:RaidStateWipe()
+        BananaLoot_DB.players = stacks
+        if entry.raidKey then self:ApplyRaidSetup(entry.raidKey, entry.hr, entry.rr, entry.br, true) end
+        entry.seeded = true
+        self:CodeApplyLive(entry)
+    else
+        -- nicht ausgewaehlt: den gesicherten Stand dieses Raids ersetzen (die live Daten gehoeren dem aktiven Raid)
+        entry.snap = {
+            reservations = {}, playerReservedItems = {}, players = stacks, lastOverwritten = {},
+            hardReserves = {}, bankReserves = {}, raidRolls = {},
+        }
+    end
     self:SaveSession()
     if BananaLoot_UI then
         if BananaLoot_UI.Refresh then BananaLoot_UI:Refresh() end

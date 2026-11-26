@@ -357,13 +357,29 @@ end
 -- Raid-Roll und SR setzt der echte Raid-Start (BananaLoot_UI:StartPreparedRaid).
 -- SR+ Demonstration fuer ALLE Test-Raids: jeder Reservierer eines Items hat einen eigenen SR+-Stand (0 bis 3), bei
 -- Items mit mehreren Reservierern also mehrere unterschiedliche SR+ - fuer die SR+-Uebersicht und den Tooltip in Raider.
-local function SeedStacks(sc)
+-- Jeder Raid hat seine eigenen SR+-Staende: der gewaehlte (aktive) Raid live, alle anderen in ihrem gesicherten Stand.
+local function SeedStacks(sc, entry, live)
+    if not live then
+        entry.snap = entry.snap or {
+            reservations = {}, playerReservedItems = {}, players = {}, lastOverwritten = {},
+            hardReserves = {}, bankReserves = {}, raidRolls = {},
+        }
+    end
     for i = 1, table.getn(sc.items) do
         local plan = sc.items[i]
         if plan.reservers then
             for ri = 1, table.getn(plan.reservers) do
                 local stack = math.mod(ri + i, 4)
-                if stack > 0 then BananaLoot:SetStack(TEST_ROSTER[plan.reservers[ri]][1], plan.id, stack) end
+                if stack > 0 then
+                    local pname = TEST_ROSTER[plan.reservers[ri]][1]
+                    if live then
+                        BananaLoot:SetStack(pname, plan.id, stack)
+                    else
+                        local p = entry.snap.players
+                        p[pname] = p[pname] or {}
+                        p[pname][plan.id] = stack
+                    end
+                end
             end
         end
     end
@@ -647,7 +663,7 @@ local function BeginRun()
     -- (Listen setzen, SR ins Hauptfenster, SR-Liste sperren).
     BananaLoot:SelectPreparedRaid(entries[chosen].id)
     for k = 1, table.getn(scenarios) do
-        if scenarios[k] then SeedStacks(scenarios[k]) end
+        if scenarios[k] then SeedStacks(scenarios[k], entries[k], k == chosen) end
     end
     SeedTestData(sc)
     BananaLoot_UI:StartPreparedRaid(entries[chosen].id)
